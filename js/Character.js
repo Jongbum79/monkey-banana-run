@@ -104,20 +104,20 @@ class PeanutsMonkeyHero {
         this.triggerLookBack(1.1, 'scared');
     }
 
-    triggerBoost(duration = 2.0) {
+    triggerBoost(duration = 1.5) {
         this.boostTimer = duration;
-        this.triggerLookBack(1.3, 'proud');
+        this.triggerLookBack(1.1, 'proud');
     }
 
-    triggerInvincibleShield(duration = 3.2) {
+    triggerInvincibleShield(duration = 1.8) {
         this.invincibleTimer = duration;
         this.shieldActive = true;
-        this.triggerLookBack(1.2, 'proud');
+        this.triggerLookBack(1.1, 'proud');
     }
 
-    triggerSuperJump(duration = 5.0) {
+    triggerSuperJump(duration = 2.5) {
         this.superJumpTimer = duration;
-        this.triggerLookBack(1.3, 'happy');
+        this.triggerLookBack(1.2, 'happy');
     }
 
     triggerWukongEvolution() {
@@ -125,8 +125,8 @@ class PeanutsMonkeyHero {
         this.wukongLevel++;
         this.maxHp += 30; // 최대 체력 +30 증가!
         this.hp = Math.min(this.maxHp, this.hp + 45); // 체력 대폭 회복!
-        this.triggerBoost(2.5);
-        this.triggerLookBack(1.6, 'proud');
+        this.triggerBoost(1.5);
+        this.triggerLookBack(1.4, 'proud');
     }
 
     update(dt, speedMultiplier = 1.0) {

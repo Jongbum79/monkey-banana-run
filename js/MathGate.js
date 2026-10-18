@@ -1,13 +1,12 @@
 /**
  * Smile Games - 원숭이의 바나나 런
- * [Step 3 업그레이드] 초대형 가독성 6학년 5단계 연산의 문 (3선지 계산 문제 게이트) 시스템
+ * [Step 3 업그레이드] 3D 입체 연산의 문 & 간단한 사칙연산(+, -, ×, ÷) 전용 출제 시스템
  * 제작: 최지훈, 박주아, 김이수, 최우영, 전준우
  *
  * 특징:
- * - 문제가 멀리 있을 때도 한눈에 잘 보이도록:
- *   1) 화면 상단 중앙에 초대형 고정 문제 전광판(Giant HUD Math Board) 동시 표시!
- *   2) 3D 게이트 위 현수막과 각 문의 정답 숫자 크기를 대폭 확대(최소 크기 보정 포함)!
- * - 초등학교 6학년 수준에 맞춘 재미있고 너무 어렵지 않은 단계별(1~5단계) 암산 문제 출제!
+ * - 소수점, 분수, 비율 문제를 모두 제외하고 직관적이고 재미있는 사칙연산(더하기, 빼기, 곱하기, 나누기)만 출제!
+ * - 3개의 문과 현수막을 3D 입체 원근 도형(윗면 + 옆면 두께 + 정면)으로 렌더링!
+ * - 화면 상단 중앙에도 초대형 고정 칠판 보드를 함께 띄워 멀리서도 문제가 선명하게 보임!
  */
 
 class MathGateManager {
@@ -30,99 +29,33 @@ class MathGateManager {
         let answer = 0;
         const r = Math.random();
 
-        if (stage === 1) {
-            // [1단계: 숲] 가벼운 두 자리 덧셈/뺄셈 & 구구단
-            if (r < 0.4) {
-                const a = Math.floor(Math.random() * 25) + 12;
-                const b = Math.floor(Math.random() * 18) + 7;
-                questionText = `${a} + ${b} = ?`;
-                answer = a + b;
-            } else if (r < 0.75) {
-                const a = Math.floor(Math.random() * 30) + 25;
-                const b = Math.floor(Math.random() * 18) + 6;
-                questionText = `${a} - ${b} = ?`;
-                answer = a - b;
-            } else {
-                const a = Math.floor(Math.random() * 7) + 3;
-                const b = Math.floor(Math.random() * 8) + 3;
-                questionText = `${a} × ${b} = ?`;
-                answer = a * b;
-            }
-        } else if (stage === 2) {
-            // [2단계: 사막] 나눗셈과 두 자리×한 자리 곱셈
-            if (r < 0.5) {
-                const b = Math.floor(Math.random() * 8) + 3;
-                const ans = Math.floor(Math.random() * 9) + 4;
-                const a = b * ans;
-                questionText = `${a} ÷ ${b} = ?`;
-                answer = ans;
-            } else {
-                const a = Math.floor(Math.random() * 12) + 11;
-                const b = Math.floor(Math.random() * 4) + 2;
-                questionText = `${a} × ${b} = ?`;
-                answer = a * b;
-            }
-        } else if (stage === 3) {
-            // [3단계: 해저] 초등 혼합 계산 (곱셈/나눗셈 먼저!)
-            if (r < 0.5) {
-                const a = Math.floor(Math.random() * 7) + 3;
-                const b = Math.floor(Math.random() * 6) + 2;
-                const c = Math.floor(Math.random() * 12) + 4;
-                questionText = `${a} × ${b} + ${c} = ?`;
-                answer = a * b + c;
-            } else {
-                const b = Math.floor(Math.random() * 6) + 3;
-                const q = Math.floor(Math.random() * 7) + 4;
-                const a = b * q;
-                const c = Math.floor(Math.random() * 10) + 5;
-                questionText = `${a} ÷ ${b} + ${c} = ?`;
-                answer = q + c;
-            }
-        } else if (stage === 4) {
-            // [4단계: 도시(타임스퀘어)] 6학년 소수 계산 & 분수/비율 기초
-            if (r < 0.35) {
-                const a = Math.floor(Math.random() * 6) + 1;
-                const b = Math.floor(Math.random() * 6) + 2;
-                questionText = `${a}.5 + ${b}.5 = ?`;
-                answer = a + b + 1;
-            } else if (r < 0.7) {
-                const a = Math.floor(Math.random() * 8) + 2;
-                questionText = `0.${a} × 10 = ?`;
-                answer = a;
-            } else {
-                const denom = [2, 3, 4, 5][Math.floor(Math.random() * 4)];
-                const mult = Math.floor(Math.random() * 6) + 2;
-                const total = denom * mult;
-                questionText = `${total} × (1/${denom}) = ?`;
-                answer = mult;
-            }
+        // 전 스테이지(1~5단계) 모두 소수점/비율 없이 간단한 더하기(+), 빼기(-), 곱하기(×), 나누기(÷)만 출제!
+        if (r < 0.25) {
+            // 1) 더하기 (+)
+            const maxA = 10 + stage * 5;
+            const a = Math.floor(Math.random() * maxA) + 5;
+            const b = Math.floor(Math.random() * (8 + stage * 4)) + 4;
+            questionText = `${a} + ${b} = ?`;
+            answer = a + b;
+        } else if (r < 0.50) {
+            // 2) 빼기 (-) : 항상 양수가 나오도록
+            const a = Math.floor(Math.random() * (14 + stage * 5)) + 12;
+            const b = Math.floor(Math.random() * (a - 4)) + 3;
+            questionText = `${a} - ${b} = ?`;
+            answer = a - b;
+        } else if (r < 0.75) {
+            // 3) 곱하기 (×) : 구구단 범위
+            const a = Math.floor(Math.random() * (5 + stage)) + 2;
+            const b = Math.floor(Math.random() * 7) + 2;
+            questionText = `${a} × ${b} = ?`;
+            answer = a * b;
         } else {
-            // [5단계: 글리치 보이드] 6학년 비와 비율 / 백분율 / 종합 혼합연산
-            if (r < 0.35) {
-                const pairs = [
-                    { q: '80의 50% = ?', a: 40 },
-                    { q: '60의 50% = ?', a: 30 },
-                    { q: '40의 25% = ?', a: 10 },
-                    { q: '80의 25% = ?', a: 20 },
-                    { q: '50의 20% = ?', a: 10 },
-                    { q: '90의 10% = ?', a: 9 }
-                ];
-                const pick = pairs[Math.floor(Math.random() * pairs.length)];
-                questionText = pick.q;
-                answer = pick.a;
-            } else if (r < 0.7) {
-                const a = Math.floor(Math.random() * 4) + 2;
-                const b = Math.floor(Math.random() * 5) + 3;
-                const scale = Math.floor(Math.random() * 3) + 2;
-                questionText = `${a} : ${b} = ${a * scale} : ?`;
-                answer = b * scale;
-            } else {
-                const a = Math.floor(Math.random() * 7) + 4;
-                const b = Math.floor(Math.random() * 6) + 3;
-                const c = Math.floor(Math.random() * 4) + 2;
-                questionText = `(${a} + ${b}) × ${c} = ?`;
-                answer = (a + b) * c;
-            }
+            // 4) 나누기 (÷) : 항상 나머지가 0인 깔끔한 나눗셈
+            const b = Math.floor(Math.random() * 7) + 2;
+            const ans = Math.floor(Math.random() * (5 + stage)) + 2;
+            const a = b * ans;
+            questionText = `${a} ÷ ${b} = ?`;
+            answer = ans;
         }
 
         // 오답 2개 생성
@@ -187,8 +120,7 @@ class MathGateManager {
         }
 
         const gate = this.activeGate;
-        // 플레이어가 문제를 충분히 읽고 레인을 옮길 수 있도록 게이트 접근 속도를 안정적으로 유지
-        const approachSpeed = gate.z < 0.75 ? 0.21 : 0.33;
+        const approachSpeed = gate.z < 0.75 ? 0.20 : 0.31;
         gate.z += dt * gameSpeed * approachSpeed;
 
         if (!gate.resolved && gate.z > 0.74) {
@@ -226,7 +158,7 @@ class MathGateManager {
 
         if (gate.z > 1.18) {
             this.activeGate = null;
-            this.cooldownTimer = 6.5;
+            this.cooldownTimer = 6.8;
         }
     }
 
@@ -243,31 +175,65 @@ class MathGateManager {
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
 
-        // 1. 3개의 문 렌더링 (문 숫자가 멀리서도 큼직하게 보이도록 배지 및 폰트 대폭 확대!)
+        // 1. 3D 입체 문(3D Volumetric Doors) 렌더링
         gate.doors.forEach(door => {
             const pDoor = trackManager.project(gate.z, door.lane, width, height);
             const doorW = (roadW / 3) * 0.90;
             const doorH = 240 * scale;
+            const depthX = (-door.lane * 16 + 14) * scale; // 3D 원근 옆면 두께
+            const depthY = -18 * scale;                   // 3D 원근 윗면 두께
             const shakeX = door.shudder > 0 ? Math.sin(door.shudder * 45) * 12 * scale : 0;
 
             ctx.save();
             ctx.translate(pDoor.x + shakeX, gateY);
 
-            // 석조/테마 문틀
-            ctx.fillStyle = gate.stage === 5 ? '#3a0ca3' : '#c8b08a';
+            const frameTopY = -doorH - 14 * scale;
+            const frameW = doorW * 1.08;
+            const halfFW = frameW * 0.5;
+
             ctx.strokeStyle = gate.stage === 5 ? '#00f5d4' : '#1a1612';
-            ctx.lineWidth = Math.max(2.5, 4.5 * scale);
+            ctx.lineWidth = Math.max(2.5, 4.2 * scale);
+
+            // (A) 3D 석조 문틀 윗면 (Top Face)
+            ctx.fillStyle = gate.stage === 5 ? '#5a189a' : '#e6d2ab';
             ctx.beginPath();
-            ctx.roundRect(-doorW * 0.54, -doorH - 14 * scale, doorW * 1.08, doorH + 14 * scale, 12 * scale);
+            ctx.moveTo(-halfFW, frameTopY);
+            ctx.lineTo(-halfFW + depthX, frameTopY + depthY);
+            ctx.lineTo(halfFW + depthX, frameTopY + depthY);
+            ctx.lineTo(halfFW, frameTopY);
+            ctx.closePath();
             ctx.fill();
             ctx.stroke();
 
-            // 문 안쪽 배경
+            // (B) 3D 석조 문틀 옆면 (Side Extrusion Face)
+            ctx.fillStyle = gate.stage === 5 ? '#240046' : '#9c8565';
+            ctx.beginPath();
+            if (depthX >= 0) {
+                ctx.moveTo(halfFW, frameTopY);
+                ctx.lineTo(halfFW + depthX, frameTopY + depthY);
+                ctx.lineTo(halfFW + depthX, depthY);
+                ctx.lineTo(halfFW, 0);
+            } else {
+                ctx.moveTo(-halfFW, frameTopY);
+                ctx.lineTo(-halfFW + depthX, frameTopY + depthY);
+                ctx.lineTo(-halfFW + depthX, depthY);
+                ctx.lineTo(-halfFW, 0);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // (C) 석조 문틀 정면 (Front Face)
+            ctx.fillStyle = gate.stage === 5 ? '#3a0ca3' : '#c8b08a';
+            ctx.fillRect(-halfFW, frameTopY, frameW, doorH + 14 * scale);
+            ctx.strokeRect(-halfFW, frameTopY, frameW, doorH + 14 * scale);
+
+            // 문 안쪽 통로
             ctx.fillStyle = door.openAmount > 0.1 ? '#fff3b0' : '#2b2118';
             ctx.fillRect(-doorW * 0.46, -doorH, doorW * 0.92, doorH);
             ctx.strokeRect(-doorW * 0.46, -doorH, doorW * 0.92, doorH);
 
-            // 양쪽 개폐식 문짝
+            // 양쪽 3D 개폐식 문짝
             const halfW = (doorW * 0.46) * (1 - door.openAmount * 0.86);
             ctx.fillStyle = door.shudder > 0 ? '#d64531' : (gate.stage === 5 ? '#7209b7' : '#8d5b3c');
             ctx.fillRect(-doorW * 0.46, -doorH, halfW, doorH);
@@ -277,9 +243,15 @@ class MathGateManager {
             ctx.strokeRect(doorW * 0.46 - halfW, -doorH, halfW, doorH);
 
             if (door.openAmount < 0.45) {
-                // 멀리 있을 때도 문 번호가 잘 보이도록 최소 반지름 26px 보장!
                 const badgeR = Math.max(26, 56 * scale);
                 const badgeY = -doorH * 0.55;
+
+                // 3D 입체 명판 두께
+                ctx.fillStyle = '#d4a373';
+                ctx.beginPath();
+                ctx.arc(4 * scale, badgeY + 4 * scale, badgeR, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
 
                 ctx.fillStyle = '#fffcf5';
                 ctx.beginPath();
@@ -315,17 +287,25 @@ class MathGateManager {
             ctx.restore();
         });
 
-        // 2. 3D 게이트 상단 현수막 (최소 크기를 대폭 키워 멀리서도 큼직하게 보이게 함!)
+        // 2. 3D 게이트 상단 현수막 (3D 두께감 포함)
         const bannerScale = Math.max(0.58, scale);
         const bannerW = Math.max(380, roadW * 1.08);
         const bannerH = 104 * bannerScale;
-        const bannerY = gateY - 248 * scale - bannerH;
+        const bannerY = gateY - 258 * scale - bannerH;
 
         ctx.save();
         ctx.translate(pCenter.x, bannerY);
 
-        ctx.fillStyle = '#fffcf5';
+        // 3D 현수막 뒤쪽 입체 박스 두께
+        ctx.fillStyle = '#8d5b3c';
         ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.roundRect(-bannerW * 0.5 + 10 * bannerScale, -10 * bannerScale, bannerW, bannerH, 20 * bannerScale);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#fffcf5';
         ctx.lineWidth = 5;
         ctx.beginPath();
         ctx.roundRect(-bannerW * 0.5, 0, bannerW, bannerH, 20 * bannerScale);
@@ -347,7 +327,7 @@ class MathGateManager {
 
         ctx.restore();
 
-        // 3. [핵심 가독성 개선] 게이트가 다가오는 동안 화면 상단 중앙에 초대형 고정 문제 보드(HUD) 추가 렌더링!
+        // 3. 화면 상단 중앙 초대형 3D 칠판 보드 렌더링
         if (!gate.resolved && gate.z < 0.86) {
             this.renderGiantTopMathBoard(ctx, width, height, gate);
         }
@@ -355,7 +335,6 @@ class MathGateManager {
         ctx.restore();
     }
 
-    // 멀리서 문이 다가올 때도 문제가 100% 선명하고 크게 보이는 상단 중앙 초대형 칠판!
     renderGiantTopMathBoard(ctx, width, height, gate) {
         ctx.save();
         const boardW = Math.min(width * 0.62, 620);
@@ -365,11 +344,16 @@ class MathGateManager {
 
         ctx.translate(bx, by);
 
-        // 칠판 외곽 황금빛 후광
-        ctx.shadowColor = 'rgba(255, 190, 11, 0.65)';
-        ctx.shadowBlur = 18;
+        // 3D 입체 칠판 하단/우측 두께
+        ctx.fillStyle = '#5c4938';
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.roundRect(-boardW * 0.5 + 8, -boardH * 0.5 + 8, boardW, boardH, 20);
+        ctx.fill();
+        ctx.stroke();
 
-        // 칠판 본체 (진한 초록/네이비 칠판 + 두꺼운 나무/황금 테두리)
+        // 칠판 본체
         ctx.fillStyle = gate.stage === 5 ? '#240046' : '#1b4332';
         ctx.strokeStyle = '#ffbe0b';
         ctx.lineWidth = 6;
@@ -378,7 +362,6 @@ class MathGateManager {
         ctx.fill();
         ctx.stroke();
 
-        ctx.shadowBlur = 0;
         ctx.strokeStyle = '#1a1612';
         ctx.lineWidth = 3;
         ctx.stroke();
@@ -394,14 +377,14 @@ class MathGateManager {
         ctx.font = 'bold 19px "Gaegu", sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(`🏫 6학년 ${gate.stage}단계 계산 문제!`, 0, -boardH * 0.5 - 1);
+        ctx.fillText(`🏫 ${gate.stage}단계 사칙연산 문제!`, 0, -boardH * 0.5 - 1);
 
         // 초대형 문제 수식 텍스트
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 48px "Comic Neue", "Gaegu", sans-serif';
         ctx.fillText(gate.questionText, 0, -8);
 
-        // 하단 3개 문 보기 안내 (좌 / 중 / 우)
+        // 하단 3개 문 보기 안내
         const dLeft = gate.doors.find(d => d.lane === -1);
         const dMid = gate.doors.find(d => d.lane === 0);
         const dRight = gate.doors.find(d => d.lane === 1);

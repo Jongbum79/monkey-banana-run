@@ -302,8 +302,8 @@ function startNewGame(skipPrologue = false) {
         bubbleKo.textContent = st1.ko;
     } else {
         gameState = 'PROLOGUE';
-        bubbleEn.textContent = "SHHH! STEALING THE ANCIENT DRAGON'S GOLDEN BANANA!";
-        bubbleKo.textContent = `"쉿! ${playerName} 원숭이가 황금 바나나를 들고 학교까지 5단계를 달려간다!"`;
+        bubbleEn.textContent = "SHHH! STEALING THE GOLDEN BANANA FROM SMILE ELEMENTARY SCHOOL!";
+        bubbleKo.textContent = `"쉿! ${playerName} 원숭이가 스마일 초등학교에서 드래곤의 황금 바나나를 뺏어 도망간다!"`;
     }
 }
 
@@ -518,36 +518,36 @@ function gameLoop(now) {
             onBananaBundle: (item) => {
                 sound.playSpecialItem();
                 score += 35;
-                hero.triggerBoost(2.5);
+                hero.triggerBoost(1.5);
                 dragon.onPlayerSuccess(15);
                 const p = track.project(item.z, item.lane, width, height);
-                track.addPopup(p.x, p.y - 55, '황금 바나나 부스트! +35 🍌', '#2a9d8f');
+                track.addPopup(p.x, p.y - 55, '황금 바나나 부스트 (1.5초)! +35 🍌', '#2a9d8f');
                 track.addBurstParticles(p.x, p.y - 30, '#ffea79', 16);
-                bubbleKo.textContent = '"우와! 특별 황금 바나나 파워로 초고속 질주~!"';
+                bubbleKo.textContent = '"우와! 특별 황금 바나나 파워로 1.5초 초고속 질주~!"';
                 updateHUD();
             },
             onShield: (item) => {
-                // 🛡️ 무적 방패: 지속시간을 3.2초로 줄이고 스폰율을 낮춰 밸런스 완성!
+                // 🛡️ 무적 방패: 지속시간을 1.8초로 대폭 단축하고 스폰율을 낮춰 긴장감 극대화!
                 sound.playSpecialItem();
                 score += 25;
-                hero.triggerInvincibleShield(3.2);
+                hero.triggerInvincibleShield(1.8);
                 const p = track.project(item.z, item.lane, width, height);
-                track.addPopup(p.x, p.y - 60, '🛡️ 방패 무적 (3.2초)!', '#00b4d8');
+                track.addPopup(p.x, p.y - 60, '🛡️ 방패 무적 (1.8초)!', '#00b4d8');
                 track.addBurstParticles(p.x, p.y - 35, '#90e0ef', 20);
-                bubbleEn.textContent = "SHIELD POWER-UP! INVINCIBLE FOR 3.2 SECONDS!";
-                bubbleKo.textContent = '"방패 아이템 획득! 3.2초 동안 모든 기물에 무적이야!"';
+                bubbleEn.textContent = "SHIELD POWER-UP! INVINCIBLE FOR 1.8 SECONDS!";
+                bubbleKo.textContent = '"방패 아이템 획득! 1.8초 동안 기물에 무적이야!"';
                 updateHUD();
             },
             onSuperJump: (item) => {
-                // 🚀 신규 아이템 1: 슈퍼점프 5초!
+                // 🚀 슈퍼점프: 지속시간 2.5초로 단축!
                 sound.playSpecialItem();
                 score += 30;
-                hero.triggerSuperJump(5.0);
+                hero.triggerSuperJump(2.5);
                 const p = track.project(item.z, item.lane, width, height);
-                track.addPopup(p.x, p.y - 65, '🚀 슈퍼점프 5초 발동! +30', '#06d6a0');
+                track.addPopup(p.x, p.y - 65, '🚀 슈퍼점프 (2.5초)! +30', '#06d6a0');
                 track.addBurstParticles(p.x, p.y - 35, '#00f5d4', 22);
-                bubbleEn.textContent = "SUPER JUMP ACTIVATED FOR 5 SECONDS! LEAP OVER EVERYTHING!";
-                bubbleKo.textContent = '"🚀 슈퍼점프 5초 발동! 이제 점프하면 엄청 높이 날아올라!"';
+                bubbleEn.textContent = "SUPER JUMP ACTIVATED FOR 2.5 SECONDS!";
+                bubbleKo.textContent = '"🚀 슈퍼점프 2.5초 발동! 지금 점프하면 높이 날아올라!"';
                 updateHUD();
             },
             onWukong: (item) => {

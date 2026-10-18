@@ -89,7 +89,7 @@ class DragonChaser {
     }
 
     /**
-     * [프롤로그 컷신] 고대 보물 동굴에서 잠든 거대 드래곤의 황금 바나나를 훔쳐 달아나는 원숭이
+     * [프롤로그 컷신] 스마일 초등학교에서 드래곤이 지키던 황금 바나나를 뺏어 달아나는 원숭이!
      */
     renderPrologue(ctx, width, height, hero) {
         const t = this.prologueTime;
@@ -97,16 +97,16 @@ class DragonChaser {
         const cy = height * 0.56;
         const isAwake = t > 1.5;
 
-        // 1. 어둡고 장엄한 고대 드래곤의 보물 동굴 배경
-        const bgGrad = ctx.createRadialGradient(cx - 80, cy, 40, cx, cy, width * 0.75);
+        // 1. 스마일 초등학교 운동장 & 하늘 배경 (드래곤이 깨어나면 붉은 노을빛으로 변함)
+        const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
         if (isAwake) {
-            bgGrad.addColorStop(0, '#ffe3a8');
-            bgGrad.addColorStop(0.5, '#d98a4e');
-            bgGrad.addColorStop(1, '#4a2518');
+            bgGrad.addColorStop(0, '#ff9f1c');
+            bgGrad.addColorStop(0.55, '#e76f51');
+            bgGrad.addColorStop(1, '#d4a373');
         } else {
-            bgGrad.addColorStop(0, '#e8d5b5');
-            bgGrad.addColorStop(0.6, '#b5986e');
-            bgGrad.addColorStop(1, '#4a3b28');
+            bgGrad.addColorStop(0, '#90e0ef');
+            bgGrad.addColorStop(0.55, '#caf0f8');
+            bgGrad.addColorStop(1, '#e9c46a');
         }
         ctx.fillStyle = bgGrad;
         ctx.fillRect(0, 0, width, height);
@@ -115,20 +115,70 @@ class DragonChaser {
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
 
-        // 2. 황금 보물 산(Gold Hoard) 바닥
-        ctx.fillStyle = '#d4a22a';
+        // 학교 운동장 잔디 및 모래 트랙 바닥
+        ctx.fillStyle = '#95d5b2';
         ctx.strokeStyle = '#1a1612';
         ctx.lineWidth = 3.5;
+        ctx.fillRect(0, cy + 40, width, height - (cy + 40));
         ctx.beginPath();
-        ctx.ellipse(cx - 140, cy + 125, 290, 62, 0, 0, Math.PI * 2);
+        ctx.moveTo(0, cy + 40);
+        ctx.lineTo(width, cy + 40);
+        ctx.stroke();
+
+        // 2. 배경에 입체(3D) 스마일 초등학교 본관 건물 렌더링!
+        ctx.save();
+        ctx.translate(cx + 40, cy + 40);
+        // 3D 건물 옆면 (입체 두께)
+        ctx.fillStyle = '#d8c3a5';
+        ctx.beginPath();
+        ctx.moveTo(240, -195);
+        ctx.lineTo(275, -215);
+        ctx.lineTo(275, 0);
+        ctx.lineTo(240, 0);
+        ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
-        // 3. 거대하고 디테일한 고대 화염 드래곤 렌더링
+        // 학교 정면 본관
+        ctx.fillStyle = '#f8edeb';
+        ctx.fillRect(-240, -195, 480, 195);
+        ctx.strokeRect(-240, -195, 480, 195);
+
+        // 3D 지붕
+        ctx.fillStyle = '#d64531';
+        ctx.beginPath();
+        ctx.moveTo(-260, -195);
+        ctx.lineTo(0, -270);
+        ctx.lineTo(260, -195);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // 시계탑 & 학교 현판
+        ctx.fillStyle = '#fffcf5';
+        ctx.beginPath();
+        ctx.arc(0, -225, 24, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#1a1612';
+        ctx.font = 'bold 24px "Gaegu", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('🏫 스마일 초등학교 (급식실 황금 바나나 보관소)', 0, -155);
+
+        // 교실 창문들
+        ctx.fillStyle = '#90e0ef';
+        [-175, -105, 105, 175].forEach(wx => {
+            ctx.fillRect(wx - 22, -125, 44, 48);
+            ctx.strokeRect(wx - 22, -125, 44, 48);
+        });
+        ctx.restore();
+
+        // 3. 학교 운동장 한가운데서 바나나를 지키던 거대 화염 드래곤!
         const dragonShakeX = isAwake ? Math.sin(t * 42) * 5 : 0;
         this.drawDetailedAncientDragon(ctx, cx - 155 + dragonShakeX, cy + 95, 1.08, isAwake, t);
 
-        // 4. 황금 바나나를 훔쳐 달아나는 아담한 원숭이 (거대한 용과 극적인 크기 대비!)
+        // 4. 학교에서 황금 바나나를 뺏어 달아나는 원숭이!
         const monkeyProgress = Math.min(1, t / 3.3);
         const monkeyX = cx + 70 + monkeyProgress * 240;
         const monkeyY = cy + 115;
@@ -136,7 +186,6 @@ class DragonChaser {
         hero.lookBackBlend = 1.0;
         hero.lookBackMood = isAwake ? 'scared' : 'proud';
         hero.runCycle = t * 16;
-        // 캐릭터 크기를 절반 수준(0.42)으로 아담하게 렌더링
         hero.render(ctx, monkeyX, monkeyY, 0.42, 0);
 
         // 5. 상단 코믹스 스토리 캡션 박스
@@ -144,7 +193,7 @@ class DragonChaser {
         ctx.strokeStyle = '#1a1612';
         ctx.lineWidth = 4;
         ctx.beginPath();
-        ctx.roundRect(cx - 350, height * 0.13, 700, 92, 20);
+        ctx.roundRect(cx - 360, height * 0.12, 720, 92, 20);
         ctx.fill();
         ctx.stroke();
 
@@ -152,17 +201,17 @@ class DragonChaser {
         if (!isAwake) {
             ctx.fillStyle = '#1a1612';
             ctx.font = 'bold 27px "Gaegu", sans-serif';
-            ctx.fillText('🍌 무시무시한 고대 드래곤의 품에서 황금 바나나를 훔쳤다!', cx, height * 0.13 + 38);
+            ctx.fillText('🏫 학교에서 드래곤이 지키던 황금 바나나를 뺏었다!', cx, height * 0.12 + 38);
             ctx.fillStyle = '#5c4938';
             ctx.font = 'bold 21px "Gaegu", sans-serif';
-            ctx.fillText('"쉿! 드래곤이 깨기 전에 재빨리 사원 밖으로 도망치자!"', cx, height * 0.13 + 72);
+            ctx.fillText('"헤헤! 스마일 초등학교에서 바나나를 뺏어 도망치자!"', cx, height * 0.12 + 72);
         } else {
             ctx.fillStyle = '#c1121f';
             ctx.font = 'bold 28px "Gaegu", sans-serif';
-            ctx.fillText('🔥 크아아아앙!! 분노한 화염 드래곤이 불길을 뿜으며 추격한다!!', cx, height * 0.13 + 38);
+            ctx.fillText('🔥 크아아아앙!! 학교를 지키던 드래곤이 불을 뿜으며 쫓아온다!!', cx, height * 0.12 + 38);
             ctx.fillStyle = '#1a1612';
             ctx.font = 'bold 21px "Gaegu", sans-serif';
-            ctx.fillText('장애물에 3번 부딪히면 끝! 계산 문제를 풀면 체력(HP)이 회복됩니다!', cx, height * 0.13 + 72);
+            ctx.fillText('장애물을 피하고 사칙연산(+,-,×,÷) 문제를 풀어 도망가세요!', cx, height * 0.12 + 72);
         }
 
         ctx.restore();
