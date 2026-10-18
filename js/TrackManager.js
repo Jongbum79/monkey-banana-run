@@ -177,24 +177,25 @@ class TrackManager {
 
             // 경사로 플랫폼(ramp)은 부딪히는 장애물이 아니라 위로 올라타서 달리는 플랫폼!
             if (obs.type === 'ramp') {
-                if (obs.z > 0.72 && obs.z < 1.02 && Math.abs(hero.laneX - obs.lane) < 0.46) {
+                if (obs.z > 0.74 && obs.z < 1.00 && Math.abs(hero.laneX - obs.lane) < 0.38) {
                     onRampNow = true;
                     if (!obs.passed) {
                         obs.passed = true;
                         callbacks.onRampClimb(obs);
                     }
                 }
-            } else if (!obs.hit && !obs.passed && obs.z > 0.83 && obs.z < 0.95) {
-                if (Math.abs(hero.laneX - obs.lane) < 0.44) {
+            } else if (!obs.hit && !obs.passed && obs.z > 0.85 && obs.z < 0.92) {
+                // 원숭이 크기가 작아진 것에 맞춰 좌우 히트박스 폭을 0.32로 정밀하고 명확하게 축소!
+                if (Math.abs(hero.laneX - obs.lane) < 0.32) {
                     let avoided = false;
                     const totalHeroHeight = hero.y + hero.platformY;
 
                     if (
                         (obs.type === 'log' || obs.type === 'hurdle' || isChaser || obs.type === 'moving_barrier') &&
-                        totalHeroHeight > 54
+                        totalHeroHeight > 36
                     ) {
                         avoided = true;
-                    } else if ((obs.type === 'arch' || obs.type === 'pillar') && totalHeroHeight > 145) {
+                    } else if ((obs.type === 'arch' || obs.type === 'pillar') && totalHeroHeight > 125) {
                         avoided = true;
                     } else if (obs.type === 'arch' && hero.isSliding) {
                         avoided = true;
@@ -207,6 +208,9 @@ class TrackManager {
                         obs.passed = true;
                         callbacks.onObstacleAvoided(obs);
                     }
+                } else if (obs.z > 0.90) {
+                    obs.passed = true;
+                    callbacks.onObstacleAvoided(obs);
                 }
             }
 
@@ -641,14 +645,13 @@ class TrackManager {
                 ctx.stroke();
             }
 
-            // 유유히 헤엄치는 대왕고래, 상어, 바다거북, 열대어들
+            // 유유히 헤엄치는 직접 그린 대왕고래, 백상아리, 바다거북, 열대어, 문어들! (이모티콘 일절 사용 안 함)
             const whaleX = centerX - 210 + Math.sin(time * 0.8) * 65;
-            const whaleY = horizonY - 115;
-            ctx.font = 'bold 58px sans-serif';
-            ctx.fillText('🐋', whaleX, whaleY);
-            ctx.fillText('🦈', centerX + 190 + Math.cos(time * 1.3) * 55, horizonY - 90);
-            ctx.font = 'bold 38px sans-serif';
-            ctx.fillText('🐢 🐠 🐡 🐙', centerX - 40 + Math.sin(time * 1.6) * 70, horizonY - 140);
+            const whaleY = horizonY - 105;
+            this.drawRealSeaCreature(ctx, whaleX, whaleY, 0.95, 2, time); // 대왕고래
+            this.drawRealSeaCreature(ctx, centerX + 190 + Math.cos(time * 1.3) * 55, horizonY - 85, 0.85, 0, time); // 백상아리
+            this.drawRealSeaCreature(ctx, centerX - 55 + Math.sin(time * 1.6) * 60, horizonY - 135, 0.72, 4, time); // 바다거북
+            this.drawRealSeaCreature(ctx, centerX + 45 + Math.cos(time * 1.9) * 50, horizonY - 125, 0.75, 1, time); // 열대어
 
         } else if (this.stage === 4) {
             // 🌃 4단계 도시 (타임스퀘어 밤): 서치라이트 불빛, 고밀도 창문 빌딩 숲, 화려한 대형 전광판!
@@ -723,6 +726,607 @@ class TrackManager {
         ctx.restore();
     }
 
+    // =========================================================================
+    // 🦌 직접 그리는 고디테일 동물 벡터 일러스트 함수들 (이모티콘 사용 금지!)
+    // =========================================================================
+
+    // 1단계 숲속 동물 5종 직접 그리기 (0:다람쥐, 1:산토끼, 2:꽃사슴, 3:붉은여우, 4:숲부엉이)
+    drawRealForestAnimal(ctx, ax, ay, kind, time) {
+        ctx.save();
+        ctx.translate(ax, ay);
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 3;
+        ctx.lineJoin = 'round';
+
+        // 바닥 그림자
+        ctx.fillStyle = 'rgba(26, 22, 18, 0.25)';
+        ctx.beginPath();
+        ctx.ellipse(0, 4, 26, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (kind === 0) {
+            // 0: 다람쥐 (풍성하게 말린 줄무늬 꼬리 + 도토리 들고 있는 모습)
+            // 큰 복슬복슬 꼬리
+            ctx.fillStyle = '#b5651d';
+            ctx.beginPath();
+            ctx.moveTo(-8, -10);
+            ctx.bezierCurveTo(-42, -5, -46, -55, -18, -52);
+            ctx.bezierCurveTo(0, -50, -4, -22, -8, -10);
+            ctx.fill();
+            ctx.stroke();
+            // 몸통
+            ctx.fillStyle = '#d48c46';
+            ctx.beginPath();
+            ctx.ellipse(0, -18, 16, 20, 0.1, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            // 하얀 배
+            ctx.fillStyle = '#fffcf2';
+            ctx.beginPath();
+            ctx.ellipse(6, -16, 8, 13, 0.1, 0, Math.PI * 2);
+            ctx.fill();
+            // 머리 & 귀
+            ctx.fillStyle = '#d48c46';
+            ctx.beginPath();
+            ctx.arc(4, -38, 13, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.ellipse(-2, -50, 4, 7, -0.2, 0, Math.PI * 2);
+            ctx.ellipse(8, -50, 4, 7, 0.2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            // 눈 & 코
+            ctx.fillStyle = '#1a1612';
+            ctx.beginPath();
+            ctx.arc(9, -40, 2.5, 0, Math.PI * 2);
+            ctx.arc(16, -36, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+            // 손에 든 도토리
+            ctx.fillStyle = '#8d5b3c';
+            ctx.beginPath();
+            ctx.arc(16, -22, 7, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = '#4a2c11';
+            ctx.beginPath();
+            ctx.arc(16, -25, 7.5, Math.PI, 0);
+            ctx.fill();
+            ctx.stroke();
+
+        } else if (kind === 1) {
+            // 1: 산토끼 (쫑긋한 긴 귀 + 분홍 귀 안쪽 + 솜방울 꼬리)
+            const hop = Math.abs(Math.sin(time * 6)) * 6;
+            ctx.translate(0, -hop);
+            // 솜방울 꼬리
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(-18, -12, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            // 몸통
+            ctx.fillStyle = '#fffcf7';
+            ctx.beginPath();
+            ctx.ellipse(0, -16, 18, 15, -0.1, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            // 머리
+            ctx.beginPath();
+            ctx.arc(10, -30, 13, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            // 긴 토끼 귀 2개
+            [-1, 1].forEach(dir => {
+                ctx.fillStyle = '#fffcf7';
+                ctx.beginPath();
+                ctx.ellipse(8 + dir * 4, -52, 5, 16, dir * 0.15, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                ctx.fillStyle = '#ffafcc';
+                ctx.beginPath();
+                ctx.ellipse(8 + dir * 4, -52, 2.5, 11, dir * 0.15, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            // 루비 눈 & 분홍 코
+            ctx.fillStyle = '#e63946';
+            ctx.beginPath();
+            ctx.arc(15, -32, 2.8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ff758f';
+            ctx.beginPath();
+            ctx.arc(22, -28, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+
+        } else if (kind === 2) {
+            // 2: 꽃사슴 (가느다란 다리 + 하얀 반점 몸통 + 멋진 사슴 뿔)
+            // 네 다리
+            ctx.strokeStyle = '#8d5b3c';
+            ctx.lineWidth = 4;
+            [-12, -5, 8, 15].forEach(lx => {
+                ctx.beginPath();
+                ctx.moveTo(lx, -22);
+                ctx.lineTo(lx, 2);
+                ctx.stroke();
+            });
+            ctx.strokeStyle = '#1a1612';
+            ctx.lineWidth = 3;
+            // 몸통
+            ctx.fillStyle = '#c67d3b';
+            ctx.beginPath();
+            ctx.ellipse(0, -26, 24, 14, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            // 하얀 꽃사슴 반점들
+            ctx.fillStyle = '#fffcf2';
+            [[-10, -28], [-2, -23], [6, -29], [-6, -20], [10, -22]].forEach(([sx, sy]) => {
+                ctx.beginPath();
+                ctx.arc(sx, sy, 2.6, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            // 긴 목과 머리
+            ctx.fillStyle = '#c67d3b';
+            ctx.beginPath();
+            ctx.moveTo(12, -32);
+            ctx.lineTo(18, -56);
+            ctx.lineTo(26, -54);
+            ctx.lineTo(20, -28);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.ellipse(24, -58, 12, 9, 0.15, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            // 사슴 뿔 (Antlers)
+            ctx.strokeStyle = '#5c3a21';
+            ctx.lineWidth = 3.2;
+            ctx.beginPath();
+            ctx.moveTo(20, -65);
+            ctx.lineTo(16, -84);
+            ctx.moveTo(18, -75);
+            ctx.lineTo(10, -80);
+            ctx.moveTo(25, -65);
+            ctx.lineTo(28, -84);
+            ctx.moveTo(27, -75);
+            ctx.lineTo(35, -80);
+            ctx.stroke();
+            // 눈과 코
+            ctx.fillStyle = '#1a1612';
+            ctx.beginPath();
+            ctx.arc(27, -59, 2.5, 0, Math.PI * 2);
+            ctx.arc(35, -56, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+        } else if (kind === 3) {
+            // 3: 붉은여우 (오렌지색 몸통 + 하얀 끝 풍성한 꼬리 + 뾰족한 귀)
+            // 여우 꼬리
+            ctx.fillStyle = '#e76f51';
+            ctx.beginPath();
+            ctx.ellipse(-24, -18, 18, 9, -0.4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(-36, -24, 7, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            // 여우 몸통
+            ctx.fillStyle = '#e76f51';
+            ctx.beginPath();
+            ctx.ellipse(0, -18, 20, 13, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            // 머리 (역삼각형 여우 얼굴)
+            ctx.beginPath();
+            ctx.moveTo(4, -44);
+            ctx.lineTo(24, -44);
+            ctx.lineTo(16, -24);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            // 뾰족한 검은 끝 귀
+            ctx.fillStyle = '#264653';
+            ctx.beginPath();
+            ctx.moveTo(5, -44);
+            ctx.lineTo(9, -56);
+            ctx.lineTo(13, -44);
+            ctx.moveTo(16, -44);
+            ctx.lineTo(20, -56);
+            ctx.lineTo(24, -44);
+            ctx.fill();
+            ctx.stroke();
+            // 눈
+            ctx.fillStyle = '#1a1612';
+            ctx.beginPath();
+            ctx.arc(11, -37, 2.2, 0, Math.PI * 2);
+            ctx.arc(18, -37, 2.2, 0, Math.PI * 2);
+            ctx.arc(16, -25, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+        } else {
+            // 4: 숲부엉이 (둥근 갈색 몸통 + 깃털 무늬 + 왕방울 노란 눈 + 부리)
+            ctx.fillStyle = '#7f5539';
+            ctx.beginPath();
+            ctx.ellipse(0, -26, 20, 24, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            // 배 깃털 패턴
+            ctx.fillStyle = '#ddb892';
+            ctx.beginPath();
+            ctx.ellipse(0, -20, 13, 15, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // 부엉이 귀 깃털
+            ctx.fillStyle = '#5c3a21';
+            ctx.beginPath();
+            ctx.moveTo(-14, -44);
+            ctx.lineTo(-22, -56);
+            ctx.lineTo(-6, -48);
+            ctx.moveTo(14, -44);
+            ctx.lineTo(22, -56);
+            ctx.lineTo(6, -48);
+            ctx.fill();
+            ctx.stroke();
+            // 커다란 황금 눈 2개
+            [-8, 8].forEach(ex => {
+                ctx.fillStyle = '#ffbe0b';
+                ctx.beginPath();
+                ctx.arc(ex, -36, 7.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                ctx.fillStyle = '#1a1612';
+                ctx.beginPath();
+                ctx.arc(ex, -36, 3.5, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            // 부리
+            ctx.fillStyle = '#fb8500';
+            ctx.beginPath();
+            ctx.moveTo(-4, -32);
+            ctx.lineTo(4, -32);
+            ctx.lineTo(0, -25);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        }
+        ctx.restore();
+    }
+
+    // 2단계 사막 동물 5종 직접 그리기 (0:사막전갈, 1:사막여우, 2:단봉낙타, 3:쌍봉낙타, 4:사막도마뱀)
+    drawRealDesertAnimal(ctx, ax, ay, kind, time) {
+        ctx.save();
+        ctx.translate(ax, ay);
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 3;
+        ctx.lineJoin = 'round';
+
+        ctx.fillStyle = 'rgba(26, 22, 18, 0.25)';
+        ctx.beginPath();
+        ctx.ellipse(0, 4, 28, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (kind === 0) {
+            // 0: 사막전갈 (집게발 + 마디 꼬리 + 독침)
+            ctx.fillStyle = '#9b2226';
+            ctx.beginPath();
+            ctx.ellipse(0, -14, 20, 12, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            // 마디 꼬리
+            for (let i = 0; i < 4; i++) {
+                ctx.fillStyle = '#bb3e03';
+                ctx.beginPath();
+                ctx.arc(-10 - i * 4, -26 - i * 9, 6 - i * 0.8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+            }
+            // 독침
+            ctx.fillStyle = '#e63946';
+            ctx.beginPath();
+            ctx.moveTo(-22, -62);
+            ctx.lineTo(-10, -56);
+            ctx.lineTo(-18, -50);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            // 양쪽 집게발
+            [-14, 14].forEach(px => {
+                ctx.fillStyle = '#ae2012';
+                ctx.beginPath();
+                ctx.arc(px, -6, 9, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+            });
+
+        } else if (kind === 1) {
+            // 1: 사막여우 (페넥여우 특유의 엄청 큰 귀 + 크림색 털)
+            ctx.fillStyle = '#f4e285';
+            ctx.beginPath();
+            ctx.ellipse(-20, -14, 15, 8, -0.3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.ellipse(0, -16, 18, 12, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            // 머리
+            ctx.beginPath();
+            ctx.arc(10, -30, 12, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            // 페넥여우 특유의 초대형 귀 2개!
+            [-1, 1].forEach(dir => {
+                ctx.fillStyle = '#f4e285';
+                ctx.beginPath();
+                ctx.ellipse(10 + dir * 10, -48, 8, 18, dir * 0.45, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                ctx.fillStyle = '#ffcad4';
+                ctx.beginPath();
+                ctx.ellipse(10 + dir * 10, -48, 4.5, 12, dir * 0.45, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.fillStyle = '#1a1612';
+            ctx.beginPath();
+            ctx.arc(7, -30, 2.5, 0, Math.PI * 2);
+            ctx.arc(15, -30, 2.5, 0, Math.PI * 2);
+            ctx.arc(12, -23, 2.8, 0, Math.PI * 2);
+            ctx.fill();
+
+        } else if (kind === 2 || kind === 3) {
+            // 2: 단봉낙타 / 3: 쌍봉낙타 (긴 다리 + 혹 1개 또는 2개 + 긴 목)
+            ctx.strokeStyle = '#99582a';
+            ctx.lineWidth = 4.5;
+            [-14, -6, 8, 16].forEach(lx => {
+                ctx.beginPath();
+                ctx.moveTo(lx, -26);
+                ctx.lineTo(lx, 2);
+                ctx.stroke();
+            });
+            ctx.strokeStyle = '#1a1612';
+            ctx.lineWidth = 3;
+            ctx.fillStyle = kind === 2 ? '#dda15e' : '#b07d4f';
+            // 몸통
+            ctx.beginPath();
+            ctx.ellipse(0, -30, 26, 16, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            // 낙타 혹 (단봉 vs 쌍봉)
+            if (kind === 2) {
+                ctx.beginPath();
+                ctx.arc(0, -46, 14, Math.PI, 0);
+                ctx.fill();
+                ctx.stroke();
+            } else {
+                [-9, 9].forEach(hx => {
+                    ctx.beginPath();
+                    ctx.arc(hx, -45, 10, Math.PI, 0);
+                    ctx.fill();
+                    ctx.stroke();
+                });
+            }
+            // U자형 긴 목과 머리
+            ctx.beginPath();
+            ctx.moveTo(18, -32);
+            ctx.quadraticCurveTo(30, -32, 28, -58);
+            ctx.lineTo(20, -58);
+            ctx.quadraticCurveTo(20, -40, 14, -36);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.ellipse(28, -62, 11, 7, 0.1, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = '#1a1612';
+            ctx.beginPath();
+            ctx.arc(30, -64, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+
+        } else {
+            // 4: 사막 목도리도마뱀 (초록/황토 비늘 몸통 + 펼쳐진 목도리 프릴 + 긴 꼬리)
+            ctx.fillStyle = '#a3b18a';
+            ctx.beginPath();
+            ctx.moveTo(-12, -12);
+            ctx.quadraticCurveTo(-40, -4, -46, -24);
+            ctx.quadraticCurveTo(-34, -10, -12, -18);
+            ctx.fill();
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.ellipse(0, -15, 18, 10, -0.1, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            // 목도리 프릴
+            ctx.fillStyle = '#f4a261';
+            ctx.beginPath();
+            ctx.arc(14, -24, 15, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            // 도마뱀 머리
+            ctx.fillStyle = '#588157';
+            ctx.beginPath();
+            ctx.ellipse(18, -24, 10, 7, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = '#1a1612';
+            ctx.beginPath();
+            ctx.arc(21, -26, 2.3, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.restore();
+    }
+
+    // 3단계 해저 생물 5종 직접 그리기 (0:백상아리, 1:열대어, 2:대왕고래, 3:바다문어, 4:바다거북)
+    drawRealSeaCreature(ctx, ax, ay, scale, kind, time) {
+        ctx.save();
+        ctx.translate(ax, ay);
+        ctx.scale(scale, scale);
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 3;
+        ctx.lineJoin = 'round';
+
+        const tailWag = Math.sin(time * 7 + kind) * 6;
+
+        if (kind === 0) {
+            // 0: 백상아리 (유선형 회청색 상어 몸통 + 등지느러미 + 아가미 + 날카로운 이빨)
+            ctx.fillStyle = '#457b9d';
+            ctx.beginPath();
+            ctx.moveTo(-36, tailWag);
+            ctx.lineTo(-48, -14 + tailWag);
+            ctx.lineTo(-44, 14 + tailWag);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            // 등지느러미
+            ctx.beginPath();
+            ctx.moveTo(-6, -12);
+            ctx.lineTo(4, -32);
+            ctx.lineTo(14, -12);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            // 상어 몸통
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 34, 14, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            // 하얀 배
+            ctx.fillStyle = '#f1faee';
+            ctx.beginPath();
+            ctx.ellipse(2, 5, 26, 7, 0, 0, Math.PI);
+            ctx.fill();
+            // 눈 & 아가미 줄 3개
+            ctx.fillStyle = '#1a1612';
+            ctx.beginPath();
+            ctx.arc(22, -4, 3, 0, Math.PI * 2);
+            ctx.fill();
+            for (let g = 0; g < 3; g++) {
+                ctx.beginPath();
+                ctx.moveTo(8 + g * 4, -5);
+                ctx.lineTo(8 + g * 4, 4);
+                ctx.stroke();
+            }
+
+        } else if (kind === 1) {
+            // 1: 열대어 (주황/하얀 줄무늬 흰동가리 니모 스타일)
+            ctx.fillStyle = '#fb5607';
+            ctx.beginPath();
+            ctx.moveTo(-18, 0);
+            ctx.lineTo(-30, -12 + tailWag * 0.6);
+            ctx.lineTo(-30, 12 + tailWag * 0.6);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 22, 15, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            // 하얀 줄무늬 2개
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(-8, -13, 6, 26);
+            ctx.strokeRect(-8, -13, 6, 26);
+            ctx.fillRect(5, -12, 6, 24);
+            ctx.strokeRect(5, -12, 6, 24);
+            ctx.fillStyle = '#1a1612';
+            ctx.beginPath();
+            ctx.arc(15, -3, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+        } else if (kind === 2) {
+            // 2: 대왕고래 (거대한 푸른 고래 몸통 + 주름진 하얀 배 + 머리 위 분수 물줄기!)
+            ctx.fillStyle = '#1d3557';
+            ctx.beginPath();
+            ctx.moveTo(-42, tailWag);
+            ctx.lineTo(-58, -16 + tailWag);
+            ctx.lineTo(-54, 16 + tailWag);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 42, 20, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            // 하얀 주름 배
+            ctx.fillStyle = '#caf0f8';
+            ctx.beginPath();
+            ctx.ellipse(6, 7, 30, 10, 0, 0, Math.PI);
+            ctx.fill();
+            ctx.stroke();
+            // 고래 머리 위 물줄기 분수
+            ctx.strokeStyle = '#90e0ef';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(12, -20);
+            ctx.quadraticCurveTo(4, -38, -8, -34);
+            ctx.moveTo(12, -20);
+            ctx.quadraticCurveTo(20, -38, 30, -34);
+            ctx.stroke();
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(24, -4, 3.2, 0, Math.PI * 2);
+            ctx.fill();
+
+        } else if (kind === 3) {
+            // 3: 바다문어 (둥근 붉은 머리 + 꿈틀거리는 다리 6가닥)
+            ctx.fillStyle = '#e63946';
+            for (let t = -2; t <= 2; t++) {
+                const wave = Math.sin(time * 8 + t) * 5;
+                ctx.beginPath();
+                ctx.moveTo(t * 7, 4);
+                ctx.quadraticCurveTo(t * 11 + wave, 18, t * 9 - wave, 28);
+                ctx.lineWidth = 6;
+                ctx.strokeStyle = '#e63946';
+                ctx.stroke();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = '#1a1612';
+                ctx.stroke();
+            }
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(0, -8, 19, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = '#fff';
+            [-6, 6].forEach(ex => {
+                ctx.beginPath();
+                ctx.arc(ex, -6, 4.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                ctx.fillStyle = '#1a1612';
+                ctx.beginPath();
+                ctx.arc(ex, -6, 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#fff';
+            });
+
+        } else {
+            // 4: 바다거북 (육각형 등껍질 + 초록 지느러미 발 + 머리)
+            ctx.fillStyle = '#52b788';
+            // 앞뒤 지느러미 발
+            ctx.beginPath();
+            ctx.ellipse(10, -16, 7, 14, -0.5, 0, Math.PI * 2);
+            ctx.ellipse(10, 16, 7, 14, 0.5, 0, Math.PI * 2);
+            ctx.ellipse(-16, -12, 5, 10, 0.5, 0, Math.PI * 2);
+            ctx.ellipse(-16, 12, 5, 10, -0.5, 0, Math.PI * 2);
+            ctx.ellipse(26, 0, 9, 7, 0, 0, Math.PI * 2); // 머리
+            ctx.fill();
+            ctx.stroke();
+            // 거북이 등껍질
+            ctx.fillStyle = '#2d6a4f';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 22, 16, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.strokeStyle = '#95d5b2';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(-10, -7, 20, 14);
+            ctx.fillStyle = '#1a1612';
+            ctx.beginPath();
+            ctx.arc(29, -2, 2.2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.restore();
+    }
+
     // 양옆 스테이지별 동물 & 오브젝트 디테일
     drawStageSideProp(ctx, x, y, scale, side, variant, time) {
         ctx.save();
@@ -736,7 +1340,7 @@ class TrackManager {
         const bob = Math.sin(time * 5 + variant) * 6;
 
         if (this.stage === 1) {
-            // 🌲 1단계 숲: 다층 수관 나무 + 꽃덤불 + 숲속 동물들(다람쥐, 산토끼, 꽃사슴, 여우, 부엉이)
+            // 🌲 1단계 숲: 다층 수관 나무 + 직접 그린 숲속 동물들(다람쥐, 산토끼, 꽃사슴, 붉은여우, 숲부엉이)
             ctx.fillStyle = '#7f4f24';
             ctx.fillRect(-16, -155, 32, 155);
             ctx.strokeRect(-16, -155, 32, 155);
@@ -754,16 +1358,14 @@ class TrackManager {
             ctx.fill();
             ctx.stroke();
 
-            const animals = ['🐿️', '🐇', '🦌', '🦊', '🦉'];
             const animalNames = ['다람쥐', '산토끼', '꽃사슴', '붉은여우', '숲부엉이'];
-            ctx.font = 'bold 58px sans-serif';
-            ctx.fillText(animals[variant % 5], -side * 58, -25 + bob);
+            this.drawRealForestAnimal(ctx, -side * 62, -10 + bob * 0.5, variant % 5, time);
             ctx.fillStyle = '#fffcf5';
             ctx.font = 'bold 18px "Gaegu", sans-serif';
-            ctx.fillText(animalNames[variant % 5], -side * 58, 8);
+            ctx.fillText(animalNames[variant % 5], -side * 62, 16);
 
         } else if (this.stage === 2) {
-            // 🌵 2단계 사막: 꽃 핀 선인장 & 오아시스 야자수 + 전갈, 사막여우, 단봉낙타, 쌍봉낙타
+            // 🌵 2단계 사막: 선인장 + 직접 그린 사막 동물들(사막전갈, 사막여우, 단봉낙타, 쌍봉낙타, 사막도마뱀)
             ctx.fillStyle = '#588157';
             ctx.beginPath();
             ctx.roundRect(-16, -145, 32, 145, 14);
@@ -774,16 +1376,14 @@ class TrackManager {
             ctx.fill();
             ctx.stroke();
 
-            const desertAnimals = ['🦂', '🦊', '🐪', '🐫', '🦎'];
             const desertLabels = ['사막전갈', '사막여우', '단봉낙타', '쌍봉낙타', '사막도마뱀'];
-            ctx.font = 'bold 62px sans-serif';
-            ctx.fillText(desertAnimals[variant % 5], -side * 65, -24 + bob);
+            this.drawRealDesertAnimal(ctx, -side * 68, -8 + bob * 0.4, variant % 5, time);
             ctx.fillStyle = '#fff3b0';
             ctx.font = 'bold 18px "Gaegu", sans-serif';
-            ctx.fillText(desertLabels[variant % 5], -side * 65, 10);
+            ctx.fillText(desertLabels[variant % 5], -side * 68, 18);
 
         } else if (this.stage === 3) {
-            // 🦈 3단계 해저: 다채로운 산호초와 해초 + 상어, 열대어, 고래, 문어, 바다거북
+            // 🦈 3단계 해저: 산호초 + 직접 그린 해양 생물들(백상아리, 열대어, 대왕고래, 바다문어, 바다거북)
             ctx.fillStyle = variant % 2 === 0 ? '#ff6b6b' : '#ff9f1c';
             ctx.beginPath();
             ctx.roundRect(-16, -130, 32, 130, 14);
@@ -792,37 +1392,53 @@ class TrackManager {
             ctx.fill();
             ctx.stroke();
 
-            const seaCreatures = ['🦈', '🐠', '🐋', '🐙', '🐢'];
             const seaLabels = ['백상아리', '열대어', '대왕고래', '바다문어', '바다거북'];
-            ctx.font = 'bold 64px sans-serif';
-            ctx.fillText(seaCreatures[variant % 5], -side * 65, -55 + bob * 1.8);
+            this.drawRealSeaCreature(ctx, -side * 68, -52 + bob * 1.5, 1.0, variant % 5, time);
             ctx.fillStyle = '#caf0f8';
             ctx.font = 'bold 18px "Gaegu", sans-serif';
-            ctx.fillText(seaLabels[variant % 5], -side * 65, -12);
+            ctx.fillText(seaLabels[variant % 5], -side * 68, -10);
 
         } else if (this.stage === 4) {
-            // 🌆 4단계 도시 (타임스퀘어 밤): 네온 광고판 타워 & 가로등 & 타임스퀘어 택시
-            ctx.fillStyle = '#2b2d42';
-            ctx.fillRect(-45, -215, 90, 215);
-            ctx.strokeRect(-45, -215, 90, 215);
+            // 🌆 4단계 도시 (타임스퀘어 밤): 3D 네온 광고판 타워 & 직접 그린 가로등
+            this.draw3DBox(ctx, 0, 0, 86, 210, -side * 16, -16, '#2b2d42', '#495057', '#151624');
 
             ctx.fillStyle = variant % 2 === 0 ? '#ff007f' : '#00f5d4';
-            ctx.fillRect(-36, -190, 72, 58);
-            ctx.strokeRect(-36, -190, 72, 58);
+            ctx.fillRect(-34, -185, 68, 56);
+            ctx.strokeRect(-34, -185, 68, 56);
             ctx.fillStyle = '#fff';
-            ctx.font = 'bold 19px "Comic Neue", sans-serif';
-            ctx.fillText(variant % 2 === 0 ? 'TIMES SQ' : 'NYC TAXI', 0, -155);
+            ctx.font = 'bold 18px "Comic Neue", sans-serif';
+            ctx.fillText(variant % 2 === 0 ? 'TIMES SQ' : 'BROADWAY', 0, -152);
 
-            ctx.font = 'bold 54px sans-serif';
-            ctx.fillText('🚕', -side * 65, -18);
+            // 네온 가로등 기둥과 불빛
+            ctx.strokeStyle = '#adb5bd';
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.moveTo(-side * 55, 0);
+            ctx.lineTo(-side * 55, -110);
+            ctx.lineTo(-side * 35, -110);
+            ctx.stroke();
+            ctx.fillStyle = '#ffea79';
+            ctx.beginPath();
+            ctx.arc(-side * 35, -106, 10, 0, Math.PI * 2);
+            ctx.fill();
 
         } else if (this.stage === 5) {
-            // ⚡ 5단계 글리치 보이드: 깨진 디지털 기둥 & 에러 홀로그램
+            // ⚡ 5단계 글리치 보이드: 깨진 3D 디지털 기둥 & 에러 홀로그램
             const glitchShift = (Math.random() - 0.5) * 20;
-            ctx.fillStyle = variant % 2 === 0 ? '#ff007f' : '#00f5d4';
-            ctx.fillRect(-30 + glitchShift, -195, 60, 195);
+            this.draw3DBox(
+                ctx,
+                glitchShift,
+                0,
+                60,
+                195,
+                -side * 14,
+                -14,
+                variant % 2 === 0 ? '#ff007f' : '#00f5d4',
+                '#7209b7',
+                '#240046'
+            );
             ctx.fillStyle = '#fff';
-            ctx.font = 'bold 24px monospace';
+            ctx.font = 'bold 22px monospace';
             ctx.fillText('ERR_404', glitchShift, -110);
         }
 
@@ -963,13 +1579,20 @@ class TrackManager {
             ctx.stroke();
 
         } else if (item.type === 'banana') {
-            // 3D 황금 바나나 캡슐 큐브
+            // 3D 황금 바나나 캡슐 큐브 (직접 그린 바나나 송이 벡터 아이콘)
             this.draw3DBox(ctx, 0, 24, 54, 54, 14, -14, '#ffea79', '#fff8cc', '#d4a62a');
-            ctx.font = 'bold 34px sans-serif';
-            ctx.fillText('🍌', 0, -2);
+            ctx.fillStyle = '#ffb703';
+            ctx.strokeStyle = '#1a1612';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.arc(-2, -4, 15, 0.2, Math.PI * 1.15);
+            ctx.quadraticCurveTo(-4, -2, 12, -10);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
 
         } else if (item.type === 'shield') {
-            // 🛡️ 3D 입체 방패 크리스탈 큐브 (1.8초 무적)
+            // 3D 입체 방패 크리스탈 큐브 (직접 그린 기사 문장 방패 벡터 아이콘)
             const glow = ctx.createRadialGradient(0, 0, 10, 0, 0, 56);
             glow.addColorStop(0, 'rgba(0, 245, 212, 0.85)');
             glow.addColorStop(1, 'rgba(0, 245, 212, 0)');
@@ -979,16 +1602,26 @@ class TrackManager {
             ctx.fill();
 
             this.draw3DBox(ctx, 0, 26, 56, 56, 15, -15, '#00b4d8', '#90e0ef', '#0077b6');
-            ctx.font = 'bold 34px sans-serif';
-            ctx.fillText('🛡️', 0, -2);
+            // 방패 문장 직접 그리기
+            ctx.fillStyle = '#caf0f8';
+            ctx.strokeStyle = '#1a1612';
+            ctx.lineWidth = 2.8;
+            ctx.beginPath();
+            ctx.moveTo(0, -18);
+            ctx.lineTo(15, -12);
+            ctx.quadraticCurveTo(15, 8, 0, 16);
+            ctx.quadraticCurveTo(-15, 8, -15, -12);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
 
             ctx.fillStyle = '#fffcf5';
             ctx.font = 'bold 17px "Gaegu", sans-serif';
-            ctx.strokeText('3D 무적 방패!', 0, -52);
-            ctx.fillText('3D 무적 방패!', 0, -52);
+            ctx.strokeText('무적 방패(1.8초)', 0, -52);
+            ctx.fillText('무적 방패(1.8초)', 0, -52);
 
         } else if (item.type === 'super_jump') {
-            // 🚀 3D 입체 슈퍼점프 부스터 큐브 (2.5초)
+            // 3D 입체 슈퍼점프 부스터 큐브 (직접 그린 화살표 날개 부스터 벡터 아이콘)
             const glow = ctx.createRadialGradient(0, 0, 10, 0, 0, 58);
             glow.addColorStop(0, 'rgba(0, 245, 212, 0.9)');
             glow.addColorStop(1, 'rgba(0, 187, 249, 0)');
@@ -998,16 +1631,29 @@ class TrackManager {
             ctx.fill();
 
             this.draw3DBox(ctx, 0, 26, 56, 56, 15, -15, '#06d6a0', '#80ffdb', '#048a64');
-            ctx.font = 'bold 34px sans-serif';
-            ctx.fillText('🚀', 0, -2);
+            // 상향 부스터 화살표 직접 그리기
+            ctx.fillStyle = '#ffea79';
+            ctx.strokeStyle = '#1a1612';
+            ctx.lineWidth = 2.8;
+            ctx.beginPath();
+            ctx.moveTo(0, -18);
+            ctx.lineTo(16, -2);
+            ctx.lineTo(7, -2);
+            ctx.lineTo(7, 14);
+            ctx.lineTo(-7, 14);
+            ctx.lineTo(-7, -2);
+            ctx.lineTo(-16, -2);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
 
             ctx.fillStyle = '#fffcf5';
             ctx.font = 'bold 18px "Gaegu", sans-serif';
-            ctx.strokeText('3D 슈퍼점프!', 0, -52);
-            ctx.fillText('3D 슈퍼점프!', 0, -52);
+            ctx.strokeText('슈퍼점프(2.5초)', 0, -52);
+            ctx.fillText('슈퍼점프(2.5초)', 0, -52);
 
         } else if (item.type === 'wukong') {
-            // 👑 3D 입체 손오공 진화 보물상자 큐브 (체력 UP)
+            // 3D 입체 손오공 진화 보물상자 큐브 (직접 그린 황금 긴고아 왕관 벡터 아이콘)
             const glow = ctx.createRadialGradient(0, 0, 10, 0, 0, 64);
             glow.addColorStop(0, 'rgba(255, 190, 11, 0.95)');
             glow.addColorStop(1, 'rgba(251, 86, 7, 0)');
@@ -1017,8 +1663,21 @@ class TrackManager {
             ctx.fill();
 
             this.draw3DBox(ctx, 0, 28, 60, 60, 16, -16, '#ffbe0b', '#ffea79', '#d48c00');
-            ctx.font = 'bold 36px sans-serif';
-            ctx.fillText('👑', 0, -2);
+            // 손오공 금관 직접 그리기
+            ctx.fillStyle = '#e63946';
+            ctx.strokeStyle = '#1a1612';
+            ctx.lineWidth = 2.8;
+            ctx.beginPath();
+            ctx.moveTo(-16, 10);
+            ctx.lineTo(-18, -10);
+            ctx.lineTo(-7, 0);
+            ctx.lineTo(0, -14);
+            ctx.lineTo(7, 0);
+            ctx.lineTo(18, -10);
+            ctx.lineTo(16, 10);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
 
             ctx.fillStyle = '#fffcf5';
             ctx.font = 'bold 19px "Gaegu", sans-serif';
@@ -1041,6 +1700,26 @@ class TrackManager {
         // 레인 위치에 따른 3D 소실점 방향 입체 두께 오프셋
         const dx = -obs.lane * 18 + 14;
         const dy = -20;
+
+        // 🎯 명확한 바닥 히트박스 가이드 프레임 표시 (실제 충돌 판정 영역 시각화!)
+        if (obs.type === 'ramp') {
+            ctx.fillStyle = 'rgba(6, 214, 160, 0.22)';
+            ctx.strokeStyle = '#06d6a0';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(-58, -14, 116, 24);
+        } else {
+            const isNearHitZone = obs.z > 0.72 && obs.z < 0.94;
+            ctx.fillStyle = isNearHitZone ? 'rgba(255, 0, 85, 0.34)' : 'rgba(230, 57, 70, 0.18)';
+            ctx.strokeStyle = isNearHitZone ? '#ff0055' : '#e63946';
+            ctx.lineWidth = isNearHitZone ? 4.2 : 3.0;
+            ctx.beginPath();
+            ctx.roundRect(-52, -14, 104, 24, 6);
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 4.0;
 
         if (obs.type === 'ramp') {
             // 🪜 3D 입체 웨지(Wedge) 등반 경사로 플랫폼
@@ -1355,15 +2034,20 @@ class TrackManager {
             ctx.fillText('🚕 달려오는 3D 자동차!', 0, -142);
 
         } else if (obs.type === 'glitch_hazard') {
-            // ⚡ [5단계 글리치 보이드 전용]: 3D 입체 글리치 해골 큐브!
+            // ⚡ [5단계 글리치 보이드 전용]: 3D 입체 글리치 사이버 코어 큐브!
             ctx.save();
             ctx.translate(0, -12);
             ctx.strokeStyle = '#00f5d4';
             ctx.lineWidth = 4;
             this.draw3DBox(ctx, 0, 0, 96, 96, dx * 1.1, dy * 1.1, '#f72585', '#7209b7', '#3a0ca3');
-            ctx.fillStyle = '#fff';
-            ctx.font = 'bold 42px sans-serif';
-            ctx.fillText('👾', 0, -45);
+            // 직접 그린 사이버 글리치 눈과 픽셀 입
+            ctx.fillStyle = '#00f5d4';
+            ctx.fillRect(-28, -68, 18, 14);
+            ctx.fillRect(10, -68, 18, 14);
+            ctx.fillStyle = '#ffbe0b';
+            for (let gx = -24; gx <= 16; gx += 10) {
+                ctx.fillRect(gx, -36 + ((gx * 7) % 6), 8, 10);
+            }
             ctx.restore();
 
             ctx.fillStyle = '#00f5d4';

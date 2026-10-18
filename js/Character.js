@@ -299,16 +299,65 @@ class PeanutsMonkeyHero {
         // 캐릭터 머리 위 실시간 HP 바 표시
         this.drawFloatingHpBar(ctx);
 
+        // 🎯 캐릭터 몸통 실제 충돌 히트박스 코너 브래킷 표시 (명확한 히트박스 시각화!)
+        this.drawClearHitboxFrame(ctx);
+
+        ctx.restore();
+    }
+
+    drawClearHitboxFrame(ctx) {
+        ctx.save();
+        const isSafe = this.isJumping || this.isSliding || this.shieldActive;
+        const boxColor = this.stumbleTimer > 0
+            ? '#ff0055'
+            : (this.shieldActive ? '#ffbe0b' : (isSafe ? '#06d6a0' : '#00f5d4'));
+
+        // 실제 판정되는 중심 코어 히트박스 영역 (좌우 폭 110, 높이 210)
+        const bx = -55;
+        const by = -230;
+        const bw = 110;
+        const bh = 220;
+        const cLen = 22;
+
+        ctx.strokeStyle = boxColor;
+        ctx.lineWidth = 4.5;
+        ctx.lineCap = 'round';
+
+        // 네 모서리 타겟 브래킷 (시야를 가리지 않으면서 히트박스 경계를 명확히 표시!)
+        ctx.beginPath();
+        // 좌상단
+        ctx.moveTo(bx, by + cLen); ctx.lineTo(bx, by); ctx.lineTo(bx + cLen, by);
+        // 우상단
+        ctx.moveTo(bx + bw - cLen, by); ctx.lineTo(bx + bw, by); ctx.lineTo(bx + bw, by + cLen);
+        // 좌하단
+        ctx.moveTo(bx, by + bh - cLen); ctx.lineTo(bx, by + bh); ctx.lineTo(bx + cLen, by + bh);
+        // 우하단
+        ctx.moveTo(bx + bw - cLen, by + bh); ctx.lineTo(bx + bw, by + bh); ctx.lineTo(bx + bw, by + bh - cLen);
+        ctx.stroke();
+
         ctx.restore();
     }
 
     drawGroundShadow(ctx, x, y, scale) {
         ctx.save();
         const jumpRatio = Math.max(0.35, 1 - this.y / 320);
-        const rx = 92 * scale * jumpRatio;
+        const rx = 86 * scale * jumpRatio;
         const ry = 22 * scale * jumpRatio;
 
         ctx.translate(x, y + 8 * scale);
+
+        // 🎯 바닥 착지 지점 & 레인 히트박스 링 (언제 점프하고 어느 레인에 있는지 100% 명확하게 표시!)
+        const ringCol = this.stumbleTimer > 0
+            ? '#ff0055'
+            : (this.isJumping ? '#06d6a0' : '#00f5d4');
+        ctx.fillStyle = 'rgba(0, 245, 212, 0.16)';
+        ctx.strokeStyle = ringCol;
+        ctx.lineWidth = 3.2;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 74 * scale, 20 * scale, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
         ctx.fillStyle = 'rgba(42, 32, 22, 0.24)';
         ctx.beginPath();
         ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);

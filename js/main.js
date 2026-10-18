@@ -698,7 +698,8 @@ function gameLoop(now) {
     }
 
     if (hero.hp > 0) {
-        const charScale = (Math.min(width, height) / 940) * 0.50;
+        // 원숭이를 조금 더 작게 축소(0.36)하여 시야와 히트박스가 훨씬 명확하게 보이도록 조정!
+        const charScale = (Math.min(width, height) / 940) * 0.36;
         const roadBottomW = Math.min(width * 0.86, 860);
         const lanePixelSpread = (roadBottomW * 0.285) / charScale;
         hero.render(ctx, width * 0.5, height * 0.84, charScale, lanePixelSpread);
