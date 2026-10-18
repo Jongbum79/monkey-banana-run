@@ -30,11 +30,12 @@ class TrackManager {
         this.spawnTimer = 0.9;
         this.coinSpawnTimer = 0.4;
         this.sideProps = [
-            { z: 0.12, variant: 0 },
-            { z: 0.32, variant: 1 },
-            { z: 0.52, variant: 2 },
-            { z: 0.72, variant: 3 },
-            { z: 0.92, variant: 4 }
+            { z: 0.10, variant: 0 },
+            { z: 0.27, variant: 1 },
+            { z: 0.44, variant: 2 },
+            { z: 0.61, variant: 3 },
+            { z: 0.78, variant: 4 },
+            { z: 0.95, variant: 0 }
         ];
     }
 
@@ -172,8 +173,8 @@ class TrackManager {
             const item = this.items[i];
             item.z += dz;
 
-            if (!item.collected && item.z > 0.80 && item.z < 0.97) {
-                if (Math.abs(hero.laneX - item.lane) < 0.48) {
+            if (!item.collected && item.z > 0.78 && item.z < 0.98) {
+                if (Math.abs(hero.laneX - item.lane) < 0.50) {
                     item.collected = true;
                     if (item.type === 'coin') callbacks.onCoin(item);
                     else if (item.type === 'banana') callbacks.onBananaBundle(item);
@@ -189,7 +190,7 @@ class TrackManager {
         // 톰 골드런 스타일 경사로(ramp) 또는 멈춰있는 트럭/버스(climb_truck) 지붕 위에 올라가 있는지 판정
         let onRampHeight = 0;
 
-        // 장애물 업데이트 및 충돌
+        // 장애물 업데이트 및 충돌 (장애물 히트박스 대폭 확대!)
         for (let i = this.obstacles.length - 1; i >= 0; i--) {
             const obs = this.obstacles[i];
             const isChaser = this.isMovingChaserType(obs.type);
@@ -210,8 +211,8 @@ class TrackManager {
                 obs.type !== 'ramp' &&
                 obs.type !== 'climb_truck' &&
                 obs.z > 0.14 &&
-                obs.z < 0.94 &&
-                Math.abs(obs.lane - hero.laneX) < 0.46
+                obs.z < 0.96 &&
+                Math.abs(obs.lane - hero.laneX) < 0.50
             ) {
                 if (callbacks.onLaserDestroy) callbacks.onLaserDestroy(obs);
                 this.obstacles.splice(i, 1);
@@ -220,26 +221,27 @@ class TrackManager {
 
             // 톰 골드런처럼 위로 올라가서 달릴 수 있는 경사로(ramp) 및 멈춰있는 대형 트럭/버스(climb_truck)!
             if (obs.type === 'ramp' || obs.type === 'climb_truck') {
-                const zStart = obs.type === 'climb_truck' ? 0.68 : 0.74;
-                const zEnd = obs.type === 'climb_truck' ? 1.03 : 1.00;
-                if (obs.z > zStart && obs.z < zEnd && Math.abs(hero.laneX - obs.lane) < 0.40) {
+                const zStart = obs.type === 'climb_truck' ? 0.63 : 0.68;
+                const zEnd = obs.type === 'climb_truck' ? 1.06 : 1.03;
+                if (obs.z > zStart && obs.z < zEnd && Math.abs(hero.laneX - obs.lane) < 0.48) {
                     onRampHeight = obs.type === 'climb_truck' ? 106 : 88;
                     if (!obs.passed) {
                         obs.passed = true;
                         callbacks.onRampClimb(obs);
                     }
                 }
-            } else if (!obs.hit && !obs.passed && obs.z > 0.85 && obs.z < 0.92) {
-                if (Math.abs(hero.laneX - obs.lane) < 0.32) {
+            } else if (!obs.hit && !obs.passed && obs.z > 0.78 && obs.z < 0.96) {
+                // 🎯 확대된 장애물 히트박스 판정: Z 깊이(0.78~0.96) & 좌우 폭(0.47) & 높이 판정 강화!
+                if (Math.abs(hero.laneX - obs.lane) < 0.47) {
                     let avoided = false;
                     const totalHeroHeight = hero.y + hero.platformY;
 
                     if (
                         (obs.type === 'log' || obs.type === 'hurdle' || isChaser || obs.type === 'moving_barrier') &&
-                        totalHeroHeight > 36
+                        totalHeroHeight > 46
                     ) {
                         avoided = true;
-                    } else if ((obs.type === 'arch' || obs.type === 'pillar') && totalHeroHeight > 125) {
+                    } else if ((obs.type === 'arch' || obs.type === 'pillar') && totalHeroHeight > 135) {
                         avoided = true;
                     } else if (obs.type === 'arch' && hero.isSliding) {
                         avoided = true;
@@ -252,7 +254,7 @@ class TrackManager {
                         obs.passed = true;
                         callbacks.onObstacleAvoided(obs);
                     }
-                } else if (obs.z > 0.90) {
+                } else if (obs.z > 0.94) {
                     obs.passed = true;
                     callbacks.onObstacleAvoided(obs);
                 }
@@ -584,16 +586,18 @@ class TrackManager {
             }
         }
 
-        // 5. 양옆 스테이지별 동물 & 배경 오브젝트 렌더링
+        // 5. 양옆 스테이지별 동물 & 배경 오브젝트 렌더링 (크기와 존재감 대폭 확대!)
         if (this.stage === 6) {
             this.drawSchoolEndingBuilding(ctx, centerX, horizonY + 45);
         } else {
             const sortedProps = [...this.sideProps].sort((a, b) => a.z - b.z);
-            sortedProps.forEach(prop => {
-                const pL = this.project(prop.z, -1.72, width, height);
-                const pR = this.project(prop.z, 1.72, width, height);
-                this.drawStageSideProp(ctx, pL.x - 45 * pL.scale, pL.y, pL.scale, -1, prop.variant, time);
-                this.drawStageSideProp(ctx, pR.x + 45 * pR.scale, pR.y, pR.scale, 1, (prop.variant + 2) % 5, time);
+            sortedProps.forEach((prop, idx) => {
+                const pL = this.project(prop.z, -1.58, width, height);
+                const pR = this.project(prop.z, 1.58, width, height);
+                const boostScaleL = Math.max(0.36, pL.scale * 1.18);
+                const boostScaleR = Math.max(0.36, pR.scale * 1.18);
+                this.drawStageSideProp(ctx, pL.x - 52 * pL.scale, pL.y, boostScaleL, -1, (prop.variant + idx) % 5, time);
+                this.drawStageSideProp(ctx, pR.x + 52 * pR.scale, pR.y, boostScaleR, 1, (prop.variant + idx + 2) % 5, time);
             });
         }
 
@@ -602,14 +606,14 @@ class TrackManager {
         }
     }
 
-    // 스테이지별 하늘/원경 초고밀도 디테일 (타임스퀘어 빌딩 숲, 비행선, 헬기, 스핑크스, 침몰선 등 대거 추가!)
+    // 스테이지별 하늘/원경 초고밀도 디테일 (타임스퀘어 빌딩 숲, 비행선, 헬기, 스핑크스, 침몰선, 원경 대형 동물 등 대거 추가!)
     renderStageSkyDetails(ctx, width, height, horizonY, centerX, time) {
         ctx.save();
         ctx.strokeStyle = '#1a1612';
         ctx.lineWidth = 2.5;
 
         if (this.stage === 1) {
-            // 🌲 1단계 숲: 햇살 빛줄기, 겹겹이 쌓인 원경 산맥, 2단 에메랄드 폭포, 고대 나무 오두막, 새 떼
+            // 🌲 1단계 숲: 햇살 빛줄기, 겹겹이 쌓인 원경 산맥, 2단 에메랄드 폭포, 고대 나무 오두막, 원경 대형 숲속 동물들!
             ctx.fillStyle = 'rgba(255, 252, 210, 0.24)';
             for (let i = -2; i <= 2; i++) {
                 ctx.beginPath();
@@ -663,6 +667,19 @@ class TrackManager {
             ctx.fill();
             ctx.stroke();
 
+            // 지평선 언덕 위 존재감 넘치는 대형 배경 동물들 (꽃사슴, 붉은여우, 다람쥐)
+            ctx.save();
+            ctx.translate(centerX - 185, horizonY - 4);
+            ctx.scale(0.68, 0.68);
+            this.drawRealForestAnimal(ctx, 0, 0, 2, time, 1); // 꽃사슴
+            ctx.restore();
+
+            ctx.save();
+            ctx.translate(centerX + 195, horizonY - 4);
+            ctx.scale(0.68, 0.68);
+            this.drawRealForestAnimal(ctx, 0, 0, 3, time, -1); // 붉은여우
+            ctx.restore();
+
             // 하늘을 나는 새 떼 (날개짓 애니메이션)
             ctx.strokeStyle = '#1a1612';
             ctx.lineWidth = 2.8;
@@ -678,7 +695,7 @@ class TrackManager {
             }
 
         } else if (this.stage === 2) {
-            // 🏜️ 2단계 사막: 이글거리는 태양, 3D 대피라미드 군락, 거대 스핑크스 석상, 오아시스 호수 & 야자수!
+            // 🏜️ 2단계 사막: 이글거리는 태양, 3D 대피라미드 군락, 거대 스핑크스 석상, 오아시스 호수 & 사막 동물들!
             ctx.fillStyle = '#fff3b0';
             ctx.beginPath();
             ctx.arc(centerX + 290, horizonY - 145, 56, 0, Math.PI * 2);
@@ -717,7 +734,6 @@ class TrackManager {
             ctx.fillStyle = '#d4a373';
             ctx.fillRect(spX - 45, horizonY - 48, 90, 48);
             ctx.strokeRect(spX - 45, horizonY - 48, 90, 48);
-            // 스핑크스 파라오 네메스 두건
             ctx.fillStyle = '#e9c46a';
             ctx.beginPath();
             ctx.moveTo(spX - 28, horizonY - 48);
@@ -728,22 +744,34 @@ class TrackManager {
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
-            // 스핑크스 얼굴
             ctx.fillStyle = '#dda15e';
             ctx.beginPath();
             ctx.arc(spX, horizonY - 72, 18, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
 
-            // 중앙 우측: 사막 오아시스 호수 & 야자수
+            // 중앙 우측: 사막 오아시스 호수
             ctx.fillStyle = '#48cae4';
             ctx.beginPath();
             ctx.ellipse(centerX + 55, horizonY - 4, 52, 12, 0, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
 
+            // 지평선 사막 언덕 위 대형 낙타 & 사막여우
+            ctx.save();
+            ctx.translate(centerX - 205, horizonY - 4);
+            ctx.scale(0.68, 0.68);
+            this.drawRealDesertAnimal(ctx, 0, 0, 2, time, 1); // 단봉낙타
+            ctx.restore();
+
+            ctx.save();
+            ctx.translate(centerX + 210, horizonY - 4);
+            ctx.scale(0.72, 0.72);
+            this.drawRealDesertAnimal(ctx, 0, 0, 1, time, -1); // 사막여우
+            ctx.restore();
+
         } else if (this.stage === 3) {
-            // 🦈 3단계 해저: 수면 빛내림, 침몰한 고대 해적선(돛대+선체), 아틀란티스 신전 기둥, 직접 그린 해양 동물들!
+            // 🦈 3단계 해저: 수면 빛내림, 침몰한 고대 해적선, 아틀란티스 신전 기둥, 더 크고 디테일한 해양 동물들!
             ctx.fillStyle = 'rgba(144, 224, 239, 0.18)';
             for (let i = -2; i <= 2; i++) {
                 ctx.beginPath();
@@ -797,17 +825,16 @@ class TrackManager {
                 ctx.stroke();
             }
 
-            // 유유히 헤엄치는 직접 그린 고퀄리티 대왕고래, 백상아리, 바다거북, 열대어, 문어들!
-            const whaleX = centerX - 180 + Math.sin(time * 0.8) * 55;
-            const whaleY = horizonY - 108;
-            this.drawRealSeaCreature(ctx, whaleX, whaleY, 0.92, 2, time); // 대왕고래
-            this.drawRealSeaCreature(ctx, centerX + 150 + Math.cos(time * 1.3) * 50, horizonY - 88, 0.85, 0, time); // 백상아리
-            this.drawRealSeaCreature(ctx, centerX - 35 + Math.sin(time * 1.6) * 55, horizonY - 142, 0.76, 4, time); // 바다거북
-            this.drawRealSeaCreature(ctx, centerX + 55 + Math.cos(time * 1.9) * 45, horizonY - 125, 0.78, 1, time); // 열대어
+            // 유유히 헤엄치는 초대형 고퀄리티 대왕고래, 백상아리, 바다거북, 열대어, 대왕문어!
+            const whaleX = centerX - 195 + Math.sin(time * 0.8) * 55;
+            const whaleY = horizonY - 112;
+            this.drawRealSeaCreature(ctx, whaleX, whaleY, 0.72, 2, time, 1); // 대왕고래
+            this.drawRealSeaCreature(ctx, centerX + 175 + Math.cos(time * 1.3) * 50, horizonY - 92, 0.68, 0, time, -1); // 백상아리
+            this.drawRealSeaCreature(ctx, centerX - 35 + Math.sin(time * 1.6) * 55, horizonY - 148, 0.62, 4, time, 1); // 바다거북
+            this.drawRealSeaCreature(ctx, centerX + 60 + Math.cos(time * 1.9) * 45, horizonY - 128, 0.64, 1, time, -1); // 열대어
 
         } else if (this.stage === 4) {
             // 🌃 4단계 도시 (타임스퀘어 밤): 빈틈없이 꽉 찬 2중 스카이라인 빌딩 숲 + 원 타임스퀘어 새해 볼 타워 + 비행선 + 경찰 헬기!
-            // 1) 밤하늘 서치라이트 4줄기
             ctx.fillStyle = 'rgba(255, 190, 11, 0.13)';
             [-2, -1, 1, 2].forEach(dir => {
                 const sway = Math.sin(time * 1.8 + dir) * 130;
@@ -819,7 +846,6 @@ class TrackManager {
                 ctx.fill();
             });
 
-            // 2) 후경(Back Row) 초고층 맨해튼 마천루 실루엣 13개 (지평선 빈틈 완전 제거!)
             const backTowers = [
                 { x: -540, w: 85, h: 255 }, { x: -460, w: 78, h: 280 }, { x: -385, w: 82, h: 240 },
                 { x: -305, w: 75, h: 295 }, { x: -230, w: 80, h: 260 }, { x: -150, w: 76, h: 275 },
@@ -835,7 +861,6 @@ class TrackManager {
                 ctx.lineWidth = 2;
                 ctx.fillRect(bx, by, bt.w, bt.h);
                 ctx.strokeRect(bx, by, bt.w, bt.h);
-                // 옥상 송신탑 안테나
                 ctx.beginPath();
                 ctx.moveTo(bx + bt.w * 0.5, by);
                 ctx.lineTo(bx + bt.w * 0.5, by - 28);
@@ -846,7 +871,6 @@ class TrackManager {
                 ctx.fill();
             });
 
-            // 3) 전경(Front Row) 3D 입체 타임스퀘어 네온 빌딩 11개!
             const frontBuildings = [
                 { x: -495, w: 88, h: 215, neon: '#ff0055', text: 'BROADWAY', sub: 'MUSICAL' },
                 { x: -400, w: 88, h: 235, neon: '#ff007f', text: 'SMILE', sub: 'GAMES 3D' },
@@ -863,17 +887,14 @@ class TrackManager {
             frontBuildings.forEach(b => {
                 const bx = centerX + b.x;
                 const by = horizonY - b.h;
-                // 3D 빌딩 측면 두께
                 ctx.fillStyle = '#090a12';
                 ctx.fillRect(bx + b.w, by + 8, 12, b.h - 8);
-                // 빌딩 본체
                 ctx.fillStyle = '#161829';
                 ctx.strokeStyle = '#000';
                 ctx.lineWidth = 2.5;
                 ctx.fillRect(bx, by, b.w, b.h);
                 ctx.strokeRect(bx, by, b.w, b.h);
 
-                // 촘촘한 빌딩 유리창 불빛 그리드
                 for (let wy = by + 92; wy < horizonY - 12; wy += 15) {
                     for (let wx = bx + 8; wx < bx + b.w - 12; wx += 14) {
                         if ((wx + wy) % 3 !== 0) {
@@ -883,7 +904,6 @@ class TrackManager {
                     }
                 }
 
-                // 상단 메인 네온 전광판
                 ctx.fillStyle = b.neon;
                 ctx.fillRect(bx + 6, by + 12, b.w - 12, 36);
                 ctx.strokeStyle = '#fff';
@@ -893,7 +913,6 @@ class TrackManager {
                 ctx.textAlign = 'center';
                 ctx.fillText(b.text, bx + b.w * 0.5, by + 34);
 
-                // 중단 서브 전광판
                 ctx.fillStyle = '#1a1612';
                 ctx.fillRect(bx + 8, by + 54, b.w - 16, 26);
                 ctx.strokeStyle = b.neon;
@@ -902,7 +921,6 @@ class TrackManager {
                 ctx.font = 'bold 11px "Comic Neue", sans-serif';
                 ctx.fillText(b.sub, bx + b.w * 0.5, by + 71);
 
-                // 중앙 원 타임스퀘어 타워 꼭대기 크리스탈 새해 볼(New Year's Ball)!
                 if (b.isCenterTower) {
                     ctx.strokeStyle = '#fff';
                     ctx.lineWidth = 3;
@@ -918,7 +936,6 @@ class TrackManager {
                 }
             });
 
-            // 4) 밤하늘을 유유히 떠다니는 스마일 게임즈 네온 비행선(Blimp) & 경찰 헬리콥터!
             const blimpX = centerX - 240 + Math.sin(time * 0.6) * 90;
             const blimpY = horizonY - 295;
             ctx.fillStyle = '#2b2d42';
@@ -933,7 +950,6 @@ class TrackManager {
             ctx.textAlign = 'center';
             ctx.fillText('SMILE 3D', blimpX, blimpY + 4);
 
-            // 우측 상단 경찰 헬리콥터 & 서치라이트
             const heliX = centerX + 250 + Math.cos(time * 1.1) * 70;
             const heliY = horizonY - 285;
             ctx.fillStyle = 'rgba(255, 255, 200, 0.22)';
@@ -991,391 +1007,658 @@ class TrackManager {
     }
 
     // =========================================================================
-    // 🦌 스누피(피너츠) 주인공 원숭이급 초고디테일 동물 일러스트 렌더링!
-    // (입체 그라데이션 + 복슬복슬 털 결 + 펜 해칭 빗금 + 눈동자 하이라이트 + 관절 애니메이션)
+    // 🦌 초대형·초고디테일 동물 일러스트 렌더링 (기존 대비 2배 이상 확대 & 세밀 묘사!)
+    // (다중 그라데이션 + 털/깃털/비늘 결 + 펜 크로스해칭 + 발톱/수염/속눈썹/소품 + 관절 모션)
     // =========================================================================
 
     // 1단계 숲속 동물 5종 (0:다람쥐, 1:산토끼, 2:꽃사슴, 3:붉은여우, 4:숲부엉이)
-    drawRealForestAnimal(ctx, ax, ay, kind, time) {
+    drawRealForestAnimal(ctx, ax, ay, kind, time, faceDir = 1) {
         ctx.save();
         ctx.translate(ax, ay);
-        ctx.scale(1.22, 1.22); // 원숭이처럼 존재감 있고 디테일이 잘 보이도록 확대!
+        // 요청 반영: 옆/배경 동물을 훨씬 더 크고(2.35배 스케일) 선명하게 확대!
+        ctx.scale(faceDir * 2.35, 2.35);
         ctx.strokeStyle = '#1a1612';
-        ctx.lineWidth = 3.2;
+        ctx.lineWidth = 2.8;
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
 
-        // 바닥 펜 해칭 그림자
-        ctx.fillStyle = 'rgba(26, 22, 18, 0.28)';
+        // 바닥 입체 그림자 & 펜 해칭
+        ctx.fillStyle = 'rgba(26, 22, 18, 0.30)';
         ctx.beginPath();
-        ctx.ellipse(0, 5, 32, 9, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, 6, 36, 10, 0, 0, Math.PI * 2);
         ctx.fill();
-        this.drawHatching(ctx, -20, 5, 20, 5, 6, 7, -0.5);
+        this.drawHatching(ctx, -24, 6, 24, 6, 7, 7, -0.5);
 
         if (kind === 0) {
-            // 🐿️ 0: 다람쥐 (3겹 명암의 풍성한 S자 꼬리 + 줄무늬 등 + 볼록한 볼 + 두 손으로 쥔 도토리)
-            const tailWag = Math.sin(time * 7) * 0.08;
+            // 🐿️ 0: 숲속 줄무늬 다람쥐 (3단 그라데이션 복슬 꼬리 + 등 줄무늬 3줄 + 발가락/발바닥 패드 + 수염 6가닥 + 앞니 + 참나무 잎 도토리)
+            const tailWag = Math.sin(time * 7) * 0.09;
             ctx.save();
             ctx.rotate(tailWag);
-            const tailGrad = ctx.createRadialGradient(-28, -36, 4, -22, -30, 32);
-            tailGrad.addColorStop(0, '#e09f3e');
-            tailGrad.addColorStop(0.6, '#b5651d');
-            tailGrad.addColorStop(1, '#6f3b0e');
+            const tailGrad = ctx.createRadialGradient(-30, -38, 4, -22, -30, 38);
+            tailGrad.addColorStop(0, '#f4a261');
+            tailGrad.addColorStop(0.55, '#c86d25');
+            tailGrad.addColorStop(1, '#5c300c');
             ctx.fillStyle = tailGrad;
             ctx.beginPath();
-            ctx.moveTo(-8, -10);
-            ctx.bezierCurveTo(-48, -4, -56, -58, -22, -60);
-            ctx.bezierCurveTo(4, -62, 2, -26, -8, -10);
+            ctx.moveTo(-7, -9);
+            ctx.bezierCurveTo(-48, -2, -62, -40, -44, -58);
+            ctx.bezierCurveTo(-28, -72, 2, -60, -2, -32);
+            ctx.bezierCurveTo(-4, -20, -5, -14, -7, -9);
             ctx.fill();
             ctx.stroke();
-            this.drawHatching(ctx, -36, -24, -22, -48, 6, 9, -0.7);
+            // 꼬리 복슬털 결 & 빗금
+            ctx.beginPath();
+            ctx.moveTo(-24, -18);
+            ctx.quadraticCurveTo(-40, -36, -24, -52);
+            ctx.moveTo(-16, -24);
+            ctx.quadraticCurveTo(-28, -38, -14, -48);
+            ctx.stroke();
+            this.drawHatching(ctx, -38, -22, -24, -50, 7, 8, -0.7);
             ctx.restore();
 
-            // 뒷다리 & 발바닥
-            ctx.fillStyle = '#9c5221';
+            // 뒷다리 허벅지 & 발가락 3개
+            ctx.fillStyle = '#a45a26';
             ctx.beginPath();
-            ctx.ellipse(-6, -4, 11, 6, 0, 0, Math.PI * 2);
+            ctx.ellipse(-6, -10, 12, 9, -0.2, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
-
-            // 통통한 몸통 & 크림색 배
-            const bodyGrad = ctx.createLinearGradient(-16, -40, 16, 0);
-            bodyGrad.addColorStop(0, '#d48c46');
-            bodyGrad.addColorStop(1, '#9c5221');
-            ctx.fillStyle = bodyGrad;
-            ctx.beginPath();
-            ctx.ellipse(0, -20, 17, 21, 0.12, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
-
-            ctx.fillStyle = '#fff8e7';
-            ctx.beginPath();
-            ctx.ellipse(7, -18, 9, 15, 0.12, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
-
-            // 머리 (볼록한 볼털 + 정수리 털 3가닥)
             ctx.fillStyle = '#d48c46';
             ctx.beginPath();
-            ctx.arc(5, -41, 14.5, 0, Math.PI * 2);
-            ctx.arc(14, -37, 8, 0, Math.PI * 2);
+            ctx.ellipse(2, -3, 12, 5.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            // 발가락 구분선
+            ctx.beginPath();
+            ctx.moveTo(8, -5); ctx.lineTo(12, -3);
+            ctx.moveTo(7, -2); ctx.lineTo(12, -1);
+            ctx.stroke();
+
+            // 통통한 몸통 & 크림색 복슬 배
+            const bodyGrad = ctx.createLinearGradient(-18, -42, 16, 0);
+            bodyGrad.addColorStop(0, '#e09145');
+            bodyGrad.addColorStop(1, '#8c4718');
+            ctx.fillStyle = bodyGrad;
+            ctx.beginPath();
+            ctx.ellipse(0, -22, 18, 22, 0.12, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
 
-            // 귀 2개 & 귓속 분홍 음영
-            [-2, 8].forEach((ex, idx) => {
-                ctx.fillStyle = '#b5651d';
+            // 다람쥐 특유의 등 줄무늬 3줄 (검은 갈색 + 크림색 줄)
+            ctx.strokeStyle = '#3d1e08';
+            ctx.lineWidth = 3.2;
+            [-11, -7, -3].forEach((sx, sIdx) => {
                 ctx.beginPath();
-                ctx.ellipse(ex, -54, 4.5, 8, idx === 0 ? -0.2 : 0.2, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.moveTo(sx, -36 + sIdx * 2);
+                ctx.quadraticCurveTo(sx - 5, -24, sx - 2, -12 + sIdx * 2);
                 ctx.stroke();
             });
+            ctx.strokeStyle = '#1a1612';
+            ctx.lineWidth = 2.8;
 
-            // 초롱초롱한 눈 (검은 눈동자 + 하얀 하이라이트) & 코 & 발그레한 볼
-            ctx.fillStyle = 'rgba(235, 105, 90, 0.45)';
+            // 크림색 배 털
+            ctx.fillStyle = '#fff8e7';
             ctx.beginPath();
-            ctx.ellipse(13, -36, 4.5, 3, 0, 0, Math.PI * 2);
+            ctx.ellipse(8, -20, 9.5, 16, 0.1, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            this.drawHatching(ctx, -10, -14, 2, -10, 5, 5, -0.5);
+
+            // 머리 + 볼록한 햄스터/다람쥐 볼 + 정수리 털 3가닥
+            ctx.fillStyle = '#e09145';
+            ctx.beginPath();
+            ctx.arc(6, -43, 15, 0, Math.PI * 2);
+            ctx.arc(16, -39, 9.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = '#fff8e7';
+            ctx.beginPath();
+            ctx.arc(17, -37, 6.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 귀 2개 & 귓속 분홍 털 + 귀 끝 털뭉치
+            [-2, 9].forEach((ex, idx) => {
+                ctx.fillStyle = '#a45a26';
+                ctx.beginPath();
+                ctx.ellipse(ex, -57, 5, 9, idx === 0 ? -0.2 : 0.2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                ctx.fillStyle = '#ffb5a7';
+                ctx.beginPath();
+                ctx.ellipse(ex, -56, 2.6, 5.5, idx === 0 ? -0.2 : 0.2, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // 발그레한 볼 + 초롱초롱 눈(이중 하이라이트) + 코 + 귀여운 앞니 + 수염
+            ctx.fillStyle = 'rgba(235, 94, 85, 0.48)';
+            ctx.beginPath();
+            ctx.ellipse(14, -36, 4.8, 3.2, 0, 0, Math.PI * 2);
             ctx.fill();
 
             ctx.fillStyle = '#1a1612';
             ctx.beginPath();
-            ctx.arc(10, -43, 3.4, 0, Math.PI * 2);
-            ctx.arc(21, -39, 3.0, 0, Math.PI * 2);
+            ctx.arc(11, -45, 4.0, 0, Math.PI * 2);
             ctx.fill();
             ctx.fillStyle = '#ffffff';
             ctx.beginPath();
-            ctx.arc(9, -44.2, 1.3, 0, Math.PI * 2);
+            ctx.arc(9.8, -46.4, 1.5, 0, Math.PI * 2);
+            ctx.arc(12.2, -43.8, 0.8, 0, Math.PI * 2);
             ctx.fill();
 
-            // 두 앞발로 소중히 쥐고 있는 입체 도토리!
-            ctx.fillStyle = '#9c5221';
+            // 코와 앞니
+            ctx.fillStyle = '#d62828';
             ctx.beginPath();
-            ctx.ellipse(18, -23, 8.5, 9.5, 0.2, 0, Math.PI * 2);
+            ctx.arc(24, -40, 2.8, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(19, -35, 3.5, 4);
+            ctx.strokeRect(19, -35, 3.5, 4);
+
+            // 수염 4가닥
+            ctx.lineWidth = 1.6;
+            ctx.beginPath();
+            ctx.moveTo(19, -38); ctx.lineTo(30, -41);
+            ctx.moveTo(19, -36); ctx.lineTo(31, -36);
+            ctx.moveTo(18, -34); ctx.lineTo(29, -32);
+            ctx.stroke();
+            ctx.lineWidth = 2.8;
+
+            // 두 손으로 쥐고 있는 디테일 도토리(격자 모자 + 반짝이는 열매 + 떡갈나무 잎) & 앞발
+            ctx.fillStyle = '#a45a26';
+            ctx.beginPath();
+            ctx.ellipse(20, -24, 9.5, 11, 0.2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = 'rgba(255,255,255,0.35)';
+            ctx.beginPath();
+            ctx.ellipse(23, -22, 2.5, 5, 0.2, 0, Math.PI * 2);
+            ctx.fill();
             ctx.fillStyle = '#4a2c11';
             ctx.beginPath();
-            ctx.arc(18, -26, 9.5, Math.PI, 0);
+            ctx.arc(20, -28, 10.5, Math.PI, 0);
             ctx.fill();
             ctx.stroke();
-            this.drawHatching(ctx, 11, -28, 24, -28, 4, 5, 0.7);
+            this.drawHatching(ctx, 12, -30, 27, -30, 5, 5, 0.7);
+            this.drawHatching(ctx, 12, -30, 27, -30, 5, 5, -0.7);
+            // 도토리 위 작은 초록 잎사귀
+            ctx.fillStyle = '#52b788';
+            ctx.beginPath();
+            ctx.ellipse(25, -39, 6, 3.2, -0.4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            // 도토리를 감싼 귀여운 앞발
+            ctx.fillStyle = '#e09145';
+            ctx.beginPath();
+            ctx.ellipse(12, -24, 6, 4, -0.2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
 
         } else if (kind === 1) {
-            // 🐇 1: 산토끼 (복슬복슬 솜털 질감 + 쫑긋 움직이는 긴 귀 + 수염 4가닥 + 깡충 점프)
-            const hop = Math.abs(Math.sin(time * 6.5)) * 9;
+            // 🐇 1: 산토끼 (복슬복슬 솜털 + 긴 쫑긋 귀 + 속눈썹 루비 눈 + 앞니 + 아삭한 잎사귀 당근!)
+            const hop = Math.abs(Math.sin(time * 6.5)) * 8;
             ctx.translate(0, -hop);
 
-            // 복슬복슬 솜방울 꼬리
-            ctx.fillStyle = '#fffcf7';
+            // 복슬복슬 구름 같은 솜방울 꼬리
+            ctx.fillStyle = '#ffffff';
             ctx.beginPath();
-            ctx.arc(-20, -14, 9.5, 0, Math.PI * 2);
+            ctx.arc(-22, -15, 10.5, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
-            this.drawHatching(ctx, -25, -14, -16, -14, 3, 5, -0.6);
+            this.drawHatching(ctx, -28, -15, -18, -15, 4, 5, -0.6);
 
-            // 뒷발과 몸통
+            // 튼튼한 뒷다리와 발가락 패드
             ctx.fillStyle = '#f8edeb';
             ctx.beginPath();
-            ctx.ellipse(-4, -4, 13, 6, -0.1, 0, Math.PI * 2);
+            ctx.ellipse(-6, -11, 13, 9, -0.15, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
-
-            ctx.fillStyle = '#fffcf7';
+            ctx.fillStyle = '#ffffff';
             ctx.beginPath();
-            ctx.ellipse(0, -18, 20, 16, -0.12, 0, Math.PI * 2);
+            ctx.ellipse(2, -3.5, 14, 5.5, 0, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
-            this.drawHatching(ctx, -12, -12, 6, -10, 5, 6, -0.5);
 
-            // 머리 & 볼록한 뺨
+            // 통통한 몸통 & 분홍빛 크림 배
+            const rabGrad = ctx.createLinearGradient(-16, -38, 16, 0);
+            rabGrad.addColorStop(0, '#ffffff');
+            rabGrad.addColorStop(1, '#f3d5b5');
+            ctx.fillStyle = rabGrad;
             ctx.beginPath();
-            ctx.arc(12, -33, 14.5, 0, Math.PI * 2);
-            ctx.arc(20, -29, 7.5, 0, Math.PI * 2);
+            ctx.ellipse(0, -20, 21, 17, -0.12, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            this.drawHatching(ctx, -14, -12, 6, -10, 6, 6, -0.5);
+
+            // 가슴 복슬털
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(14, -21, 9, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
 
-            // 긴 토끼 귀 2개 (까딱거리는 애니메이션)
-            const earTilt = Math.sin(time * 7) * 0.08;
+            // 머리 & 볼록한 볼살
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(12, -35, 15, 0, Math.PI * 2);
+            ctx.arc(21, -31, 8.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // 긴 토끼 귀 2개 (검은 끝 포인트 + 귓속 핑크 그라데이션)
+            const earTilt = Math.sin(time * 7) * 0.09;
             [-1, 1].forEach(dir => {
                 ctx.save();
-                ctx.translate(10 + dir * 4, -44);
-                ctx.rotate(dir * 0.18 + earTilt);
-                ctx.fillStyle = '#fffcf7';
+                ctx.translate(10 + dir * 4.5, -46);
+                ctx.rotate(dir * 0.20 + earTilt);
+                ctx.fillStyle = '#ffffff';
                 ctx.beginPath();
-                ctx.ellipse(0, -12, 5.5, 17, 0, 0, Math.PI * 2);
+                ctx.ellipse(0, -14, 6.2, 19, 0, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.stroke();
                 ctx.fillStyle = '#ffafcc';
                 ctx.beginPath();
-                ctx.ellipse(0, -12, 3, 12, 0, 0, Math.PI * 2);
+                ctx.ellipse(0, -13, 3.4, 13.5, 0, 0, Math.PI * 2);
+                ctx.fill();
+                // 귀 끝 검은 털 포인트
+                ctx.fillStyle = '#2b2d42';
+                ctx.beginPath();
+                ctx.ellipse(0, -29, 3.8, 4, 0, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.restore();
             });
 
-            // 초롱초롱 루비 눈 + 분홍 코 + 수염
+            // 발그레한 볼 + 초롱초롱 루비 눈 + 분홍 코 + 토끼 앞니 + 수염
+            ctx.fillStyle = 'rgba(255, 117, 143, 0.45)';
+            ctx.beginPath();
+            ctx.ellipse(19, -28, 4.5, 3, 0, 0, Math.PI * 2);
+            ctx.fill();
+
             ctx.fillStyle = '#d62828';
             ctx.beginPath();
-            ctx.arc(17, -35, 3.6, 0, Math.PI * 2);
+            ctx.arc(17, -37, 4.2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#1a1612';
+            ctx.beginPath();
+            ctx.arc(17.5, -37, 2.2, 0, Math.PI * 2);
             ctx.fill();
             ctx.fillStyle = '#ffffff';
             ctx.beginPath();
-            ctx.arc(16, -36.2, 1.4, 0, Math.PI * 2);
+            ctx.arc(16, -38.4, 1.5, 0, Math.PI * 2);
+            ctx.arc(18.5, -35.8, 0.8, 0, Math.PI * 2);
             ctx.fill();
 
             ctx.fillStyle = '#ff758f';
             ctx.beginPath();
-            ctx.arc(26, -30, 3.2, 0, Math.PI * 2);
+            ctx.arc(28, -32, 3.2, 0, Math.PI * 2);
             ctx.fill();
-            ctx.lineWidth = 1.8;
-            ctx.beginPath();
-            ctx.moveTo(21, -28); ctx.lineTo(31, -31);
-            ctx.moveTo(21, -26); ctx.lineTo(31, -26);
             ctx.stroke();
 
+            // 토끼 앞니 2개
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(23, -28, 4.5, 4.5);
+            ctx.strokeRect(23, -28, 4.5, 4.5);
+
+            // 수염
+            ctx.lineWidth = 1.6;
+            ctx.beginPath();
+            ctx.moveTo(22, -31); ctx.lineTo(34, -34);
+            ctx.moveTo(22, -29); ctx.lineTo(34, -29);
+            ctx.moveTo(22, -27); ctx.lineTo(33, -25);
+            ctx.stroke();
+            ctx.lineWidth = 2.8;
+
+            // 앞발로 들고 있는 싱싱한 통통 당근!
+            ctx.save();
+            ctx.translate(23, -18);
+            ctx.rotate(0.35);
+            ctx.fillStyle = '#52b788';
+            ctx.beginPath();
+            ctx.ellipse(0, -12, 3, 6, -0.3, 0, Math.PI * 2);
+            ctx.ellipse(3, -12, 3, 6, 0.3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = '#fb5607';
+            ctx.beginPath();
+            ctx.moveTo(-5, -8);
+            ctx.lineTo(5, -8);
+            ctx.lineTo(0, 11);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+
         } else if (kind === 2) {
-            // 🦌 2: 꽃사슴 (우아한 근육 다리 + 검은 발굽 + 하얀 매화 반점 + 다단 가지 뿔 + 맑은 눈망울)
-            const legSwing = Math.sin(time * 5) * 4;
-            [[-14, 1], [-6, -1], [8, 1], [16, -1]].forEach(([lx, dir]) => {
-                ctx.strokeStyle = '#9c5221';
-                ctx.lineWidth = 5;
+            // 🦌 2: 대왕 꽃사슴 (관절 다리 4개 + 검은 발굽 + 매화 반점 10개 + 하얀 목도리 갈기 + 10각 왕관 가지 뿔!)
+            const legSwing = Math.sin(time * 5) * 4.5;
+            [[-15, 1], [-6, -1], [9, 1], [17, -1]].forEach(([lx, dir]) => {
+                const footX = lx + dir * legSwing;
+                ctx.strokeStyle = '#8c4718';
+                ctx.lineWidth = 5.2;
                 ctx.beginPath();
-                ctx.moveTo(lx, -22);
-                ctx.lineTo(lx + dir * legSwing, 2);
+                ctx.moveTo(lx, -24);
+                ctx.lineTo(lx + dir * legSwing * 0.4, -11);
+                ctx.lineTo(footX, 2);
                 ctx.stroke();
-                // 검은 발굽
+                // 무릎 관절 & 검은 발굽
+                ctx.fillStyle = '#6f3b0e';
+                ctx.beginPath();
+                ctx.arc(lx + dir * legSwing * 0.4, -11, 2.8, 0, Math.PI * 2);
+                ctx.fill();
                 ctx.fillStyle = '#1a1612';
-                ctx.fillRect(lx + dir * legSwing - 3, 0, 6, 5);
+                ctx.fillRect(footX - 3.5, 0, 7, 5.5);
             });
 
             ctx.strokeStyle = '#1a1612';
-            ctx.lineWidth = 3.2;
-            const deerGrad = ctx.createLinearGradient(0, -42, 0, -12);
-            deerGrad.addColorStop(0, '#d48c46');
-            deerGrad.addColorStop(1, '#9c5221');
-            ctx.fillStyle = deerGrad;
+            ctx.lineWidth = 2.8;
+
+            // 쫑긋한 하얀 사슴 꼬리
+            ctx.fillStyle = '#fffcf2';
             ctx.beginPath();
-            ctx.ellipse(0, -27, 26, 15, 0, 0, Math.PI * 2);
+            ctx.ellipse(-27, -32, 7, 4.5, 0.4, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
-            this.drawHatching(ctx, -18, -20, 12, -20, 6, 7, -0.5);
 
-            // 하얀 매화 반점
+            // 우아한 몸통 그라데이션 & 하얀 배
+            const deerGrad = ctx.createLinearGradient(0, -44, 0, -12);
+            deerGrad.addColorStop(0, '#e09145');
+            deerGrad.addColorStop(0.7, '#9c5221');
+            deerGrad.addColorStop(1, '#6f3b0e');
+            ctx.fillStyle = deerGrad;
+            ctx.beginPath();
+            ctx.ellipse(0, -28, 28, 16, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#fff8e7';
+            ctx.beginPath();
+            ctx.ellipse(0, -16, 20, 5.5, 0, 0, Math.PI);
+            ctx.fill();
+            this.drawHatching(ctx, -18, -20, 14, -20, 7, 7, -0.5);
+
+            // 선명한 하얀 매화 반점 10개
             ctx.fillStyle = '#fffcf2';
-            [[-14, -30], [-6, -24], [3, -31], [11, -25], [-2, -33], [-11, -22]].forEach(([sx, sy]) => {
+            [
+                [-17, -32], [-10, -25], [-3, -34], [5, -26], [12, -32],
+                [-14, -22], [-5, -21], [3, -32], [9, -22], [-20, -27]
+            ].forEach(([sx, sy]) => {
                 ctx.beginPath();
-                ctx.arc(sx, sy, 3.0, 0, Math.PI * 2);
+                ctx.arc(sx, sy, 2.8, 0, Math.PI * 2);
                 ctx.fill();
             });
 
-            // 늘씬한 목과 머리
+            // 늘씬한 목과 풍성한 크림색 가슴 갈기 털
             ctx.fillStyle = '#d48c46';
             ctx.beginPath();
-            ctx.moveTo(13, -32);
-            ctx.lineTo(20, -60);
-            ctx.lineTo(29, -57);
-            ctx.lineTo(22, -26);
+            ctx.moveTo(12, -33);
+            ctx.lineTo(20, -64);
+            ctx.lineTo(30, -60);
+            ctx.lineTo(23, -26);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
 
-            // 하얀 가슴 털
             ctx.fillStyle = '#fff8e7';
             ctx.beginPath();
-            ctx.ellipse(22, -40, 4.5, 11, 0.2, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.fillStyle = '#d48c46';
-            ctx.beginPath();
-            ctx.ellipse(26, -62, 13.5, 9.5, 0.12, 0, Math.PI * 2);
+            ctx.ellipse(24, -42, 6, 14, 0.18, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
 
-            // 웅장한 사슴 뿔 (가지 뿔)
+            // 사슴 귀 2개
+            ctx.fillStyle = '#b5651d';
+            ctx.beginPath();
+            ctx.ellipse(15, -67, 8, 4.2, -0.5, 0, Math.PI * 2);
+            ctx.ellipse(20, -69, 7, 3.8, -0.8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // 사슴 머리 & 주둥이
+            ctx.fillStyle = '#e09145';
+            ctx.beginPath();
+            ctx.ellipse(27, -64, 14.5, 10, 0.1, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // 웅장한 10각 왕관 가지 뿔 (Royal Branched Antlers)
             ctx.strokeStyle = '#5c3a21';
             ctx.lineWidth = 3.8;
             ctx.beginPath();
-            ctx.moveTo(21, -70); ctx.lineTo(15, -92);
-            ctx.moveTo(18, -80); ctx.lineTo(9, -86);
-            ctx.moveTo(27, -70); ctx.lineTo(31, -92);
-            ctx.moveTo(29, -80); ctx.lineTo(39, -86);
+            // 좌측 큰 뿔 + 가지 3개
+            ctx.moveTo(21, -72);
+            ctx.quadraticCurveTo(14, -84, 16, -98);
+            ctx.moveTo(17, -80); ctx.lineTo(8, -85);
+            ctx.moveTo(16, -89); ctx.lineTo(7, -94);
+            ctx.moveTo(16, -86); ctx.lineTo(22, -95);
+            // 우측 큰 뿔 + 가지 3개
+            ctx.moveTo(27, -72);
+            ctx.quadraticCurveTo(34, -84, 33, -98);
+            ctx.moveTo(31, -80); ctx.lineTo(41, -85);
+            ctx.moveTo(33, -89); ctx.lineTo(42, -94);
+            ctx.moveTo(32, -86); ctx.lineTo(27, -95);
             ctx.stroke();
+            ctx.strokeStyle = '#1a1612';
+            ctx.lineWidth = 2.8;
 
-            // 눈동자 & 코
+            // 사슴의 깊은 눈망울 & 속눈썹 & 검은 코
             ctx.fillStyle = '#1a1612';
             ctx.beginPath();
-            ctx.arc(29, -63, 3.2, 0, Math.PI * 2);
-            ctx.arc(38, -60, 3.5, 0, Math.PI * 2);
+            ctx.arc(29, -65, 3.6, 0, Math.PI * 2);
+            ctx.arc(40, -62, 3.8, 0, Math.PI * 2);
             ctx.fill();
             ctx.fillStyle = '#ffffff';
             ctx.beginPath();
-            ctx.arc(28, -64, 1.3, 0, Math.PI * 2);
+            ctx.arc(27.8, -66.2, 1.4, 0, Math.PI * 2);
             ctx.fill();
 
         } else if (kind === 3) {
-            // 🦊 3: 붉은여우 (하얀 털 끝의 복슬복슬 대형 꼬리 + 하얀 턱수염 털 + 검은 양말 다리)
-            // 복슬복슬 여우 꼬리
-            ctx.fillStyle = '#e76f51';
+            // 🦊 3: 붉은여우 (초대형 복슬 꼬리 + 하얀 꼬리 끝 + 검은 양말 다리 + 하얀 가슴털 + 영리한 호박색 눈)
+            const tailSway = Math.sin(time * 5.5) * 0.08;
+            ctx.save();
+            ctx.rotate(tailSway);
+            const foxTailGrad = ctx.createLinearGradient(-52, -36, -12, -12);
+            foxTailGrad.addColorStop(0, '#d64531');
+            foxTailGrad.addColorStop(1, '#f4a261');
+            ctx.fillStyle = foxTailGrad;
             ctx.beginPath();
             ctx.moveTo(-14, -18);
-            ctx.bezierCurveTo(-48, -38, -54, -8, -22, -10);
+            ctx.bezierCurveTo(-48, -44, -60, -14, -22, -8);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
-            ctx.fillStyle = '#fffcf7';
+            // 꼬리 끝 눈부신 하얀 털뭉치
+            ctx.fillStyle = '#ffffff';
             ctx.beginPath();
-            ctx.arc(-41, -24, 9, 0, Math.PI * 2);
+            ctx.arc(-44, -25, 10.5, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
+            this.drawHatching(ctx, -34, -22, -18, -16, 5, 6, -0.6);
+            ctx.restore();
 
-            // 검은 양말을 신은 다리 4개
-            [-12, -4, 8, 15].forEach(lx => {
-                ctx.fillStyle = '#264653';
-                ctx.fillRect(lx - 3, -12, 6, 14);
-                ctx.strokeRect(lx - 3, -12, 6, 14);
+            // 검은 스타킹 양말을 신은 날렵한 다리 4개
+            [-14, -5, 8, 16].forEach((lx, idx) => {
+                const swing = Math.sin(time * 6 + idx) * 3;
+                ctx.fillStyle = '#1d2d44';
+                ctx.fillRect(lx - 3.2 + swing, -13, 6.4, 15);
+                ctx.strokeRect(lx - 3.2 + swing, -13, 6.4, 15);
             });
 
-            // 몸통
+            // 날렵한 여우 몸통 & 하얀 배
+            const foxGrad = ctx.createLinearGradient(0, -36, 0, -8);
+            foxGrad.addColorStop(0, '#e76f51');
+            foxGrad.addColorStop(1, '#c84b31');
+            ctx.fillStyle = foxGrad;
+            ctx.beginPath();
+            ctx.ellipse(0, -21, 24, 14.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            this.drawHatching(ctx, -16, -16, 10, -16, 6, 6, -0.5);
+
+            // 풍성한 하얀 가슴 목도리 털 (Chest Ruff)
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.moveTo(10, -30);
+            ctx.quadraticCurveTo(24, -24, 16, -9);
+            ctx.quadraticCurveTo(6, -15, 10, -30);
+            ctx.fill();
+            ctx.stroke();
+
+            // 여우 머리 & 뾰족한 주둥이 & 하얀 뺨 마스크
             ctx.fillStyle = '#e76f51';
             ctx.beginPath();
-            ctx.ellipse(0, -20, 22, 13.5, 0, 0, Math.PI * 2);
+            ctx.arc(15, -39, 15, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
-            this.drawHatching(ctx, -14, -15, 10, -15, 5, 6, -0.5);
 
-            // 여우 머리 & 하얀 뺨 털
-            ctx.fillStyle = '#e76f51';
+            ctx.fillStyle = '#ffffff';
             ctx.beginPath();
-            ctx.arc(14, -38, 14, 0, Math.PI * 2);
+            ctx.moveTo(4, -36);
+            ctx.lineTo(17, -23);
+            ctx.lineTo(31, -36);
+            ctx.quadraticCurveTo(22, -39, 17, -33);
+            ctx.quadraticCurveTo(11, -39, 4, -36);
             ctx.fill();
             ctx.stroke();
 
-            ctx.fillStyle = '#fffcf7';
-            ctx.beginPath();
-            ctx.moveTo(4, -35);
-            ctx.lineTo(16, -24);
-            ctx.lineTo(28, -35);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-
-            // 뾰족한 검은 끝 귀
+            // 검은 끝의 뾰족한 여우 귀 2개 + 귓속 하얀 잔털
             ctx.fillStyle = '#1a1612';
             ctx.beginPath();
-            ctx.moveTo(4, -47); ctx.lineTo(8, -62); ctx.lineTo(14, -49);
-            ctx.moveTo(16, -49); ctx.lineTo(22, -62); ctx.lineTo(26, -47);
+            ctx.moveTo(4, -48); ctx.lineTo(8, -65); ctx.lineTo(15, -50);
+            ctx.moveTo(17, -50); ctx.lineTo(24, -65); ctx.lineTo(28, -48);
             ctx.fill();
             ctx.stroke();
+            ctx.fillStyle = '#ffcad4';
+            ctx.beginPath();
+            ctx.moveTo(7, -50); ctx.lineTo(9, -60); ctx.lineTo(13, -51);
+            ctx.moveTo(19, -51); ctx.lineTo(23, -60); ctx.lineTo(26, -50);
+            ctx.fill();
 
-            // 영리한 눈매와 코
+            // 호박색 눈과 검은 눈동자 & 코 & 수염
+            ctx.fillStyle = '#ffbe0b';
+            ctx.beginPath();
+            ctx.ellipse(11, -40, 3.6, 2.8, 0.15, 0, Math.PI * 2);
+            ctx.ellipse(21, -40, 3.6, 2.8, -0.15, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
             ctx.fillStyle = '#1a1612';
             ctx.beginPath();
-            ctx.arc(11, -39, 2.8, 0, Math.PI * 2);
-            ctx.arc(20, -39, 2.8, 0, Math.PI * 2);
-            ctx.arc(16, -25, 3.5, 0, Math.PI * 2);
+            ctx.arc(11, -40, 1.8, 0, Math.PI * 2);
+            ctx.arc(21, -40, 1.8, 0, Math.PI * 2);
+            ctx.arc(17, -24, 3.6, 0, Math.PI * 2);
             ctx.fill();
+
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(8, -28); ctx.lineTo(-2, -29);
+            ctx.moveTo(8, -26); ctx.lineTo(-1, -25);
+            ctx.moveTo(24, -28); ctx.lineTo(34, -29);
+            ctx.moveTo(24, -26); ctx.lineTo(33, -25);
+            ctx.stroke();
 
         } else {
-            // 🦉 4: 숲부엉이 (나뭇가지 위에서 날개를 접고 앉은 정밀한 깃털 패턴 + 황금 왕방울 눈)
-            ctx.fillStyle = '#7f5539';
+            // 🦉 4: 숲부엉이 (이끼 낀 나뭇가지 + 노란 발톱 + 겹겹의 날개 깃털 + V자 가슴 무늬 + 황금 왕방울 눈)
+            // 부엉이가 앉아있는 통나무 가지 & 초록 이끼
+            ctx.fillStyle = '#5c3a21';
             ctx.beginPath();
-            ctx.ellipse(0, -28, 22, 26, 0, 0, Math.PI * 2);
+            ctx.roundRect(-28, -4, 56, 9, 4);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = '#52b788';
+            ctx.beginPath();
+            ctx.arc(-22, -4, 5, 0, Math.PI * 2);
+            ctx.arc(22, -4, 4.5, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
 
-            // 양쪽 접은 날개
-            ctx.fillStyle = '#5c3a21';
-            [-19, 19].forEach(wx => {
+            // 나뭇가지를 움켜쥔 노란 발가락 6개
+            ctx.fillStyle = '#ffbe0b';
+            [-10, -7, -4, 4, 7, 10].forEach(tx => {
                 ctx.beginPath();
-                ctx.ellipse(wx, -26, 6, 18, wx < 0 ? 0.15 : -0.15, 0, Math.PI * 2);
+                ctx.ellipse(tx, -3, 2.2, 4.5, 0, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.stroke();
             });
 
-            // 크림색 배 & U자 깃털 비늘 무늬
-            ctx.fillStyle = '#ede0d4';
+            // 통통한 부엉이 몸통
+            const owlGrad = ctx.createLinearGradient(0, -56, 0, -4);
+            owlGrad.addColorStop(0, '#8d5b3c');
+            owlGrad.addColorStop(1, '#5c3a21');
+            ctx.fillStyle = owlGrad;
             ctx.beginPath();
-            ctx.ellipse(0, -21, 14, 17, 0, 0, Math.PI * 2);
+            ctx.ellipse(0, -30, 24, 27, 0, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
-            ctx.lineWidth = 2;
-            [[-6, -24], [6, -24], [0, -18], [-5, -12], [5, -12]].forEach(([fx, fy]) => {
+
+            // 양쪽 접은 날개 & 깃털 층 묘사
+            ctx.fillStyle = '#4a2c11';
+            [-21, 21].forEach(wx => {
                 ctx.beginPath();
-                ctx.arc(fx, fy, 3.5, 0, Math.PI);
+                ctx.ellipse(wx, -28, 7, 20, wx < 0 ? 0.16 : -0.16, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                // 날개 깃털 결
+                ctx.beginPath();
+                ctx.moveTo(wx - 4, -34); ctx.lineTo(wx + 4, -30);
+                ctx.moveTo(wx - 4, -26); ctx.lineTo(wx + 4, -22);
+                ctx.moveTo(wx - 4, -18); ctx.lineTo(wx + 4, -14);
                 ctx.stroke();
             });
 
-            // 부엉이 귀 깃털 (Ear tufts)
-            ctx.lineWidth = 3.2;
-            ctx.fillStyle = '#5c3a21';
+            // 크림색 배 & 9개의 정교한 V자/비늘 깃털 무늬
+            ctx.fillStyle = '#f5ebe0';
             ctx.beginPath();
-            ctx.moveTo(-14, -46); ctx.lineTo(-24, -60); ctx.lineTo(-5, -50);
-            ctx.moveTo(14, -46); ctx.lineTo(24, -60); ctx.lineTo(5, -50);
+            ctx.ellipse(0, -22, 15.5, 18.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.lineWidth = 2.0;
+            [
+                [-7, -27], [0, -27], [7, -27],
+                [-9, -20], [-2, -20], [5, -20],
+                [-6, -13], [1, -13], [7, -13]
+            ].forEach(([fx, fy]) => {
+                ctx.beginPath();
+                ctx.arc(fx, fy, 3.4, 0.15, Math.PI - 0.15);
+                ctx.stroke();
+            });
+            ctx.lineWidth = 2.8;
+
+            // 부엉이 얼굴 원반 (Facial Disc) & 귀 깃털 (Horn Tufts)
+            ctx.fillStyle = '#d5bdaf';
+            ctx.beginPath();
+            ctx.ellipse(-9, -40, 11, 11, 0, 0, Math.PI * 2);
+            ctx.ellipse(9, -40, 11, 11, 0, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
 
-            // 왕방울 황금 눈 2개 + 동공 하이라이트
-            [-8.5, 8.5].forEach(ex => {
+            ctx.fillStyle = '#4a2c11';
+            ctx.beginPath();
+            ctx.moveTo(-14, -48); ctx.lineTo(-27, -64); ctx.lineTo(-4, -52);
+            ctx.moveTo(14, -48); ctx.lineTo(27, -64); ctx.lineTo(4, -52);
+            ctx.fill();
+            ctx.stroke();
+
+            // 왕방울 황금 눈 2개 + 동공 + 이중 별빛 하이라이트
+            [-9, 9].forEach(ex => {
                 ctx.fillStyle = '#ffbe0b';
                 ctx.beginPath();
-                ctx.arc(ex, -38, 8.5, 0, Math.PI * 2);
+                ctx.arc(ex, -40, 8.8, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.stroke();
                 ctx.fillStyle = '#1a1612';
                 ctx.beginPath();
-                ctx.arc(ex, -38, 4.2, 0, Math.PI * 2);
+                ctx.arc(ex, -40, 4.6, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.fillStyle = '#ffffff';
                 ctx.beginPath();
-                ctx.arc(ex - 1.5, -39.5, 1.6, 0, Math.PI * 2);
+                ctx.arc(ex - 1.8, -41.8, 1.9, 0, Math.PI * 2);
+                ctx.arc(ex + 1.6, -38.4, 1.0, 0, Math.PI * 2);
                 ctx.fill();
             });
 
-            // 갈고리 부리
+            // 날카로운 갈고리 부리
             ctx.fillStyle = '#fb8500';
             ctx.beginPath();
-            ctx.moveTo(-4.5, -34);
-            ctx.lineTo(4.5, -34);
-            ctx.lineTo(0, -26);
+            ctx.moveTo(-5, -36);
+            ctx.lineTo(5, -36);
+            ctx.lineTo(0, -27);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
@@ -1384,420 +1667,680 @@ class TrackManager {
     }
 
     // 2단계 사막 동물 5종 (0:사막전갈, 1:사막여우, 2:단봉낙타, 3:쌍봉낙타, 4:사막도마뱀)
-    drawRealDesertAnimal(ctx, ax, ay, kind, time) {
+    drawRealDesertAnimal(ctx, ax, ay, kind, time, faceDir = 1) {
         ctx.save();
         ctx.translate(ax, ay);
-        ctx.scale(1.22, 1.22);
+        // 요청 반영: 사막 동물도 2.35배 스케일로 큼직하고 생동감 넘치게 확대!
+        ctx.scale(faceDir * 2.35, 2.35);
         ctx.strokeStyle = '#1a1612';
-        ctx.lineWidth = 3.2;
+        ctx.lineWidth = 2.8;
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
 
-        ctx.fillStyle = 'rgba(26, 22, 18, 0.26)';
+        ctx.fillStyle = 'rgba(26, 22, 18, 0.28)';
         ctx.beginPath();
-        ctx.ellipse(0, 5, 34, 9, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, 6, 38, 10, 0, 0, Math.PI * 2);
         ctx.fill();
-        this.drawHatching(ctx, -22, 5, 22, 5, 6, 7, -0.5);
+        this.drawHatching(ctx, -24, 6, 24, 6, 7, 7, -0.5);
 
         if (kind === 0) {
-            // 🦂 0: 사막전갈 (다관절 다리 8개 + 갑각 마디 음영 + 집게발 + 붉은 독침)
+            // 🦂 0: 황제 사막전갈 (다관절 다리 8개 + 7겹 갑각 마디 + 톱니 집게발 2개 + 6마디 독침 꼬리 & 형광 독액 방울!)
             [-1, 1].forEach(side => {
-                for (let l = 0; l < 3; l++) {
+                for (let l = 0; l < 4; l++) {
+                    const step = Math.sin(time * 12 + l * 1.4) * 2.5;
                     ctx.beginPath();
-                    ctx.moveTo(side * 12, -10 - l * 4);
-                    ctx.lineTo(side * 28, -16 - l * 5);
-                    ctx.lineTo(side * 34, -4 - l * 3);
+                    ctx.moveTo(side * 12, -9 - l * 3.5);
+                    ctx.lineTo(side * 27, -17 - l * 4.5 + step);
+                    ctx.lineTo(side * 36, -3 - l * 2.5 + step);
                     ctx.stroke();
                 }
             });
-            ctx.fillStyle = '#9b2226';
+
+            // 마디 갑각 몸통
+            const scorpGrad = ctx.createLinearGradient(-20, -28, 20, -2);
+            scorpGrad.addColorStop(0, '#bb3e03');
+            scorpGrad.addColorStop(0.5, '#9b2226');
+            scorpGrad.addColorStop(1, '#370617');
+            ctx.fillStyle = scorpGrad;
             ctx.beginPath();
-            ctx.ellipse(0, -15, 22, 13, 0, 0, Math.PI * 2);
+            ctx.ellipse(0, -16, 24, 14, 0, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
-            this.drawHatching(ctx, -14, -15, 14, -15, 5, 6, -0.5);
-
-            for (let i = 0; i < 5; i++) {
-                ctx.fillStyle = i % 2 === 0 ? '#bb3e03' : '#9b2226';
+            // 갑각 등판 마디 선 & 해칭
+            [-10, -3, 4, 11].forEach(segX => {
                 ctx.beginPath();
-                ctx.arc(-8 - i * 3.5, -28 - i * 8.5, 7 - i * 0.8, 0, Math.PI * 2);
+                ctx.moveTo(segX, -28);
+                ctx.quadraticCurveTo(segX + 3, -16, segX, -4);
+                ctx.stroke();
+            });
+            this.drawHatching(ctx, -15, -15, 15, -15, 6, 6, -0.5);
+
+            // 아치형 6마디 전갈 꼬리
+            const tailBob = Math.sin(time * 7) * 2;
+            for (let i = 0; i < 6; i++) {
+                ctx.fillStyle = i % 2 === 0 ? '#ca6702' : '#9b2226';
+                ctx.beginPath();
+                ctx.arc(-10 - i * 2.8, -28 - i * 7.8 + tailBob * 0.4, 7.5 - i * 0.7, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.stroke();
             }
+            // 날카로운 붉은 독침 + 형광 초록 독액 방울
             ctx.fillStyle = '#ff0055';
             ctx.beginPath();
-            ctx.moveTo(-24, -68);
-            ctx.lineTo(-10, -62);
-            ctx.lineTo(-19, -54);
+            ctx.moveTo(-25, -72 + tailBob);
+            ctx.lineTo(-9, -66 + tailBob);
+            ctx.lineTo(-19, -56 + tailBob);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
+            ctx.fillStyle = '#80ffdb';
+            ctx.beginPath();
+            ctx.arc(-8, -64 + tailBob, 3.2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
 
-            [-16, 16].forEach(px => {
+            // 톱니가 달린 거대 집게발 2개
+            [-18, 18].forEach(px => {
                 ctx.fillStyle = '#ae2012';
                 ctx.beginPath();
-                ctx.arc(px, -6, 10, 0.2, Math.PI * 1.8);
+                ctx.arc(px, -5, 11, 0.25, Math.PI * 1.75);
+                ctx.lineTo(px, -5);
+                ctx.closePath();
                 ctx.fill();
                 ctx.stroke();
             });
 
+            // 빛나는 눈 2개
+            ctx.fillStyle = '#ffbe0b';
+            ctx.beginPath();
+            ctx.arc(10, -21, 2.5, 0, Math.PI * 2);
+            ctx.arc(16, -18, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+
         } else if (kind === 1) {
-            // 🦊 1: 사막여우 (페넥여우: 크림색 털 + 얼굴보다 큰 초대형 레이더 귀 + 복슬복슬 꼬리 + 초롱초롱 눈)
+            // 🦊 1: 사막여우 (페넥여우: 초대형 레이더 귀 + 귓속 잔털 + 눈물 자국 무늬 + 복슬 꼬리 + 초롱초롱 눈)
+            const earWave = Math.sin(time * 6) * 0.07;
+
+            // 풍성한 모래빛 꼬리 & 검은 꼬리 끝
             ctx.fillStyle = '#f4e285';
             ctx.beginPath();
-            ctx.ellipse(-22, -15, 17, 9, -0.35, 0, Math.PI * 2);
+            ctx.ellipse(-24, -16, 19, 10, -0.35, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
-            ctx.fillStyle = '#6f3b0e';
+            ctx.fillStyle = '#5c3a21';
             ctx.beginPath();
-            ctx.arc(-36, -20, 5.5, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.fillStyle = '#f4e285';
-            ctx.beginPath();
-            ctx.ellipse(0, -17, 20, 13, 0, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
-            this.drawHatching(ctx, -12, -13, 10, -13, 5, 6, -0.5);
-
-            ctx.beginPath();
-            ctx.arc(11, -33, 13.5, 0, Math.PI * 2);
+            ctx.arc(-39, -22, 6.5, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
 
-            // 페넥여우 특유의 초대형 귀 2개 + 귓속 잔털 해칭
+            // 아담한 다리 4개
+            [-12, -4, 7, 14].forEach(lx => {
+                ctx.fillStyle = '#e9c46a';
+                ctx.fillRect(lx - 2.8, -11, 5.6, 13);
+                ctx.strokeRect(lx - 2.8, -11, 5.6, 13);
+            });
+
+            // 크림색 몸통 & 하얀 배
+            const fenGrad = ctx.createLinearGradient(0, -32, 0, -4);
+            fenGrad.addColorStop(0, '#f4e285');
+            fenGrad.addColorStop(1, '#dda15e');
+            ctx.fillStyle = fenGrad;
+            ctx.beginPath();
+            ctx.ellipse(0, -18, 21, 13.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = '#fffcf2';
+            ctx.beginPath();
+            ctx.ellipse(3, -12, 14, 6, 0, 0, Math.PI);
+            ctx.fill();
+            this.drawHatching(ctx, -12, -14, 10, -14, 5, 6, -0.5);
+
+            // 페넥여우 특유의 초대형 레이더 귀 2개 + 귓속 핑크/크림 잔털 결
             [-1, 1].forEach(dir => {
                 ctx.save();
-                ctx.translate(11 + dir * 9, -46);
-                ctx.rotate(dir * 0.45 + Math.sin(time * 6) * 0.06);
+                ctx.translate(12 + dir * 9.5, -46);
+                ctx.rotate(dir * 0.48 + earWave * dir);
                 ctx.fillStyle = '#f4e285';
                 ctx.beginPath();
-                ctx.ellipse(0, -6, 9, 20, 0, 0, Math.PI * 2);
+                ctx.ellipse(0, -9, 10.5, 23, 0, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.stroke();
                 ctx.fillStyle = '#ffcad4';
                 ctx.beginPath();
-                ctx.ellipse(0, -6, 5, 14, 0, 0, Math.PI * 2);
+                ctx.ellipse(0, -8, 6.2, 16.5, 0, 0, Math.PI * 2);
                 ctx.fill();
+                // 귓속 하얀 잔털 줄무늬
+                ctx.strokeStyle = '#fffcf2';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(-4, -2); ctx.lineTo(3, -6);
+                ctx.moveTo(-4, -8); ctx.lineTo(3, -12);
+                ctx.stroke();
                 ctx.restore();
             });
 
+            // 하트형 얼굴 & 하얀 볼털
+            ctx.strokeStyle = '#1a1612';
+            ctx.lineWidth = 2.8;
+            ctx.fillStyle = '#f4e285';
+            ctx.beginPath();
+            ctx.arc(12, -34, 14.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = '#fffcf2';
+            ctx.beginPath();
+            ctx.ellipse(8, -29, 6, 5, 0, 0, Math.PI * 2);
+            ctx.ellipse(18, -29, 6, 5, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 초롱초롱한 큰 눈동자 + 하이라이트 + 귀여운 코 + 수염
             ctx.fillStyle = '#1a1612';
             ctx.beginPath();
-            ctx.arc(8, -33, 3.2, 0, Math.PI * 2);
-            ctx.arc(17, -33, 3.2, 0, Math.PI * 2);
-            ctx.arc(13, -25, 3.2, 0, Math.PI * 2);
+            ctx.arc(8, -34, 3.8, 0, Math.PI * 2);
+            ctx.arc(18, -34, 3.8, 0, Math.PI * 2);
+            ctx.arc(13, -25, 3.0, 0, Math.PI * 2);
             ctx.fill();
             ctx.fillStyle = '#ffffff';
             ctx.beginPath();
-            ctx.arc(7, -34, 1.2, 0, Math.PI * 2);
-            ctx.arc(16, -34, 1.2, 0, Math.PI * 2);
+            ctx.arc(6.8, -35.3, 1.5, 0, Math.PI * 2);
+            ctx.arc(16.8, -35.3, 1.5, 0, Math.PI * 2);
             ctx.fill();
 
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(6, -27); ctx.lineTo(-4, -28);
+            ctx.moveTo(6, -25); ctx.lineTo(-3, -24);
+            ctx.moveTo(20, -27); ctx.lineTo(30, -28);
+            ctx.moveTo(20, -25); ctx.lineTo(29, -24);
+            ctx.stroke();
+
         } else if (kind === 2 || kind === 3) {
-            // 🐪 2: 단봉낙타 / 🐫 3: 쌍봉낙타 (무릎 관절이 있는 긴 다리 + 화려한 아라비안 양탄자 안장 + 혹 + 긴 목)
-            const walk = Math.sin(time * 4.5) * 3.5;
-            [[-15, 1], [-6, -1], [8, 1], [17, -1]].forEach(([lx, dir]) => {
-                ctx.strokeStyle = '#99582a';
-                ctx.lineWidth = 5;
+            // 🐪 2: 단봉낙타 / 🐫 3: 쌍봉낙타 (무릎 패드 긴 다리 + 금실 술 장식 아라비안 양탄자 안장 + 털뭉치 혹 + 건초 먹기)
+            const walk = Math.sin(time * 4.5) * 4;
+            [[-16, 1], [-6, -1], [8, 1], [18, -1]].forEach(([lx, dir]) => {
+                const fx = lx + dir * walk;
+                ctx.strokeStyle = '#8c5227';
+                ctx.lineWidth = 5.4;
                 ctx.beginPath();
                 ctx.moveTo(lx, -26);
-                ctx.lineTo(lx + dir * walk, 2);
+                ctx.lineTo(lx + dir * walk * 0.4, -12);
+                ctx.lineTo(fx, 2);
                 ctx.stroke();
+                // 무릎 패드 & 넓은 사막 발바닥
+                ctx.fillStyle = '#5c3a21';
+                ctx.beginPath();
+                ctx.arc(lx + dir * walk * 0.4, -12, 3.2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#6f3b0e';
+                ctx.beginPath();
+                ctx.ellipse(fx, 3, 5.5, 2.8, 0, 0, Math.PI * 2);
+                ctx.fill();
             });
 
             ctx.strokeStyle = '#1a1612';
-            ctx.lineWidth = 3.2;
-            ctx.fillStyle = kind === 2 ? '#dda15e' : '#b07d4f';
+            ctx.lineWidth = 2.8;
+
+            // 낙타 꼬리
             ctx.beginPath();
-            ctx.ellipse(0, -32, 28, 17, 0, 0, Math.PI * 2);
+            ctx.moveTo(-28, -34);
+            ctx.quadraticCurveTo(-36, -24, -34, -14);
+            ctx.stroke();
+
+            // 낙타 몸통
+            const camGrad = ctx.createLinearGradient(0, -52, 0, -14);
+            camGrad.addColorStop(0, kind === 2 ? '#e9c46a' : '#c88a51');
+            camGrad.addColorStop(1, '#8c5227');
+            ctx.fillStyle = camGrad;
+            ctx.beginPath();
+            ctx.ellipse(0, -33, 30, 18, 0, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
-            this.drawHatching(ctx, -18, -24, 16, -24, 6, 7, -0.5);
+            this.drawHatching(ctx, -18, -24, 16, -24, 7, 7, -0.5);
 
-            // 낙타 혹 (단봉 vs 쌍봉)
+            // 낙타 혹 (단봉 vs 쌍봉) & 화려한 아라비안 카펫 안장
             if (kind === 2) {
+                ctx.fillStyle = '#dda15e';
                 ctx.beginPath();
-                ctx.arc(0, -48, 15, Math.PI, 0);
+                ctx.arc(0, -49, 16, Math.PI, 0);
                 ctx.fill();
                 ctx.stroke();
-                // 붉은 사막 양탄자 안장
-                ctx.fillStyle = '#e63946';
-                ctx.fillRect(-12, -46, 24, 12);
-                ctx.strokeRect(-12, -46, 24, 12);
             } else {
-                [-10, 10].forEach(hx => {
+                [-11, 11].forEach(hx => {
+                    ctx.fillStyle = '#b07d4f';
                     ctx.beginPath();
-                    ctx.arc(hx, -47, 11, Math.PI, 0);
+                    ctx.arc(hx, -48, 11.5, Math.PI, 0);
                     ctx.fill();
                     ctx.stroke();
                 });
             }
 
-            // U자형 긴 목과 낙타 얼굴
+            // 금빛 술이 달린 왕실 양탄자 안장
+            ctx.fillStyle = kind === 2 ? '#e63946' : '#2a9d8f';
+            ctx.fillRect(-15, -47, 30, 15);
+            ctx.strokeRect(-15, -47, 30, 15);
+            ctx.fillStyle = '#ffbe0b';
+            ctx.beginPath();
+            ctx.moveTo(0, -45); ctx.lineTo(8, -39.5); ctx.lineTo(0, -34); ctx.lineTo(-8, -39.5);
+            ctx.closePath();
+            ctx.fill();
+            // 금색 술(Tassels)
+            for (let tx = -13; tx <= 13; tx += 6.5) {
+                ctx.fillRect(tx - 1, -32, 2.5, 4.5);
+            }
+
+            // U자형 긴 목과 갈기 털 & 낙타 얼굴
             ctx.fillStyle = kind === 2 ? '#dda15e' : '#b07d4f';
             ctx.beginPath();
             ctx.moveTo(18, -34);
-            ctx.quadraticCurveTo(33, -34, 30, -62);
-            ctx.lineTo(21, -62);
-            ctx.quadraticCurveTo(21, -42, 14, -38);
+            ctx.quadraticCurveTo(35, -34, 32, -65);
+            ctx.lineTo(22, -65);
+            ctx.quadraticCurveTo(22, -44, 14, -39);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
 
             ctx.beginPath();
-            ctx.ellipse(30, -65, 12.5, 8, 0.1, 0, Math.PI * 2);
+            ctx.ellipse(32, -68, 13.5, 8.5, 0.1, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            // 둥근 귀
+            ctx.beginPath();
+            ctx.arc(23, -74, 4, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
 
+            // 긴 속눈썹 눈 & 콧구멍 & 입에 문 사막 풀
             ctx.fillStyle = '#1a1612';
             ctx.beginPath();
-            ctx.arc(32, -67, 2.8, 0, Math.PI * 2);
+            ctx.arc(33, -70, 3.0, 0, Math.PI * 2);
             ctx.fill();
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(32, -71, 1.1, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#52b788';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(42, -65);
+            ctx.lineTo(51, -61);
+            ctx.moveTo(42, -65);
+            ctx.lineTo(50, -68);
+            ctx.stroke();
 
         } else {
-            // 🦎 4: 사막 목도리도마뱀 (부채꼴 주름 목도리 프릴 + 비늘 해칭 + 긴 꼬리)
+            // 🦎 4: 사막 목도리도마뱀 (줄무늬 긴 꼬리 + 발톱 다리 + 10갈래 부채꼴 목도리 프릴 + 경고 무늬 + 황금 파충류 눈)
             ctx.fillStyle = '#588157';
             ctx.beginPath();
             ctx.moveTo(-12, -12);
-            ctx.quadraticCurveTo(-44, -4, -50, -26);
-            ctx.quadraticCurveTo(-36, -10, -12, -19);
+            ctx.quadraticCurveTo(-48, -2, -56, -28);
+            ctx.quadraticCurveTo(-38, -10, -12, -20);
             ctx.fill();
             ctx.stroke();
 
-            ctx.beginPath();
-            ctx.ellipse(0, -16, 20, 11, -0.1, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
-            this.drawHatching(ctx, -12, -16, 10, -16, 5, 6, 0.5);
-
-            // 화려하게 펼쳐진 주황/노란 목도리 프릴
-            ctx.fillStyle = '#f4a261';
-            ctx.beginPath();
-            ctx.arc(15, -25, 17, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
-            ctx.strokeStyle = '#e76f51';
-            for (let a = 0; a < 6; a++) {
-                const ang = (a / 6) * Math.PI * 2;
+            // 발톱 달린 도마뱀 다리
+            [-8, 8].forEach(lx => {
                 ctx.beginPath();
-                ctx.moveTo(15, -25);
-                ctx.lineTo(15 + Math.cos(ang) * 16, -25 + Math.sin(ang) * 16);
+                ctx.moveTo(lx, -10);
+                ctx.lineTo(lx - 4, 2);
+                ctx.lineTo(lx + 4, 2);
                 ctx.stroke();
-            }
+            });
 
-            ctx.strokeStyle = '#1a1612';
+            // 비늘 몸통
             ctx.fillStyle = '#588157';
             ctx.beginPath();
-            ctx.ellipse(20, -25, 11, 8, 0, 0, Math.PI * 2);
+            ctx.ellipse(0, -16, 22, 12, -0.1, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            this.drawHatching(ctx, -14, -16, 10, -16, 6, 6, 0.5);
+            this.drawHatching(ctx, -14, -16, 10, -16, 6, 6, -0.5);
+
+            // 화려하게 펼쳐진 2중 부채꼴 목도리 프릴 (Frill)
+            const frillPulse = 1 + Math.sin(time * 9) * 0.06;
+            ctx.save();
+            ctx.translate(16, -26);
+            ctx.scale(frillPulse, frillPulse);
+            const frillGrad = ctx.createRadialGradient(0, 0, 4, 0, 0, 21);
+            frillGrad.addColorStop(0, '#ffbe0b');
+            frillGrad.addColorStop(0.6, '#f4a261');
+            frillGrad.addColorStop(1, '#e63946');
+            ctx.fillStyle = frillGrad;
+            ctx.beginPath();
+            ctx.arc(0, 0, 20, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.strokeStyle = '#9b2226';
+            ctx.lineWidth = 2;
+            for (let a = 0; a < 10; a++) {
+                const ang = (a / 10) * Math.PI * 2;
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(Math.cos(ang) * 19, Math.sin(ang) * 19);
+                ctx.stroke();
+            }
+            ctx.restore();
+
+            // 도마뱀 머리와 황금 눈
+            ctx.strokeStyle = '#1a1612';
+            ctx.lineWidth = 2.8;
+            ctx.fillStyle = '#3a5a40';
+            ctx.beginPath();
+            ctx.ellipse(22, -26, 12.5, 8.5, 0, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
             ctx.fillStyle = '#ffbe0b';
             ctx.beginPath();
-            ctx.arc(23, -27, 3.2, 0, Math.PI * 2);
+            ctx.arc(25, -28, 3.6, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
+            ctx.fillStyle = '#1a1612';
+            ctx.fillRect(24.3, -30.5, 1.4, 5);
         }
         ctx.restore();
     }
 
     // 3단계 해저 생물 5종 (0:백상아리, 1:열대어, 2:대왕고래, 3:바다문어, 4:바다거북)
-    drawRealSeaCreature(ctx, ax, ay, scale, kind, time) {
+    drawRealSeaCreature(ctx, ax, ay, scale, kind, time, faceDir = 1) {
         ctx.save();
         ctx.translate(ax, ay);
-        ctx.scale(scale * 1.18, scale * 1.18);
+        // 요청 반영: 해저 동물도 2.3배 스케일로 큼직하고 선명하게 확대!
+        ctx.scale(faceDir * scale * 2.30, scale * 2.30);
         ctx.strokeStyle = '#1a1612';
-        ctx.lineWidth = 3.2;
+        ctx.lineWidth = 2.8;
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
 
-        const tailWag = Math.sin(time * 7 + kind) * 7;
+        const tailWag = Math.sin(time * 7 + kind) * 6.5;
 
         if (kind === 0) {
-            // 🦈 0: 백상아리 (입체 어뢰형 몸통 + 등지느러미 + 아가미 3줄 + 지그재그 이빨 + 매서운 눈)
-            ctx.fillStyle = '#457b9d';
+            // 🦈 0: 백상아리 (투톤 어뢰형 몸통 + 초승달 꼬리지느러미 + 등/가슴지느러미 + 아가미 5줄 + 2열 톱니 이빨 + 물방울)
+            ctx.fillStyle = '#1d3557';
             ctx.beginPath();
-            ctx.moveTo(-36, tailWag);
-            ctx.lineTo(-52, -17 + tailWag);
-            ctx.lineTo(-46, 0 + tailWag);
-            ctx.lineTo(-50, 17 + tailWag);
+            ctx.moveTo(-36, tailWag * 0.5);
+            ctx.lineTo(-55, -20 + tailWag);
+            ctx.lineTo(-47, 0 + tailWag * 0.6);
+            ctx.lineTo(-53, 19 + tailWag);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
 
+            // 등지느러미 & 가슴지느러미
             ctx.beginPath();
-            ctx.moveTo(-8, -12);
-            ctx.lineTo(4, -36);
-            ctx.lineTo(16, -12);
+            ctx.moveTo(-10, -13);
+            ctx.lineTo(3, -39);
+            ctx.lineTo(17, -13);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
 
-            const sharkGrad = ctx.createLinearGradient(0, -18, 0, 16);
+            const sharkGrad = ctx.createLinearGradient(0, -19, 0, 17);
             sharkGrad.addColorStop(0, '#1d3557');
             sharkGrad.addColorStop(0.55, '#457b9d');
             sharkGrad.addColorStop(1, '#f1faee');
             ctx.fillStyle = sharkGrad;
             ctx.beginPath();
-            ctx.ellipse(0, 0, 38, 16, 0, 0, Math.PI * 2);
+            ctx.ellipse(0, 0, 40, 17, 0, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
 
-            // 상어 이빨 입 & 아가미
-            ctx.fillStyle = '#e63946';
+            // 가슴지느러미
+            ctx.fillStyle = '#1d3557';
             ctx.beginPath();
-            ctx.arc(22, 6, 9, 0, Math.PI);
+            ctx.moveTo(2, 8);
+            ctx.lineTo(-8, 26);
+            ctx.lineTo(14, 12);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // 벌린 상어 입 & 톱니 이빨 & 아가미 4줄 & 매서운 노란 눈
+            ctx.fillStyle = '#d62828';
+            ctx.beginPath();
+            ctx.arc(23, 6, 9.5, 0, Math.PI);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = '#ffffff';
+            for (let tx = 16; tx <= 29; tx += 4.2) {
+                ctx.beginPath();
+                ctx.moveTo(tx - 1.8, 6);
+                ctx.lineTo(tx, 10.5);
+                ctx.lineTo(tx + 1.8, 6);
+                ctx.fill();
+            }
+
+            ctx.fillStyle = '#ffbe0b';
+            ctx.beginPath();
+            ctx.arc(26, -5, 3.8, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
             ctx.fillStyle = '#1a1612';
             ctx.beginPath();
-            ctx.arc(24, -4, 3.2, 0, Math.PI * 2);
+            ctx.arc(26.8, -5, 1.8, 0, Math.PI * 2);
             ctx.fill();
-            for (let g = 0; g < 3; g++) {
+
+            for (let g = 0; g < 4; g++) {
                 ctx.beginPath();
-                ctx.moveTo(6 + g * 4.5, -6);
-                ctx.lineTo(6 + g * 4.5, 5);
+                ctx.moveTo(4 + g * 4, -7);
+                ctx.quadraticCurveTo(2 + g * 4, 0, 4 + g * 4, 6);
                 ctx.stroke();
             }
 
         } else if (kind === 1) {
-            // 🐠 1: 열대어 (주황/하얀 줄무늬 흰동가리 + 등지느러미 + 지느러미 빗금)
+            // 🐠 1: 황제 열대어 (흰동가리: 주황 몸통 + 검은 테두리 하얀 줄무늬 3개 + 부채꼴 지느러미 결)
             ctx.fillStyle = '#fb5607';
             ctx.beginPath();
-            ctx.moveTo(-18, 0);
-            ctx.lineTo(-34, -14 + tailWag * 0.6);
-            ctx.lineTo(-34, 14 + tailWag * 0.6);
+            ctx.moveTo(-20, 0);
+            ctx.lineTo(-36, -15 + tailWag * 0.6);
+            ctx.quadraticCurveTo(-41, tailWag * 0.6, -36, 15 + tailWag * 0.6);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
 
+            // 등지느러미
+            ctx.fillStyle = '#ff9f1c';
             ctx.beginPath();
-            ctx.ellipse(0, 0, 24, 16, 0, 0, Math.PI * 2);
+            ctx.moveTo(-12, -14);
+            ctx.quadraticCurveTo(0, -28, 12, -13);
+            ctx.closePath();
             ctx.fill();
             ctx.stroke();
 
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(-9, -15, 7, 30);
-            ctx.strokeRect(-9, -15, 7, 30);
-            ctx.fillRect(5, -14, 7, 28);
-            ctx.strokeRect(5, -14, 7, 28);
+            ctx.fillStyle = '#fb5607';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 25, 17, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
 
+            // 흰동가리 하얀 줄무늬 3줄
+            ctx.fillStyle = '#ffffff';
+            [[-13, 6, 26], [-1, 7, 32], [11, 6, 26]].forEach(([bx, bw, bh]) => {
+                ctx.beginPath();
+                ctx.roundRect(bx, -bh * 0.5, bw, bh, 3);
+                ctx.fill();
+                ctx.stroke();
+            });
+
+            // 가슴 지느러미
+            ctx.fillStyle = 'rgba(255, 190, 11, 0.85)';
+            ctx.beginPath();
+            ctx.ellipse(4, 5, 7, 5, 0.3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // 눈동자 & 하이라이트
             ctx.fillStyle = '#1a1612';
             ctx.beginPath();
-            ctx.arc(16, -3, 3.5, 0, Math.PI * 2);
+            ctx.arc(18, -3, 3.8, 0, Math.PI * 2);
             ctx.fill();
             ctx.fillStyle = '#ffffff';
             ctx.beginPath();
-            ctx.arc(15, -4, 1.3, 0, Math.PI * 2);
+            ctx.arc(16.8, -4.2, 1.5, 0, Math.PI * 2);
             ctx.fill();
 
         } else if (kind === 2) {
-            // 🐋 2: 대왕고래 (거대한 네이비/시안 그라데이션 몸통 + 주름진 하얀 배 + 시원한 분수 물줄기!)
+            // 🐋 2: 대왕고래 (거대한 네이비/시안 몸통 + 주름진 하얀 배 8줄 + 가슴지느러미 + 2단 분수 물줄기!)
             ctx.fillStyle = '#1d3557';
             ctx.beginPath();
-            ctx.moveTo(-44, tailWag);
-            ctx.lineTo(-62, -18 + tailWag);
-            ctx.lineTo(-56, 18 + tailWag);
+            ctx.moveTo(-44, tailWag * 0.5);
+            ctx.lineTo(-64, -19 + tailWag);
+            ctx.lineTo(-58, 19 + tailWag);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
 
+            const whaleGrad = ctx.createLinearGradient(0, -24, 0, 22);
+            whaleGrad.addColorStop(0, '#1d3557');
+            whaleGrad.addColorStop(0.6, '#2a6f97');
+            whaleGrad.addColorStop(1, '#caf0f8');
+            ctx.fillStyle = whaleGrad;
             ctx.beginPath();
-            ctx.ellipse(0, 0, 46, 22, 0, 0, Math.PI * 2);
+            ctx.ellipse(0, 0, 48, 23, 0, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
 
+            // 하얀 주름 배 (Ventral Pleats)
             ctx.fillStyle = '#caf0f8';
             ctx.beginPath();
-            ctx.ellipse(6, 8, 34, 11, 0, 0, Math.PI);
+            ctx.ellipse(8, 8, 36, 12, 0, 0, Math.PI);
             ctx.fill();
             ctx.stroke();
-            this.drawHatching(ctx, -18, 12, 26, 12, 7, 6, 0.1);
+            this.drawHatching(ctx, -18, 13, 28, 13, 8, 6, 0.08);
 
-            ctx.strokeStyle = '#90e0ef';
-            ctx.lineWidth = 3.5;
+            // 긴 가슴지느러미
+            ctx.fillStyle = '#1d3557';
             ctx.beginPath();
-            ctx.moveTo(14, -22);
-            ctx.quadraticCurveTo(4, -44, -10, -38);
-            ctx.moveTo(14, -22);
-            ctx.quadraticCurveTo(24, -44, 36, -38);
+            ctx.ellipse(4, 14, 7, 16, 0.5, 0, Math.PI * 2);
+            ctx.fill();
             ctx.stroke();
 
+            // 시원하게 뿜어져 나오는 2단 고래 분수 & 물방울!
+            ctx.strokeStyle = '#90e0ef';
+            ctx.lineWidth = 3.4;
+            ctx.beginPath();
+            ctx.moveTo(15, -22);
+            ctx.quadraticCurveTo(4, -48, -14, -40);
+            ctx.moveTo(15, -22);
+            ctx.quadraticCurveTo(26, -48, 40, -40);
+            ctx.moveTo(15, -22);
+            ctx.lineTo(15, -46);
+            ctx.stroke();
+            ctx.fillStyle = '#caf0f8';
+            [[-16, -36], [15, -50], [42, -36]].forEach(([dx, dy]) => {
+                ctx.beginPath();
+                ctx.arc(dx, dy, 3, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            ctx.strokeStyle = '#1a1612';
+            ctx.lineWidth = 2.8;
+            ctx.fillStyle = '#1a1612';
+            ctx.beginPath();
+            ctx.arc(28, -4, 3.8, 0, Math.PI * 2);
+            ctx.fill();
             ctx.fillStyle = '#ffffff';
             ctx.beginPath();
-            ctx.arc(26, -4, 3.8, 0, Math.PI * 2);
+            ctx.arc(27, -5.2, 1.5, 0, Math.PI * 2);
             ctx.fill();
 
         } else if (kind === 3) {
-            // 🐙 3: 바다문어 (빨판이 달린 꿈틀거리는 다리 6가닥 + 입체 둥근 머리 + 귀여운 눈)
-            for (let t = -2; t <= 2; t++) {
+            // 🐙 3: 대왕 바다문어 (빨판이 촘촘히 박힌 8가닥 꿈틀 다리 + 반점 둥근 머리 + 왕눈)
+            for (let t = -3; t <= 3; t++) {
                 const wave = Math.sin(time * 8 + t) * 6;
+                const endX = t * 8.5 - wave;
                 ctx.beginPath();
-                ctx.moveTo(t * 8, 4);
-                ctx.quadraticCurveTo(t * 13 + wave, 20, t * 10 - wave, 32);
-                ctx.lineWidth = 7;
+                ctx.moveTo(t * 6.5, 4);
+                ctx.quadraticCurveTo(t * 11 + wave, 19, endX, 34);
+                ctx.lineWidth = 7.5;
                 ctx.strokeStyle = '#e63946';
                 ctx.stroke();
-                ctx.lineWidth = 2.5;
+                ctx.lineWidth = 2.6;
                 ctx.strokeStyle = '#1a1612';
                 ctx.stroke();
+                // 다리 위 분홍/하얀 빨판(Suction Cups)
+                ctx.fillStyle = '#ffccd5';
+                ctx.beginPath();
+                ctx.arc(t * 8 + wave * 0.4, 16, 2.2, 0, Math.PI * 2);
+                ctx.arc(t * 8.2, 25, 2.0, 0, Math.PI * 2);
+                ctx.fill();
             }
-            ctx.lineWidth = 3.2;
-            ctx.fillStyle = '#e63946';
+            ctx.lineWidth = 2.8;
+            const octGrad = ctx.createRadialGradient(-6, -16, 4, 0, -10, 24);
+            octGrad.addColorStop(0, '#ff758f');
+            octGrad.addColorStop(1, '#c9184a');
+            ctx.fillStyle = octGrad;
             ctx.beginPath();
-            ctx.arc(0, -9, 21, 0, Math.PI * 2);
+            ctx.arc(0, -10, 22, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
-            this.drawHatching(ctx, -12, -16, 12, -16, 4, 6, -0.5);
+            this.drawHatching(ctx, -13, -18, 13, -18, 5, 6, -0.5);
 
-            [-7, 7].forEach(ex => {
+            [-7.5, 7.5].forEach(ex => {
                 ctx.fillStyle = '#ffffff';
                 ctx.beginPath();
-                ctx.arc(ex, -6, 5.2, 0, Math.PI * 2);
+                ctx.arc(ex, -6, 5.8, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.stroke();
                 ctx.fillStyle = '#1a1612';
                 ctx.beginPath();
-                ctx.arc(ex, -6, 2.5, 0, Math.PI * 2);
+                ctx.arc(ex, -6, 2.8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(ex - 1, -7.2, 1.1, 0, Math.PI * 2);
                 ctx.fill();
             });
 
         } else {
-            // 🐢 4: 바다거북 (육각 거북 등껍질 무늬 + 헤엄치는 지느러미 발 + 초롱초롱 눈)
-            const swim = Math.sin(time * 6) * 0.2;
+            // 🐢 4: 푸른바다거북 (정교한 육각형 등껍질 무늬 + 노란 테두리 + 비늘 지느러미 발 + 초롱초롱 눈)
+            const swim = Math.sin(time * 6) * 0.22;
             ctx.fillStyle = '#52b788';
             ctx.beginPath();
-            ctx.ellipse(10, -18, 7, 15, -0.45 + swim, 0, Math.PI * 2);
-            ctx.ellipse(10, 18, 7, 15, 0.45 - swim, 0, Math.PI * 2);
-            ctx.ellipse(-18, -13, 5, 11, 0.5, 0, Math.PI * 2);
-            ctx.ellipse(-18, 13, 5, 11, -0.5, 0, Math.PI * 2);
-            ctx.ellipse(28, 0, 10, 8, 0, 0, Math.PI * 2);
+            ctx.ellipse(10, -20, 7.5, 17, -0.45 + swim, 0, Math.PI * 2);
+            ctx.ellipse(10, 20, 7.5, 17, 0.45 - swim, 0, Math.PI * 2);
+            ctx.ellipse(-19, -14, 5.5, 12, 0.5, 0, Math.PI * 2);
+            ctx.ellipse(-19, 14, 5.5, 12, -0.5, 0, Math.PI * 2);
+            ctx.ellipse(30, 0, 11, 8.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // 등껍질 황금 테두리 & 짙은 녹색 돔
+            ctx.fillStyle = '#e9c46a';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 26, 19, 0, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
 
             ctx.fillStyle = '#2d6a4f';
             ctx.beginPath();
-            ctx.ellipse(0, 0, 24, 17, 0, 0, Math.PI * 2);
+            ctx.ellipse(0, 0, 23, 16, 0, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
 
+            // 육각형 거북 등껍질 격자 무늬
             ctx.strokeStyle = '#95d5b2';
             ctx.lineWidth = 2.4;
-            ctx.strokeRect(-11, -8, 22, 16);
+            ctx.strokeRect(-12, -8, 24, 16);
             ctx.beginPath();
-            ctx.moveTo(-11, 0); ctx.lineTo(11, 0);
-            ctx.moveTo(0, -8); ctx.lineTo(0, 8);
+            ctx.moveTo(-12, 0); ctx.lineTo(12, 0);
+            ctx.moveTo(-4, -8); ctx.lineTo(-4, 8);
+            ctx.moveTo(4, -8); ctx.lineTo(4, 8);
             ctx.stroke();
 
+            ctx.strokeStyle = '#1a1612';
             ctx.fillStyle = '#1a1612';
             ctx.beginPath();
-            ctx.arc(31, -2, 2.6, 0, Math.PI * 2);
+            ctx.arc(33, -2.5, 3.0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(32, -3.5, 1.2, 0, Math.PI * 2);
             ctx.fill();
         }
         ctx.restore();
     }
 
-    // 양옆 스테이지별 동물 & 오브젝트 디테일
+    // 양옆 스테이지별 동물 & 오브젝트 디테일 (동물 크기 2배 이상 확대 & 트랙 쪽을 바라보도록 배치!)
     drawStageSideProp(ctx, x, y, scale, side, variant, time) {
         ctx.save();
         ctx.translate(x, y);
@@ -1808,68 +2351,87 @@ class TrackManager {
         ctx.textAlign = 'center';
 
         const bob = Math.sin(time * 5 + variant) * 6;
+        // 트랙 안쪽(주인공이 달리는 도로 방향)을 바라보도록 방향 설정
+        const faceDir = side < 0 ? 1 : -1;
+        const animalX = -side * 34;
 
         if (this.stage === 1) {
-            // 🌲 1단계 숲: 다층 수관 나무 + 직접 그린 숲속 동물들(다람쥐, 산토끼, 꽃사슴, 붉은여우, 숲부엉이)
+            // 🌲 1단계 숲: 다층 수관 나무(뒤쪽) + 초대형 고디테일 숲속 동물들(앞쪽)!
+            const treeX = side * 48;
             ctx.fillStyle = '#7f4f24';
-            ctx.fillRect(-16, -155, 32, 155);
-            ctx.strokeRect(-16, -155, 32, 155);
+            ctx.fillRect(treeX - 18, -175, 36, 175);
+            ctx.strokeRect(treeX - 18, -175, 36, 175);
+            this.drawHatching(ctx, treeX - 8, -150, treeX - 8, -20, 8, 10, 0.4);
 
             ctx.fillStyle = '#2d6a4f';
             ctx.beginPath();
-            ctx.arc(-24, -155, 50, 0, Math.PI * 2);
-            ctx.arc(24, -155, 50, 0, Math.PI * 2);
+            ctx.arc(treeX - 28, -175, 54, 0, Math.PI * 2);
+            ctx.arc(treeX + 28, -175, 54, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
 
             ctx.fillStyle = '#40916c';
             ctx.beginPath();
-            ctx.arc(0, -190, 62, 0, Math.PI * 2);
+            ctx.arc(treeX, -212, 66, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
 
-            const animalNames = ['다람쥐', '산토끼', '꽃사슴', '붉은여우', '숲부엉이'];
-            this.drawRealForestAnimal(ctx, -side * 62, -10 + bob * 0.5, variant % 5, time);
+            const animalNames = ['🐿️ 다람쥐', '🐇 산토끼', '🦌 꽃사슴', '🦊 붉은여우', '🦉 숲부엉이'];
+            this.drawRealForestAnimal(ctx, animalX, -8 + bob * 0.5, variant % 5, time, faceDir);
+
+            ctx.font = 'bold 22px "Gaegu", sans-serif';
+            ctx.lineWidth = 5;
+            ctx.strokeStyle = '#1a1612';
+            ctx.strokeText(animalNames[variant % 5], animalX, 32);
             ctx.fillStyle = '#fffcf5';
-            ctx.font = 'bold 18px "Gaegu", sans-serif';
-            ctx.fillText(animalNames[variant % 5], -side * 62, 16);
+            ctx.fillText(animalNames[variant % 5], animalX, 32);
 
         } else if (this.stage === 2) {
-            // 🌵 2단계 사막: 선인장 + 직접 그린 사막 동물들(사막전갈, 사막여우, 단봉낙타, 쌍봉낙타, 사막도마뱀)
+            // 🌵 2단계 사막: 거대 선인장(뒤쪽) + 초대형 고디테일 사막 동물들(앞쪽)!
+            const cactX = side * 52;
             ctx.fillStyle = '#588157';
             ctx.beginPath();
-            ctx.roundRect(-16, -145, 32, 145, 14);
-            ctx.roundRect(-48, -110, 32, 22, 10);
-            ctx.roundRect(-48, -140, 20, 45, 10);
-            ctx.roundRect(16, -95, 32, 22, 10);
-            ctx.roundRect(28, -130, 20, 50, 10);
+            ctx.roundRect(cactX - 16, -155, 32, 155, 14);
+            ctx.roundRect(cactX - 48, -115, 32, 22, 10);
+            ctx.roundRect(cactX - 48, -148, 20, 48, 10);
+            ctx.roundRect(cactX + 16, -100, 32, 22, 10);
+            ctx.roundRect(cactX + 28, -138, 20, 52, 10);
             ctx.fill();
             ctx.stroke();
 
-            const desertLabels = ['사막전갈', '사막여우', '단봉낙타', '쌍봉낙타', '사막도마뱀'];
-            this.drawRealDesertAnimal(ctx, -side * 68, -8 + bob * 0.4, variant % 5, time);
+            const desertLabels = ['🦂 황제전갈', '🦊 사막여우', '🐪 단봉낙타', '🐫 쌍봉낙타', '🦎 목도리도마뱀'];
+            this.drawRealDesertAnimal(ctx, animalX, -6 + bob * 0.4, variant % 5, time, faceDir);
+
+            ctx.font = 'bold 22px "Gaegu", sans-serif';
+            ctx.lineWidth = 5;
+            ctx.strokeStyle = '#1a1612';
+            ctx.strokeText(desertLabels[variant % 5], animalX, 34);
             ctx.fillStyle = '#fff3b0';
-            ctx.font = 'bold 18px "Gaegu", sans-serif';
-            ctx.fillText(desertLabels[variant % 5], -side * 68, 18);
+            ctx.fillText(desertLabels[variant % 5], animalX, 34);
 
         } else if (this.stage === 3) {
-            // 🦈 3단계 해저: 산호초 + 직접 그린 해양 생물들(백상아리, 열대어, 대왕고래, 바다문어, 바다거북)
+            // 🦈 3단계 해저: 산호초(뒤쪽) + 초대형 고디테일 해양 동물들(앞쪽)!
+            const coralX = side * 52;
             ctx.fillStyle = variant % 2 === 0 ? '#ff6b6b' : '#ff9f1c';
             ctx.beginPath();
-            ctx.roundRect(-16, -130, 32, 130, 14);
-            ctx.roundRect(-44, -95, 28, 65, 12);
-            ctx.roundRect(16, -105, 28, 75, 12);
+            ctx.roundRect(coralX - 16, -140, 32, 140, 14);
+            ctx.roundRect(coralX - 44, -100, 28, 68, 12);
+            ctx.roundRect(coralX + 16, -110, 28, 78, 12);
             ctx.fill();
             ctx.stroke();
 
-            const seaLabels = ['백상아리', '열대어', '대왕고래', '바다문어', '바다거북'];
-            this.drawRealSeaCreature(ctx, -side * 68, -52 + bob * 1.5, 1.0, variant % 5, time);
+            const seaLabels = ['🦈 백상아리', '🐠 황제열대어', '🐋 대왕고래', '🐙 대왕문어', '🐢 푸른바다거북'];
+            this.drawRealSeaCreature(ctx, animalX, -64 + bob * 1.4, 1.0, variant % 5, time, faceDir);
+
+            ctx.font = 'bold 22px "Gaegu", sans-serif';
+            ctx.lineWidth = 5;
+            ctx.strokeStyle = '#1a1612';
+            ctx.strokeText(seaLabels[variant % 5], animalX, 18);
             ctx.fillStyle = '#caf0f8';
-            ctx.font = 'bold 18px "Gaegu", sans-serif';
-            ctx.fillText(seaLabels[variant % 5], -side * 68, -10);
+            ctx.fillText(seaLabels[variant % 5], animalX, 18);
 
         } else if (this.stage === 4) {
-            // 🌆 4단계 도시 (타임스퀘어 밤): 3D 네온 광고판 타워 & 직접 그린 가로등
+            // 🌆 4단계 도시 (타임스퀘어 밤): 3D 네온 광고판 타워 & 가로등
             this.draw3DBox(ctx, 0, 0, 86, 210, -side * 16, -16, '#2b2d42', '#495057', '#151624');
 
             ctx.fillStyle = variant % 2 === 0 ? '#ff007f' : '#00f5d4';
@@ -1879,7 +2441,6 @@ class TrackManager {
             ctx.font = 'bold 18px "Comic Neue", sans-serif';
             ctx.fillText(variant % 2 === 0 ? 'TIMES SQ' : 'BROADWAY', 0, -152);
 
-            // 네온 가로등 기둥과 불빛
             ctx.strokeStyle = '#adb5bd';
             ctx.lineWidth = 5;
             ctx.beginPath();
@@ -2206,21 +2767,34 @@ class TrackManager {
         const dx = -obs.lane * 18 + 14;
         const dy = -20;
 
-        // 🎯 명확한 바닥 히트박스 가이드 프레임 표시 (실제 충돌 판정 영역 시각화!)
+        // 🎯 대폭 확대된 장애물 히트박스 가이드 프레임 표시 (바닥 판정 영역 + 입체 바운딩 히트박스 시각화!)
         if (obs.type === 'ramp' || obs.type === 'climb_truck') {
-            ctx.fillStyle = 'rgba(6, 214, 160, 0.24)';
+            ctx.fillStyle = 'rgba(6, 214, 160, 0.28)';
             ctx.strokeStyle = '#06d6a0';
-            ctx.lineWidth = 3.2;
-            ctx.strokeRect(-64, -16, 128, 28);
-        } else {
-            const isNearHitZone = obs.z > 0.72 && obs.z < 0.94;
-            ctx.fillStyle = isNearHitZone ? 'rgba(255, 0, 85, 0.34)' : 'rgba(230, 57, 70, 0.18)';
-            ctx.strokeStyle = isNearHitZone ? '#ff0055' : '#e63946';
-            ctx.lineWidth = isNearHitZone ? 4.2 : 3.0;
+            ctx.lineWidth = 3.8;
             ctx.beginPath();
-            ctx.roundRect(-52, -14, 104, 24, 6);
+            ctx.roundRect(-84, -24, 168, 44, 8);
             ctx.fill();
             ctx.stroke();
+        } else {
+            const isNearHitZone = obs.z > 0.70 && obs.z < 0.96;
+            const boxH = (obs.type === 'arch' || obs.type === 'pillar') ? 195 : 108;
+            // 1) 넓어진 바닥 충돌 히트박스 패드 (164 x 46)
+            ctx.fillStyle = isNearHitZone ? 'rgba(255, 0, 85, 0.38)' : 'rgba(230, 57, 70, 0.22)';
+            ctx.strokeStyle = isNearHitZone ? '#ff0055' : '#e63946';
+            ctx.lineWidth = isNearHitZone ? 4.8 : 3.4;
+            ctx.beginPath();
+            ctx.roundRect(-82, -24, 164, 46, 8);
+            ctx.fill();
+            ctx.stroke();
+
+            // 2) 장애물 상단 입체 충돌 히트박스 외곽 점선 프레임
+            ctx.save();
+            ctx.setLineDash([8, 6]);
+            ctx.strokeStyle = isNearHitZone ? 'rgba(255, 0, 85, 0.85)' : 'rgba(230, 57, 70, 0.50)';
+            ctx.lineWidth = isNearHitZone ? 3.2 : 2.2;
+            ctx.strokeRect(-78, -boxH, 156, boxH + 14);
+            ctx.restore();
         }
 
         ctx.strokeStyle = '#1a1612';
