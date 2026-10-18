@@ -210,6 +210,7 @@ function updateHUD() {
     if (hero.isWukong) statusParts.push(`👑손오공 Lv.${hero.wukongLevel}`);
     if (hero.invincibleTimer > 0) statusParts.push(`🛡️${hero.invincibleTimer.toFixed(1)}s`);
     if (hero.superJumpTimer > 0) statusParts.push(`🚀${hero.superJumpTimer.toFixed(1)}s`);
+    if (hero.laserGunTimer > 0) statusParts.push(`🔫레이저 ${hero.laserGunTimer.toFixed(1)}s`);
     shieldStatusEl.textContent = statusParts.join(' ');
 
     hudPlayerNameEl.textContent = playerName || '플레이어';
@@ -249,7 +250,7 @@ function setStage(newStage) {
         const info = STAGE_INFO[clamped];
         if (clamped === 5) {
             sound.playGlitchStatic();
-            bubbleEn.textContent = "BZZZT!! STAGE 5: GLITCH VOID!! FINAL STAGE!!";
+            bubbleEn.textContent = "BZZZT!! STAGE 5: GLITCH VOID!! 3 SECONDS REST BEFORE START!";
         } else if (clamped === 6) {
             gameState = 'SCHOOL_ENDING';
             schoolEndingTimer = 0;
@@ -261,12 +262,12 @@ function setStage(newStage) {
             bubbleEn.textContent = "DING-DONG-DANG-DONG! ARRIVED AT SMILE ELEMENTARY SCHOOL!";
         } else {
             sound.playSpecialItem();
-            bubbleEn.textContent = `STAGE ${clamped} UNLOCKED! SPEED UP!`;
+            bubbleEn.textContent = `STAGE ${clamped} UNLOCKED! 3 SECONDS REST THEN GO!`;
         }
         bubbleKo.textContent = info.ko;
-        // 스테이지가 바뀔 때마다 화면 중앙으로 큰 글씨 배너가 시원하게 지나가게 함!
-        track.triggerStageBanner(info.bannerTitle, info.bannerSub, info.color);
-        track.addBurstParticles(width * 0.5, height * 0.4, '#ffea79', 26);
+        // 스테이지가 넘어갈 때 상단 컴팩트 배너를 띄우고 3초 동안 기물 없이 쉬고 시작!
+        track.triggerStageBanner(info.bannerTitle, info.bannerSub, info.color, clamped < 6);
+        track.addBurstParticles(width * 0.5, height * 0.25, '#ffea79', 26);
         updateHUD();
     }
 }
@@ -551,7 +552,7 @@ function gameLoop(now) {
                 updateHUD();
             },
             onWukong: (item) => {
-                // 👑 신규 아이템 2: 손오공 진화 (체력 대폭 올리기 + 근두운/여의봉/긴고아 장착)!
+                // 👑 손오공 진화 (체력 대폭 올리기 + 근두운/여의봉/긴고아 장착)!
                 sound.playWukongEvolution();
                 score += 50;
                 hero.triggerWukongEvolution();
@@ -563,12 +564,35 @@ function gameLoop(now) {
                 bubbleKo.textContent = `"👑 제천대성 손오공 진화! 최대 체력이 ${hero.maxHp}으로 오르고 체력이 대폭 회복됐어!"`;
                 updateHUD();
             },
+            onLaserGun: (item) => {
+                // 🔫 신규 특별 아이템: 레이저총 (4초 동안 유저가 있는 레인의 기물을 모두 자동 파괴!)
+                sound.playLaserGun();
+                score += 40;
+                hero.triggerLaserGun(4.0);
+                const p = track.project(item.z, item.lane, width, height);
+                track.addPopup(p.x, p.y - 75, '🔫 플라즈마 레이저총 발동(4초)! +40', '#ff006e');
+                track.addBurstParticles(p.x, p.y - 40, '#ff006e', 24);
+                bubbleEn.textContent = "PLASMA LASER GUN!! VAPORIZING ALL OBSTACLES IN YOUR LANE FOR 4 SECONDS!";
+                bubbleKo.textContent = '"🔫 레이저총 장착! 4초 동안 내가 달리는 레인의 기물을 레이저로 싹 없애버려!"';
+                updateHUD();
+            },
+            onLaserDestroy: (obs) => {
+                // ⚡ 레이저 빔이 현재 레인의 기물을 명중시켜 증발시켰을 때!
+                sound.playLaserZap();
+                score += 25;
+                const p = track.project(obs.z, obs.lane, width, height);
+                track.addPopup(p.x, p.y - 70, '⚡ 레이저 기물 증발! +25', '#00f5d4');
+                track.addBurstParticles(p.x, p.y - 40, '#ff006e', 16);
+                track.addBurstParticles(p.x, p.y - 40, '#00f5d4', 12);
+                updateHUD();
+            },
             onRampClimb: (obs) => {
                 sound.playJump(false);
-                score += 15;
+                score += 18;
                 const p = track.project(obs.z, obs.lane, width, height);
-                track.addPopup(p.x, p.y - 85, '경사로 위 질주! +15 🏃‍♂️', '#2a9d8f');
-                track.addBurstParticles(p.x, p.y - 50, '#a8dadc', 10);
+                const label = obs.type === 'climb_truck' ? '🚛 트럭 지붕 위 질주! +18' : '⏫ 경사로 위 질주! +18';
+                track.addPopup(p.x, p.y - 95, label, '#2a9d8f');
+                track.addBurstParticles(p.x, p.y - 50, '#a8dadc', 12);
                 updateHUD();
             },
             onChaserSpawn: (chaserType) => {

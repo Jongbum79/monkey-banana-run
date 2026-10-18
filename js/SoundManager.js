@@ -404,4 +404,24 @@ class SoundManager {
         this.playGlitchStatic(0.15, 0.14);
     }
     playRoar() { this.playTone(135, 'sawtooth', 0.65, 0.24, 42); }
+
+    // 🔫 레이저총 아이템 획득 및 발동 사운드
+    playLaserGun() {
+        if (this.muted) return;
+        this.init();
+        [440, 660, 880, 1320, 1760].forEach((f, idx) => {
+            setTimeout(() => {
+                this.playTone(f, 'sawtooth', 0.14, 0.18, f * 1.25);
+                this.playTone(f * 0.5, 'triangle', 0.14, 0.14);
+            }, idx * 45);
+        });
+    }
+
+    // ⚡ 레이저 빔이 레인의 기물을 파괴할 때 사운드
+    playLaserZap() {
+        if (this.muted) return;
+        this.init();
+        this.playTone(1480, 'sawtooth', 0.16, 0.20, 220);
+        this.playTone(980, 'square', 0.14, 0.14, 140);
+    }
 }

@@ -16,7 +16,8 @@ class MathGateManager {
 
     reset() {
         this.activeGate = null;
-        this.cooldownTimer = 5.5;
+        // 게임 길이를 24% 늘림 (5.5s * 1.24 = 6.82s)
+        this.cooldownTimer = 6.82;
         this.solvedCount = 0;
     }
 
@@ -108,6 +109,10 @@ class MathGateManager {
             this.activeGate = null;
             return;
         }
+        // 스테이지 전환 후 3초 휴식 카운트다운 중에는 연산 게이트 타이머도 함께 대기!
+        if (trackManager.stagePauseTimer > 0) {
+            return;
+        }
 
         if (!this.activeGate) {
             this.cooldownTimer -= dt;
@@ -120,7 +125,7 @@ class MathGateManager {
         }
 
         const gate = this.activeGate;
-        const approachSpeed = gate.z < 0.75 ? 0.20 : 0.31;
+        const approachSpeed = gate.z < 0.75 ? 0.175 : 0.28;
         gate.z += dt * gameSpeed * approachSpeed;
 
         if (!gate.resolved && gate.z > 0.74) {
@@ -158,7 +163,8 @@ class MathGateManager {
 
         if (gate.z > 1.18) {
             this.activeGate = null;
-            this.cooldownTimer = 6.8;
+            // 게임 길이를 기존 대비 24% 연장 (6.8s * 1.24 = 8.43s)
+            this.cooldownTimer = 8.43;
         }
     }
 

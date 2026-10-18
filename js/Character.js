@@ -42,16 +42,17 @@ class PeanutsMonkeyHero {
         this.lookBackBlend = 0;    // 0: 완전 뒷모습, 1: 뒤돌아본 모습 (부드러운 회전 전환)
         this.lookBackMood = 'happy'; // 'happy' | 'scared' | 'proud'
 
-        // 피격(장애물/오답 충돌) 및 부스트, 무적 방패, 슈퍼점프, 손오공 진화 상태
+        // 피격(장애물/오답 충돌) 및 부스트, 무적 방패, 슈퍼점프, 레이저총, 손오공 진화 상태
         this.stumbleTimer = 0;
         this.boostTimer = 0;
         this.shieldActive = false;
-        this.invincibleTimer = 0; // 방패 아이템 획득 시 기물 무적 타이머 (3.2초로 단축)
-        this.superJumpTimer = 0;  // 슈퍼점프 아이템 획득 시 5초간 초고도 점프!
+        this.invincibleTimer = 0; // 방패 아이템 획득 시 기물 무적 타이머 (1.8초)
+        this.superJumpTimer = 0;  // 슈퍼점프 아이템 획득 시 초고도 점프 (2.5초)
+        this.laserGunTimer = 0;   // 🔫 레이저총 아이템 획득 시 4초간 현재 레인 기물 자동 파괴!
         this.isWukong = false;    // 손오공 진화 여부 (체력 대폭 상승 + 긴고아/여의봉/근두운 장착)
         this.wukongLevel = 0;
 
-        // 톰 골드런 스타일 장애물(경사로/버스 지붕) 위로 올라가 달리기 높이
+        // 톰 골드런 스타일 장애물(경사로/트럭/버스 지붕) 위로 올라가 달리기 높이
         this.platformY = 0;
         this.targetPlatformY = 0;
 
@@ -70,14 +71,17 @@ class PeanutsMonkeyHero {
     }
 
     jump() {
+        // 슬라이드 중 점프 입력 시 딜레이 없이 즉시 슬라이드 취소 후 점프 발동!
         if (this.isSliding) {
             this.isSliding = false;
             this.slideTimer = 0;
         }
-        if (!this.isJumping) {
+        // 착지 직전(y < 48)에도 선입력 점프가 즉시 먹히도록 반응성 대폭 개선!
+        if (!this.isJumping || this.y < 48) {
             this.isJumping = true;
-            // 슈퍼점프 5초 적용 중일 때는 훨씬 높이 점프!
-            this.vy = this.superJumpTimer > 0 ? 27.5 : 19.5;
+            // 점프 키를 누른 즉시 첫 프레임부터 높이를 44로 띄워 즉각적인 회피 & 초고속 반응 보장!
+            this.y = Math.max(this.y, 44);
+            this.vy = this.superJumpTimer > 0 ? 33.0 : 24.5;
             return true;
         }
         return false;
@@ -85,11 +89,13 @@ class PeanutsMonkeyHero {
 
     slide() {
         if (this.isJumping) {
-            // 공중에서 아래 키를 누르면 급강하!
-            this.vy = -26;
+            // 공중에서 아래 키를 누르면 딜레이 없이 즉시 바닥으로 초고속 착지 후 슬라이딩!
+            this.y = Math.min(this.y, 14);
+            this.vy = -58;
+            this.isJumping = false;
         }
         this.isSliding = true;
-        this.slideTimer = 0.65;
+        this.slideTimer = 0.58;
         return true;
     }
 
@@ -120,6 +126,11 @@ class PeanutsMonkeyHero {
         this.triggerLookBack(1.2, 'happy');
     }
 
+    triggerLaserGun(duration = 4.0) {
+        this.laserGunTimer = duration;
+        this.triggerLookBack(1.2, 'proud');
+    }
+
     triggerWukongEvolution() {
         this.isWukong = true;
         this.wukongLevel++;
@@ -134,16 +145,16 @@ class PeanutsMonkeyHero {
         const boostFactor = (this.boostTimer > 0 || this.invincibleTimer > 0) ? 1.35 : 1.0;
         this.runCycle += dt * 13.5 * speedMultiplier * boostFactor;
 
-        // 레인 보간
-        this.laneX += (this.currentLane - this.laneX) * Math.min(1, dt * 13);
+        // 레인 보간 속도를 2배 이상 빠르게(dt * 28) 높여 좌우 이동 반응이 즉각적으로 이루어지게 함!
+        this.laneX += (this.currentLane - this.laneX) * Math.min(1, dt * 28);
 
-        // 장애물 지붕 위(platformY) 부드러운 등반/하강
-        this.platformY += (this.targetPlatformY - this.platformY) * Math.min(1, dt * 14);
+        // 장애물/트럭 지붕 위(platformY) 즉각적이고 부드러운 등반/하강
+        this.platformY += (this.targetPlatformY - this.platformY) * Math.min(1, dt * 22);
 
-        // 점프 물리
+        // 초고속 반응 점프 물리
         if (this.isJumping) {
             this.y += this.vy * (dt * 60);
-            this.vy -= 0.92 * (dt * 60);
+            this.vy -= 1.38 * (dt * 60);
             if (this.y <= 0) {
                 this.y = 0;
                 this.vy = 0;
@@ -159,11 +170,14 @@ class PeanutsMonkeyHero {
             }
         }
 
-        // 피격 및 부스트, 무적 방패, 슈퍼점프 타이머
+        // 피격 및 부스트, 무적 방패, 슈퍼점프, 레이저총 타이머
         if (this.stumbleTimer > 0) this.stumbleTimer -= dt;
         if (this.boostTimer > 0) this.boostTimer -= dt;
         if (this.superJumpTimer > 0) {
             this.superJumpTimer = Math.max(0, this.superJumpTimer - dt);
+        }
+        if (this.laserGunTimer > 0) {
+            this.laserGunTimer = Math.max(0, this.laserGunTimer - dt);
         }
         if (this.invincibleTimer > 0) {
             this.invincibleTimer -= dt;
@@ -260,9 +274,14 @@ class PeanutsMonkeyHero {
             this.drawWukongNimbusAndStaff(ctx, swing);
         }
 
-        // 슈퍼점프 5초 활성화 시 발밑 스프링 날개 링 이펙트
+        // 슈퍼점프 활성화 시 발밑 스프링 날개 링 이펙트
         if (this.superJumpTimer > 0) {
             this.drawSuperJumpAura(ctx);
+        }
+
+        // 🔫 레이저총(4초) 활성화 시 전방 레인을 관통하는 초고열 플라즈마 레이저 빔 & 레이저총 렌더링!
+        if (this.laserGunTimer > 0) {
+            this.drawLaserGunAndBeam(ctx);
         }
 
         this.drawLeftArmRunningAway(ctx, swing);
@@ -301,6 +320,58 @@ class PeanutsMonkeyHero {
 
         // 🎯 캐릭터 몸통 실제 충돌 히트박스 코너 브래킷 표시 (명확한 히트박스 시각화!)
         this.drawClearHitboxFrame(ctx);
+
+        ctx.restore();
+    }
+
+    drawLaserGunAndBeam(ctx) {
+        ctx.save();
+        const pulse = Math.sin(this.time * 40) * 6;
+
+        // 1) 전방 지평선까지 뻗어나가는 고출력 플라즈마 레이저 빔
+        const beamGrad = ctx.createLinearGradient(0, -195, 0, -980);
+        beamGrad.addColorStop(0, 'rgba(255, 0, 110, 0.95)');
+        beamGrad.addColorStop(0.5, 'rgba(0, 245, 212, 0.88)');
+        beamGrad.addColorStop(1, 'rgba(255, 190, 11, 0.0)');
+
+        ctx.fillStyle = beamGrad;
+        ctx.beginPath();
+        ctx.moveTo(-26 - pulse * 0.5, -195);
+        ctx.lineTo(-8, -980);
+        ctx.lineTo(8, -980);
+        ctx.lineTo(26 + pulse * 0.5, -195);
+        ctx.closePath();
+        ctx.fill();
+
+        // 레이저 중심 화이트 코어
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.moveTo(-9, -195);
+        ctx.lineTo(-2, -950);
+        ctx.lineTo(2, -950);
+        ctx.lineTo(9, -195);
+        ctx.closePath();
+        ctx.fill();
+
+        // 2) 어깨/팔 옆에 장착된 3D 하이테크 레이저 캐논 총신
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 4;
+        ctx.fillStyle = '#3a86ff';
+        ctx.beginPath();
+        ctx.roundRect(-88, -225, 36, 62, 10);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#ff006e';
+        ctx.fillRect(-82, -242, 24, 20);
+        ctx.strokeRect(-82, -242, 24, 20);
+
+        // 총구 에너지 링
+        ctx.strokeStyle = '#00f5d4';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(-70, -246, 16 + pulse * 0.4, 0, Math.PI * 2);
+        ctx.stroke();
 
         ctx.restore();
     }
