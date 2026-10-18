@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smile Games - 원숭이의 바나나 런 (Peanuts Edition)</title>
+    <title>Smile Games - 원숭이의 바나나 런 (6학년 5단계 에디션)</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -13,7 +13,7 @@
     <!-- 상단 피너츠 구름 말풍선 -->
     <div class="peanuts-speech-bubble">
         <p id="bubble-en">HEHE! MY BANANA! WONDER IF CHARLIE BROWN IS WATCHING?</p>
-        <div class="sub-ko" id="bubble-ko">"헤헤! 드래곤의 황금 바나나를 들고 도망가자!"</div>
+        <div class="sub-ko" id="bubble-ko">"헤헤! 드래곤의 황금 바나나를 들고 학교까지 도망가자!"</div>
         <div class="bubble-dot-1"></div>
         <div class="bubble-dot-2"></div>
     </div>
@@ -36,15 +36,19 @@
                 <strong>개발팀:</strong> 최지훈, 박주아, 김이수, 최우영, 전준우
             </p>
             <div class="hud-stats">
+                <div class="hud-row" style="background:#fff3b0; padding:3px 8px; border-radius:8px; border:2px solid #1a1612; margin-bottom:4px;">
+                    <span id="stage-badge" style="color:#1a1612; font-size:17px;">🌲 1단계: 동물들의 숲</span>
+                    <span id="shield-status" style="color:#0077b6; font-size:15px;"></span>
+                </div>
                 <div class="hud-row">
                     <span>🏃 도전자: <strong id="hud-player-name" style="color:#d64531;">플레이어</strong></span>
-                    <span>🧮 정답: <span id="math-solved-val">0</span>회</span>
+                    <span>🧮 6학년 문제: <span id="math-solved-val">0</span>/10</span>
                 </div>
                 <div class="hud-row">
                     <span style="color:#b53421;">🪙 점수: <span id="score-val">0</span></span>
                     <span style="font-size:15px; color:#5c4938;">🏆 1위: <span id="best-score-val">0</span></span>
                 </div>
-                <!-- 캐릭터 HP 게이지 바 (장애물 3회 충돌 시 소멸 / 문제 정답 시 회복) -->
+                <!-- 캐릭터 HP 게이지 바 (체력 60으로 축소 / 장애물 3회 충돌 시 소멸 / 문제 정답 시 회복) -->
                 <div class="hp-bar-wrap">
                     <div class="hp-bar-fill" id="hp-bar-fill"></div>
                     <div class="hp-bar-ticks">
@@ -52,7 +56,7 @@
                         <div class="hp-tick"></div>
                         <div class="hp-tick"></div>
                     </div>
-                    <div class="hp-bar-label" id="hp-bar-label">❤️ HP 100% (장애물 3회 충돌 시 소멸)</div>
+                    <div class="hp-bar-label" id="hp-bar-label">❤️ 체력(HP) 60/60 (3회 충돌 시 소멸)</div>
                 </div>
                 <!-- 드래곤 추격 거리 바 -->
                 <div class="dragon-meter">
@@ -72,12 +76,12 @@
         <!-- 하단 컨트롤 바 & 서명 -->
         <div class="bottom-bar">
             <div class="controls-card">
-                <h3>🎮 조작 방법 (장애물 3회 충돌 시 소멸 / 문제 풀면 HP 회복!)</h3>
+                <h3>🎮 조작 방법 (🛡️방패=기물 무적 / 경사로 위 질주 / 굴러오는 바위 회피!)</h3>
                 <div class="key-guide">
-                    <div class="key-item"><span class="badge">← / →</span> <span>문 선택 / 레인 이동</span></div>
-                    <div class="key-item"><span class="badge">↑ / Space</span> <span>점프 (통나무 넘기)</span></div>
-                    <div class="key-item"><span class="badge">↓ / S</span> <span>슬라이딩 (아치 통과)</span></div>
-                    <div class="key-item"><span class="badge">L 키</span> <span>뒤돌아보기 (표정)</span></div>
+                    <div class="key-item"><span class="badge">← / →</span> <span>문 선택 / 바위 회피</span></div>
+                    <div class="key-item"><span class="badge">↑ / Space</span> <span>점프 / 경사로 등반</span></div>
+                    <div class="key-item"><span class="badge">↓ / S</span> <span>슬라이딩</span></div>
+                    <div class="key-item"><span class="badge">L 키</span> <span>뒤돌아보기</span></div>
                 </div>
                 <div class="btn-group">
                     <button class="btn" id="btn-left">◀ 좌측</button>
@@ -100,11 +104,11 @@
             <p style="font-size:16px; color:#5c4938;">
                 개발자: <strong>최지훈, 박주아, 김이수, 최우영, 전준우</strong>
             </p>
-            <p style="margin-top:8px; font-weight:700;">
-                플레이어 이름을 입력하고 황금 바나나 탈출을 시작하세요!
+            <p style="margin-top:6px; font-size:15px; color:#2a9d8f; font-weight:700;">
+                🌲1단계:숲 ➔ 🏜️2단계:사막 ➔ 🦈3단계:해저 ➔ 🌃4단계:도시 ➔ ⚡5단계:글리치 보이드 ➔ 🏫학교 도착!
             </p>
             <div class="name-input-group">
-                <input type="text" id="player-name-input" class="name-input" placeholder="플레이어 이름 입력" maxlength="12" />
+                <input type="text" id="player-name-input" class="name-input" placeholder="6학년 도전자 이름 입력" maxlength="12" />
                 <button class="start-btn" id="btn-start-game">🚀 출발!</button>
             </div>
 
@@ -115,16 +119,16 @@
         </div>
     </div>
 
-    <!-- 2. 게임 오버 & 랭킹 결과 모달 -->
+    <!-- 2. 게임 오버 / 학교 도착 클리어 & 랭킹 결과 모달 -->
     <div class="modal-backdrop" id="gameover-modal">
         <div class="modal-card">
-            <h2>🐉 게임 오버!</h2>
-            <p id="gameover-reason">장애물에 3번 부딪혀 캐릭터 HP가 모두 소진되었어요!</p>
+            <h2 id="gameover-title">🐉 게임 오버!</h2>
+            <p id="gameover-reason">장애물에 3번 부딪혀 캐릭터 체력(HP)이 모두 소진되었어요!</p>
             <p style="margin-top:8px; font-weight:700; font-size:24px; color:#b53421;">
                 <span id="final-player-name">플레이어</span>님의 점수: <span id="final-score">0</span>점
             </p>
             <p style="font-size:18px; color:#2a9d8f; font-weight:700;">
-                풀어낸 계산 문제: <span id="final-math">0</span>개
+                풀어낸 6학년 문제: <span id="final-math">0</span>개
             </p>
 
             <div class="ranking-box">
@@ -133,7 +137,7 @@
             </div>
 
             <div style="display:flex; gap:10px; justify-content:center; margin-top:16px;">
-                <button class="restart-btn" id="btn-restart">🍌 다시 도망가기! (Enter)</button>
+                <button class="restart-btn" id="btn-restart">🍌 다시 도전하기! (Enter)</button>
                 <button class="restart-btn" id="btn-change-name" style="background:#90e0ef;">✏️ 이름 바꾸기</button>
             </div>
         </div>

@@ -42,14 +42,19 @@ class PeanutsMonkeyHero {
         this.lookBackBlend = 0;    // 0: 완전 뒷모습, 1: 뒤돌아본 모습 (부드러운 회전 전환)
         this.lookBackMood = 'happy'; // 'happy' | 'scared' | 'proud'
 
-        // 피격(장애물/오답 충돌) 및 부스트 상태
+        // 피격(장애물/오답 충돌) 및 부스트, 무적 방패 상태
         this.stumbleTimer = 0;
         this.boostTimer = 0;
         this.shieldActive = false;
+        this.invincibleTimer = 0; // 방패 아이템 획득 시 기물 완전 무적 타이머
 
-        // 캐릭터 HP 시스템 (장애물 3회 충돌 시 0이 되어 소멸, 문제 해결 시 조금씩 회복)
-        this.maxHp = 99;
-        this.hp = 99;
+        // 톰 골드런 스타일 장애물(경사로/버스 지붕) 위로 올라가 달리기 높이
+        this.platformY = 0;
+        this.targetPlatformY = 0;
+
+        // 캐릭터 HP 시스템 (체력을 60으로 줄여 긴장감 부여, 3회 충돌 시 0 소멸, 문제 해결 시 조금씩 복구)
+        this.maxHp = 60;
+        this.hp = 60;
     }
 
     changeLane(dir) {
@@ -100,13 +105,22 @@ class PeanutsMonkeyHero {
         this.triggerLookBack(1.3, 'proud');
     }
 
+    triggerInvincibleShield(duration = 7.0) {
+        this.invincibleTimer = duration;
+        this.shieldActive = true;
+        this.triggerLookBack(1.4, 'proud');
+    }
+
     update(dt, speedMultiplier = 1.0) {
         this.time += dt;
-        const boostFactor = this.boostTimer > 0 ? 1.45 : 1.0;
+        const boostFactor = (this.boostTimer > 0 || this.invincibleTimer > 0) ? 1.35 : 1.0;
         this.runCycle += dt * 13.5 * speedMultiplier * boostFactor;
 
         // 레인 보간
         this.laneX += (this.currentLane - this.laneX) * Math.min(1, dt * 13);
+
+        // 장애물 지붕 위(platformY) 부드러운 등반/하강
+        this.platformY += (this.targetPlatformY - this.platformY) * Math.min(1, dt * 14);
 
         // 점프 물리
         if (this.isJumping) {
@@ -127,9 +141,16 @@ class PeanutsMonkeyHero {
             }
         }
 
-        // 피격 및 부스트 타이머
+        // 피격 및 부스트, 무적 방패 타이머
         if (this.stumbleTimer > 0) this.stumbleTimer -= dt;
         if (this.boostTimer > 0) this.boostTimer -= dt;
+        if (this.invincibleTimer > 0) {
+            this.invincibleTimer -= dt;
+            if (this.invincibleTimer <= 0) {
+                this.invincibleTimer = 0;
+                this.shieldActive = false;
+            }
+        }
 
         // 가끔 자동으로 뒤를 힐끔 돌아보는 타이머 (기본은 도망가는 뒷모습, 가끔 뒤돌아봄!)
         if (this.lookBackDuration > 0) {
@@ -183,7 +204,7 @@ class PeanutsMonkeyHero {
 
         const charX = centerX + this.laneX * laneSpread * scale;
         const bounceY = (this.isJumping || this.isSliding) ? 0 : Math.abs(Math.sin(this.runCycle)) * 20;
-        const charY = groundY - (this.y + bounceY) * scale;
+        const charY = groundY - (this.y + this.platformY + bounceY) * scale;
         const tilt = (this.currentLane - this.laneX) * 0.16 + Math.sin(this.runCycle) * 0.035;
 
         // 1. 바닥 펜 해칭 그림자
@@ -1103,18 +1124,44 @@ class PeanutsMonkeyHero {
         ctx.restore();
     }
 
-    // 바나나 실드 보호막
+    // 🛡️ 특별 무적 방패 오라 (기물에 완전 무적!)
     drawShieldBubble(ctx) {
         ctx.save();
         ctx.translate(0, -195);
-        ctx.strokeStyle = '#4ea8de';
-        ctx.fillStyle = 'rgba(144, 224, 239, 0.22)';
-        ctx.lineWidth = 4;
-        ctx.setLineDash([12, 8]);
+        const pulse = 1 + Math.sin(this.time * 10) * 0.05;
+        ctx.scale(pulse, pulse);
+
+        ctx.strokeStyle = '#00b4d8';
+        ctx.fillStyle = 'rgba(144, 224, 239, 0.28)';
+        ctx.lineWidth = 6;
+        ctx.setLineDash([16, 10]);
+        ctx.lineDashOffset = -this.time * 40;
         ctx.beginPath();
-        ctx.arc(0, 0, 195, 0, Math.PI * 2);
+        ctx.arc(0, 0, 205, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
+
+        // 회전하는 4개의 미니 방패 아이콘
+        ctx.setLineDash([]);
+        for (let i = 0; i < 4; i++) {
+            const ang = this.time * 3.5 + (i * Math.PI) / 2;
+            const sx = Math.cos(ang) * 205;
+            const sy = Math.sin(ang) * 205;
+            ctx.font = 'bold 34px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🛡️', sx, sy);
+        }
+
+        if (this.invincibleTimer > 0) {
+            ctx.fillStyle = '#0077b6';
+            ctx.strokeStyle = '#fffcf5';
+            ctx.lineWidth = 5;
+            ctx.font = 'bold 26px "Gaegu", sans-serif';
+            const txt = `🛡️ 무적 방패 ${this.invincibleTimer.toFixed(1)}초`;
+            ctx.strokeText(txt, 0, -225);
+            ctx.fillText(txt, 0, -225);
+        }
         ctx.restore();
     }
 

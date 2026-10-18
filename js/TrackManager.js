@@ -1,15 +1,8 @@
 /**
  * Smile Games - 원숭이의 바나나 런
- * [Step 2] 무한 생성 3레인 러닝 트랙 & 장애물 · 코인 · 파워업 매니저
+ * [Step 2 고도화] 5단계 스테이지(숲/사막/해저/타임스퀘어밤/글리치보이드 + 학교 엔딩) &
+ * 톰 골드런 스타일 등반 경사로(ramp) + 굴러오는 바위(rolling_stone) + 무적 방패(shield)
  * 제작: 최지훈, 박주아, 김이수, 최우영, 전준우
- *
- * 특징:
- * - 피너츠(스누피) 코믹스 풍의 원근 3레인 돌길 트랙, 고대 사원 기둥, 횃불, 폭포, 야자수
- * - 3종 장애물:
- *   1) 통나무 바리케이드 (점프 ↑/Space로 회피)
- *   2) 고대 사원 덩굴 현수막 아치 (슬라이딩 ↓/S로 회피)
- *   3) 불타는 사원 화로 기둥 (좌우 레인 이동 ←/→으로 회피)
- * - 수집 아이템: 황금 별 코인(+10점), 바나나 송이(+30점 & 부스트), 보호막 실드
  */
 
 class TrackManager {
@@ -18,22 +11,22 @@ class TrackManager {
     }
 
     reset() {
+        this.stage = 1; // 1:숲, 2:사막, 3:해저, 4:타임스퀘어 도시(밤), 5:글리치 보이드, 6:학교 엔딩
         this.scrollDist = 0;
         this.obstacles = [];
         this.items = [];
         this.popups = [];
         this.particles = [];
-        this.spawnTimer = 1.2;
+        this.spawnTimer = 1.0;
         this.coinSpawnTimer = 0.4;
         this.sideProps = [
-            { z: 0.15, type: 'temple' },
-            { z: 0.40, type: 'palm' },
-            { z: 0.65, type: 'temple' },
-            { z: 0.90, type: 'palm' }
+            { z: 0.15, variant: 0 },
+            { z: 0.40, variant: 1 },
+            { z: 0.65, variant: 2 },
+            { z: 0.90, variant: 3 }
         ];
     }
 
-    // 원근 좌표 변환 헬퍼 (z: 0.0 지평선 ~ 1.0 플레이어 위치)
     project(z, lane, width, height) {
         const horizonY = height * 0.42;
         const groundY = height * 0.84;
@@ -51,7 +44,7 @@ class TrackManager {
     }
 
     addPopup(x, y, text, color = '#d64531') {
-        this.popups.push({ x, y, text, color, alpha: 1.0, scale: 1.2 });
+        this.popups.push({ x, y, text, color, alpha: 1.0 });
     }
 
     addBurstParticles(x, y, color = '#f6d54a', count = 10) {
@@ -70,70 +63,79 @@ class TrackManager {
     }
 
     update(dt, gameSpeed, hero, mathGateActive, callbacks) {
-        const dz = dt * gameSpeed * 0.36;
+        if (this.stage === 6) return; // 학교 엔딩 시 정지
+
+        // 5단계 글리치 보이드는 가장 빠르고 긴장감 넘침
+        const stageSpeedMult = this.stage === 5 ? 1.22 : (1 + (this.stage - 1) * 0.05);
+        const dz = dt * gameSpeed * stageSpeedMult * 0.36;
         this.scrollDist += dz;
 
-        // 양옆 사원/야자수 프롭 이동
         this.sideProps.forEach(p => {
             p.z += dz;
-            if (p.z > 1.15) {
-                p.z -= 1.15;
-            }
+            if (p.z > 1.15) p.z -= 1.15;
         });
 
-        // 수학의 문이 가까이에 없을 때만 일반 장애물 스폰
         if (!mathGateActive) {
-            this.spawnTimer -= dt * gameSpeed;
+            this.spawnTimer -= dt * gameSpeed * stageSpeedMult;
             if (this.spawnTimer <= 0) {
-                this.spawnObstaclePattern();
-                this.spawnTimer = 1.65 + Math.random() * 0.85;
+                this.spawnObstaclePattern(callbacks);
+                const baseInterval = this.stage === 5 ? 1.25 : 1.55;
+                this.spawnTimer = baseInterval + Math.random() * 0.65;
             }
         }
 
-        // 코인 줄 스폰
         this.coinSpawnTimer -= dt * gameSpeed;
         if (this.coinSpawnTimer <= 0 && !mathGateActive) {
             this.spawnCoinLine();
-            this.coinSpawnTimer = 1.8 + Math.random() * 0.9;
+            this.coinSpawnTimer = 1.6 + Math.random() * 0.8;
         }
 
-        // 아이템 업데이트 및 획득 체크
+        // 아이템 업데이트 및 충돌
         for (let i = this.items.length - 1; i >= 0; i--) {
             const item = this.items[i];
             item.z += dz;
 
-            // 플레이어 위치 (z: 0.83 ~ 0.96) 도달 시 충돌 판정
-            if (!item.collected && item.z > 0.82 && item.z < 0.97) {
+            if (!item.collected && item.z > 0.81 && item.z < 0.97) {
                 if (Math.abs(hero.laneX - item.lane) < 0.48) {
                     item.collected = true;
-                    if (item.type === 'coin') {
-                        callbacks.onCoin(item);
-                    } else if (item.type === 'banana') {
-                        callbacks.onBananaBundle(item);
-                    } else if (item.type === 'shield') {
-                        callbacks.onShield(item);
-                    }
+                    if (item.type === 'coin') callbacks.onCoin(item);
+                    else if (item.type === 'banana') callbacks.onBananaBundle(item);
+                    else if (item.type === 'shield') callbacks.onShield(item);
                 }
             }
-
-            if (item.z > 1.18 || item.collected) {
-                if (item.z > 1.18) this.items.splice(i, 1);
-            }
+            if (item.z > 1.18) this.items.splice(i, 1);
         }
 
-        // 장애물 업데이트 및 충돌 체크
+        // 톰 골드런 스타일 경사로 플랫폼(ramp) 위에 올라가 있는지 판정
+        let onRampNow = false;
+
+        // 장애물 업데이트 및 충돌
         for (let i = this.obstacles.length - 1; i >= 0; i--) {
             const obs = this.obstacles[i];
-            obs.z += dz;
+            // 움직이는 돌(rolling_stone)은 나를 향해 더 빠르게 굴러옴!
+            const extraSpeed = obs.type === 'rolling_stone' ? dz * 0.42 : 0;
+            obs.z += dz + extraSpeed;
+            if (obs.type === 'rolling_stone') {
+                obs.rot = (obs.rot || 0) + dt * 10;
+            }
 
-            if (!obs.hit && !obs.passed && obs.z > 0.84 && obs.z < 0.95) {
+            // 경사로 플랫폼(ramp)은 부딪히는 장애물이 아니라 위로 올라타서 달리는 플랫폼!
+            if (obs.type === 'ramp') {
+                if (obs.z > 0.72 && obs.z < 1.02 && Math.abs(hero.laneX - obs.lane) < 0.46) {
+                    onRampNow = true;
+                    if (!obs.passed) {
+                        obs.passed = true;
+                        callbacks.onRampClimb(obs);
+                    }
+                }
+            } else if (!obs.hit && !obs.passed && obs.z > 0.83 && obs.z < 0.95) {
                 if (Math.abs(hero.laneX - obs.lane) < 0.44) {
-                    // 장애물 종류별 회피 조건 검사
                     let avoided = false;
-                    if (obs.type === 'log' && hero.y > 55) {
-                        avoided = true; // 점프로 통나무 회피 성공!
+                    const totalHeroHeight = hero.y + hero.platformY;
+                    if ((obs.type === 'log' || obs.type === 'rolling_stone') && totalHeroHeight > 52) {
+                        avoided = true;
                     } else if (obs.type === 'arch' && hero.isSliding) {
-                        avoided = true; // 슬라이딩으로 높은 아치 회피 성공!
+                        avoided = true;
                     }
 
                     if (!avoided) {
@@ -146,12 +148,11 @@ class TrackManager {
                 }
             }
 
-            if (obs.z > 1.18) {
-                this.obstacles.splice(i, 1);
-            }
+            if (obs.z > 1.18) this.obstacles.splice(i, 1);
         }
 
-        // 파티클 업데이트
+        hero.targetPlatformY = onRampNow ? 88 : 0;
+
         for (let i = this.particles.length - 1; i >= 0; i--) {
             const pt = this.particles[i];
             pt.x += pt.vx * dt;
@@ -161,7 +162,6 @@ class TrackManager {
             if (pt.alpha <= 0) this.particles.splice(i, 1);
         }
 
-        // 팝업 텍스트 업데이트
         for (let i = this.popups.length - 1; i >= 0; i--) {
             const pp = this.popups[i];
             pp.y -= dt * 70;
@@ -170,31 +170,38 @@ class TrackManager {
         }
     }
 
-    spawnObstaclePattern() {
+    spawnObstaclePattern(callbacks) {
         const lanes = [-1, 0, 1];
-        const types = ['log', 'arch', 'pillar'];
+        // 톰 골드런 경사로(ramp)와 굴러오는 바위(rolling_stone)를 포함한 5종 패턴!
+        const types = ['ramp', 'rolling_stone', 'log', 'arch', 'pillar'];
         const chosenLane = lanes[Math.floor(Math.random() * 3)];
-        const chosenType = types[Math.floor(Math.random() * 3)];
+        const chosenType = types[Math.floor(Math.random() * types.length)];
 
         this.obstacles.push({
             lane: chosenLane,
             z: 0.04,
             type: chosenType,
+            rot: 0,
             hit: false,
             passed: false
         });
 
-        // 35% 확률로 다른 레인에 보조 장애물 하나 더 배치 (최소 1개 레인은 항상 열려 있음)
-        if (Math.random() < 0.35) {
-            const otherLanes = lanes.filter(l => l !== chosenLane);
-            const secondLane = otherLanes[Math.floor(Math.random() * otherLanes.length)];
-            this.obstacles.push({
-                lane: secondLane,
-                z: 0.04,
-                type: 'log',
-                hit: false,
-                passed: false
-            });
+        // 굴러오는 돌이 생성될 때 돌 구르는 소리 재생!
+        if (chosenType === 'rolling_stone' && callbacks && callbacks.onRollingStoneSpawn) {
+            callbacks.onRollingStoneSpawn();
+        }
+
+        // 경사로(ramp) 위에는 보너스 코인 3개와 특별 방패 아이템을 올려두어 올라가는 재미 극대화!
+        if (chosenType === 'ramp') {
+            for (let k = 0; k < 3; k++) {
+                this.items.push({
+                    lane: chosenLane,
+                    z: 0.04 - k * 0.04,
+                    type: k === 2 ? 'shield' : 'coin',
+                    onRamp: true,
+                    collected: false
+                });
+            }
         }
     }
 
@@ -202,84 +209,82 @@ class TrackManager {
         const lane = [-1, 0, 1][Math.floor(Math.random() * 3)];
         const count = 4;
         for (let i = 0; i < count; i++) {
+            let itemType = 'coin';
+            if (i === count - 1) {
+                const r = Math.random();
+                // 방패 아이템 스폰 확률을 높여 플레이어가 무적 방패를 자주 즐길 수 있게 함!
+                if (r < 0.38) itemType = 'shield';
+                else if (r < 0.62) itemType = 'banana';
+            }
             this.items.push({
                 lane,
                 z: 0.02 - i * 0.065,
-                type: (i === count - 1 && Math.random() < 0.25)
-                    ? (Math.random() < 0.65 ? 'banana' : 'shield')
-                    : 'coin',
+                type: itemType,
+                onRamp: false,
                 collected: false
             });
         }
     }
 
-    // 배경 및 트랙 바닥 렌더링
+    // =========================================================================
+    // 1단계~5단계 테마 배경 + 동물 디테일 렌더링
+    // =========================================================================
     renderBackgroundAndRoad(ctx, width, height, time) {
         const horizonY = height * 0.42;
-        const groundY = height * 0.84;
         const centerX = width * 0.5;
         const topRoadW = 130;
         const botRoadW = Math.min(width * 0.86, 860);
 
-        // 1. 스누피 코믹스 빈티지 수채화 하늘
+        // 스테이지별 팔레트 설정
+        const themes = {
+            1: { // 1단계: 숲속 (Forest)
+                skyTop: '#a8dadc', skyMid: '#d8f3dc', skyBot: '#95d5b2',
+                ground: '#74c69d', roadTop: '#e6d2ab', roadBot: '#c9ada7',
+                tileA: '#ddb892', tileB: '#b08968'
+            },
+            2: { // 2단계: 사막 (Desert)
+                skyTop: '#ff9f1c', skyMid: '#ffbf69', skyBot: '#f4a261',
+                ground: '#e9c46a', roadTop: '#f4e285', roadBot: '#dda15e',
+                tileA: '#e9c46a', tileB: '#d4a373'
+            },
+            3: { // 3단계: 해저 (Undersea)
+                skyTop: '#03045e', skyMid: '#0077b6', skyBot: '#00b4d8',
+                ground: '#48cae4', roadTop: '#90e0ef', roadBot: '#0096c7',
+                tileA: '#ade8f4', tileB: '#48cae4'
+            },
+            4: { // 4단계: 도시 (타임스퀘어 밤 느낌)
+                skyTop: '#0b090a', skyMid: '#161a1d', skyBot: '#2b2d42',
+                ground: '#2b2d42', roadTop: '#495057', roadBot: '#212529',
+                tileA: '#343a40', tileB: '#495057'
+            },
+            5: { // 5단계: 글리치 보이드 (Glitch Void)
+                skyTop: '#05000a', skyMid: '#1a002c', skyBot: '#240046',
+                ground: '#10002b', roadTop: '#3c096c', roadBot: '#10002b',
+                tileA: '#240046', tileB: '#5a189a'
+            },
+            6: { // 클리어 엔딩: 학교 도착 (School)
+                skyTop: '#90e0ef', skyMid: '#caf0f8', skyBot: '#fffcf2',
+                ground: '#95d5b2', roadTop: '#e6d2ab', roadBot: '#d5b887',
+                tileA: '#e3c99b', tileB: '#d6b886'
+            }
+        };
+
+        const th = themes[this.stage] || themes[1];
+
+        // 1. 하늘 그라데이션
         const skyGrad = ctx.createLinearGradient(0, 0, 0, height);
-        skyGrad.addColorStop(0.0, '#cfe3dc');
-        skyGrad.addColorStop(0.42, '#f2ead3');
-        skyGrad.addColorStop(1.0, '#e3cca3');
+        skyGrad.addColorStop(0.0, th.skyTop);
+        skyGrad.addColorStop(0.45, th.skyMid);
+        skyGrad.addColorStop(1.0, th.skyBot);
         ctx.fillStyle = skyGrad;
         ctx.fillRect(0, 0, width, height);
 
-        // 2. 원경 구름, 폭포 절벽, 야자수
-        ctx.save();
-        ctx.strokeStyle = '#1a1612';
-        ctx.lineWidth = 2.6;
-        ctx.lineJoin = 'round';
+        // 2. 스테이지별 원경 특수 배경 렌더링
+        this.renderStageSkyDetails(ctx, width, height, horizonY, centerX, time);
 
-        // 뭉게구름
-        ctx.fillStyle = '#faf6e8';
-        ctx.beginPath();
-        ctx.arc(centerX - 250, horizonY - 48, 55, Math.PI * 0.8, Math.PI * 1.95);
-        ctx.arc(centerX - 185, horizonY - 68, 65, Math.PI * 1.0, Math.PI * 2.1);
-        ctx.arc(centerX + 215, horizonY - 55, 60, Math.PI * 0.9, Math.PI * 2.05);
-        ctx.fill();
-        ctx.stroke();
-
-        // 우측 원경 폭포 절벽
-        ctx.fillStyle = '#dfcba6';
-        ctx.beginPath();
-        ctx.moveTo(centerX + 120, horizonY + 15);
-        ctx.lineTo(centerX + 150, horizonY - 125);
-        ctx.lineTo(centerX + 350, horizonY - 155);
-        ctx.lineTo(centerX + 390, horizonY + 15);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        // 절벽 폭포 물줄기
-        ctx.fillStyle = '#cbe2e0';
-        ctx.beginPath();
-        ctx.moveTo(centerX + 205, horizonY - 130);
-        ctx.lineTo(centerX + 245, horizonY - 135);
-        ctx.lineTo(centerX + 255, horizonY + 10);
-        ctx.lineTo(centerX + 195, horizonY + 10);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        ctx.lineWidth = 1.8;
-        for (let i = 0; i < 3; i++) {
-            const wx = centerX + 212 + i * 14;
-            const wyOff = (this.scrollDist * 260) % 32;
-            ctx.beginPath();
-            ctx.moveTo(wx, horizonY - 115 + wyOff);
-            ctx.lineTo(wx - 2, horizonY - 45 + wyOff);
-            ctx.stroke();
-        }
-        ctx.restore();
-
-        // 3. 지평선 잔디 언덕
-        ctx.fillStyle = '#d7c296';
-        ctx.strokeStyle = '#1a1612';
+        // 3. 지평선 지면
+        ctx.fillStyle = th.ground;
+        ctx.strokeStyle = this.stage === 5 ? '#00f5d4' : '#1a1612';
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.moveTo(0, horizonY);
@@ -290,10 +295,10 @@ class TrackManager {
         ctx.fill();
         ctx.stroke();
 
-        // 4. 원근 3레인 돌길 트랙 (Cobblestone Road)
+        // 4. 원근 3레인 도로
         const roadGrad = ctx.createLinearGradient(0, horizonY, 0, height);
-        roadGrad.addColorStop(0, '#e6d2ab');
-        roadGrad.addColorStop(1, '#d3b582');
+        roadGrad.addColorStop(0, th.roadTop);
+        roadGrad.addColorStop(1, th.roadBot);
         ctx.fillStyle = roadGrad;
         ctx.beginPath();
         ctx.moveTo(centerX - topRoadW * 0.5, horizonY);
@@ -304,7 +309,7 @@ class TrackManager {
         ctx.fill();
         ctx.stroke();
 
-        // 돌바닥 타일 스크롤
+        // 타일 스크롤
         const numRows = 9;
         for (let i = 0; i < numRows; i++) {
             const prog = ((i + (this.scrollDist * 2.5) % 1) / numRows);
@@ -323,8 +328,8 @@ class TrackManager {
                 const x2R = centerX + (col + 0.44) * (w2 / 3);
                 const x2L = centerX + (col - 0.44) * (w2 / 3);
 
-                ctx.fillStyle = (i + col) % 2 === 0 ? '#e3c99b' : '#d6b886';
-                ctx.strokeStyle = '#1a1612';
+                ctx.fillStyle = (i + col) % 2 === 0 ? th.tileA : th.tileB;
+                ctx.strokeStyle = this.stage === 5 ? '#ff007f' : '#1a1612';
                 ctx.lineWidth = 1.4 + z1 * 2.4;
 
                 ctx.beginPath();
@@ -338,95 +343,280 @@ class TrackManager {
             }
         }
 
-        // 5. 양옆 고대 사원 기둥, 횃불, 야자수 원근 렌더링
-        const sortedProps = [...this.sideProps].sort((a, b) => a.z - b.z);
-        sortedProps.forEach(prop => {
-            const pL = this.project(prop.z, -1.65, width, height);
-            const pR = this.project(prop.z, 1.65, width, height);
-            if (prop.type === 'temple') {
-                this.drawSideTemple(ctx, pL.x - 45 * pL.scale, pL.y, pL.scale, -1, time);
-                this.drawSideTemple(ctx, pR.x + 45 * pR.scale, pR.y, pR.scale, 1, time);
-            } else {
-                this.drawSidePalm(ctx, pL.x - 30 * pL.scale, pL.y, pL.scale, -1);
-                this.drawSidePalm(ctx, pR.x + 30 * pR.scale, pR.y, pR.scale, 1);
-            }
-        });
+        // 5. 양옆 스테이지별 동물 & 배경 오브젝트 렌더링
+        if (this.stage === 6) {
+            this.drawSchoolEndingBuilding(ctx, centerX, horizonY + 45);
+        } else {
+            const sortedProps = [...this.sideProps].sort((a, b) => a.z - b.z);
+            sortedProps.forEach(prop => {
+                const pL = this.project(prop.z, -1.72, width, height);
+                const pR = this.project(prop.z, 1.72, width, height);
+                this.drawStageSideProp(ctx, pL.x - 45 * pL.scale, pL.y, pL.scale, -1, prop.variant, time);
+                this.drawStageSideProp(ctx, pR.x + 45 * pR.scale, pR.y, pR.scale, 1, (prop.variant + 1) % 4, time);
+            });
+        }
+
+        // 5단계 글리치 보이드 화면 지지직 이펙트
+        if (this.stage === 5) {
+            this.renderGlitchOverlay(ctx, width, height, time);
+        }
     }
 
-    drawSideTemple(ctx, x, y, scale, side, time) {
+    // 스테이지별 하늘/원경 디테일
+    renderStageSkyDetails(ctx, width, height, horizonY, centerX, time) {
+        ctx.save();
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 2.5;
+
+        if (this.stage === 1) {
+            // 1단계 숲: 뭉게구름과 원경 숲 산맥, 날아다니는 새들
+            ctx.fillStyle = '#52b788';
+            ctx.beginPath();
+            ctx.arc(centerX - 260, horizonY, 160, Math.PI, 0);
+            ctx.arc(centerX + 260, horizonY, 180, Math.PI, 0);
+            ctx.fill();
+            ctx.stroke();
+        } else if (this.stage === 2) {
+            // 2단계 사막: 이글거리는 태양과 거대 피라미드 2개!
+            ctx.fillStyle = '#fff3b0';
+            ctx.beginPath();
+            ctx.arc(centerX + 220, horizonY - 110, 48, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#e09f3e';
+            [[-220, 140], [180, 120]].forEach(([px, ph]) => {
+                ctx.beginPath();
+                ctx.moveTo(centerX + px - ph, horizonY);
+                ctx.lineTo(centerX + px, horizonY - ph);
+                ctx.lineTo(centerX + px + ph, horizonY);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            });
+        } else if (this.stage === 3) {
+            // 3단계 해저: 바닷속 물방울들과 하늘(수면 위)을 유유히 헤엄치는 거대한 고래와 상어, 물고기 떼!
+            // 거대 고래 🐋
+            const whaleX = centerX - 180 + Math.sin(time * 0.8) * 60;
+            const whaleY = horizonY - 105;
+            ctx.fillStyle = '#023e8a';
+            ctx.beginPath();
+            ctx.ellipse(whaleX, whaleY, 95, 38, 0.05, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = '#caf0f8';
+            ctx.font = 'bold 54px sans-serif';
+            ctx.fillText('🐋', whaleX - 30, whaleY + 15);
+            ctx.fillText('🦈', centerX + 180 + Math.cos(time * 1.3) * 50, horizonY - 85);
+            ctx.font = 'bold 34px sans-serif';
+            ctx.fillText('🐠 🐟 🐡', centerX + Math.sin(time * 2) * 80, horizonY - 130);
+        } else if (this.stage === 4) {
+            // 4단계 도시 (타임스퀘어 밤): 마천루 스카이라인 & 화려한 네온 전광판 빌딩들!
+            const buildings = [
+                { x: -360, w: 95, h: 210, neon: '#ff007f', text: 'SMILE' },
+                { x: -250, w: 85, h: 175, neon: '#00f5d4', text: 'NYC' },
+                { x: -150, w: 75, h: 230, neon: '#ffbe0b', text: '24H' },
+                { x: 140,  w: 85, h: 220, neon: '#8338ec', text: 'GAMES' },
+                { x: 240,  w: 95, h: 185, neon: '#3a86ff', text: 'STAR' },
+                { x: 350,  w: 90, h: 215, neon: '#fb5607', text: 'TAXI' }
+            ];
+            buildings.forEach(b => {
+                ctx.fillStyle = '#1d1e2c';
+                ctx.strokeStyle = '#000';
+                ctx.fillRect(centerX + b.x, horizonY - b.h, b.w, b.h);
+                ctx.strokeRect(centerX + b.x, horizonY - b.h, b.w, b.h);
+
+                // 타임스퀘어 대형 네온 전광판
+                ctx.fillStyle = b.neon;
+                ctx.fillRect(centerX + b.x + 10, horizonY - b.h + 25, b.w - 20, 42);
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 18px "Comic Neue", sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(b.text, centerX + b.x + b.w * 0.5, horizonY - b.h + 52);
+            });
+        } else if (this.stage === 5) {
+            // 5단계 글리치 보이드: 공간 균열 번개 & 붉은 보이드 코어
+            ctx.strokeStyle = '#00f5d4';
+            ctx.lineWidth = 3;
+            for (let i = 0; i < 4; i++) {
+                ctx.beginPath();
+                const gx = Math.random() * width;
+                const gy = Math.random() * horizonY;
+                ctx.moveTo(gx, gy);
+                ctx.lineTo(gx + (Math.random() - 0.5) * 120, gy + 40);
+                ctx.stroke();
+            }
+        }
+        ctx.restore();
+    }
+
+    // 양옆 스테이지별 동물 & 오브젝트 디테일
+    drawStageSideProp(ctx, x, y, scale, side, variant, time) {
         ctx.save();
         ctx.translate(x, y);
         ctx.scale(scale, scale);
-
-        ctx.fillStyle = '#dcc59a';
         ctx.strokeStyle = '#1a1612';
         ctx.lineWidth = 3.5;
         ctx.lineJoin = 'round';
+        ctx.textAlign = 'center';
 
-        // 사원 석조 기둥
-        ctx.fillRect(-55, -240, 110, 240);
-        ctx.strokeRect(-55, -240, 110, 240);
+        const bob = Math.sin(time * 5 + variant) * 6;
 
-        // 상단 장식 석재
-        ctx.fillStyle = '#cbb183';
-        ctx.fillRect(-68, -265, 136, 30);
-        ctx.strokeRect(-68, -265, 136, 30);
+        if (this.stage === 1) {
+            // 🌲 1단계 숲: 울창한 나무 + 귀여운 숲속 동물들(다람쥐, 토끼, 사슴, 여우)
+            ctx.fillStyle = '#7f4f24';
+            ctx.fillRect(-16, -150, 32, 150);
+            ctx.strokeRect(-16, -150, 32, 150);
 
-        // 횃불 & 불꽃
-        const tx = -side * 45;
-        ctx.fillStyle = '#8d5b3c';
-        ctx.fillRect(tx - 7, -130, 14, 65);
-        ctx.strokeRect(tx - 7, -130, 14, 65);
-
-        const flicker = Math.sin(time * 12 + x) * 5;
-        ctx.fillStyle = '#fff0a8';
-        ctx.beginPath();
-        ctx.moveTo(tx - 16, -132);
-        ctx.quadraticCurveTo(tx - 24, -165, tx + flicker, -192);
-        ctx.quadraticCurveTo(tx + 24, -165, tx + 16, -132);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        ctx.restore();
-    }
-
-    drawSidePalm(ctx, x, y, scale, side) {
-        ctx.save();
-        ctx.translate(x, y);
-        ctx.scale(scale, scale);
-        ctx.strokeStyle = '#1a1612';
-        ctx.lineWidth = 3.2;
-
-        // 줄기
-        ctx.fillStyle = '#b89466';
-        ctx.beginPath();
-        ctx.moveTo(-14, 0);
-        ctx.quadraticCurveTo(-side * 20, -100, -side * 45, -210);
-        ctx.lineTo(-side * 45 + 18, -210);
-        ctx.quadraticCurveTo(-side * 20 + 18, -100, 14, 0);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        // 야자수 잎
-        ctx.translate(-side * 36, -210);
-        ctx.fillStyle = '#92b678';
-        [-2.1, -1.1, -0.2, 0.6, 1.5, 2.3].forEach(ang => {
-            ctx.save();
-            ctx.rotate(ang);
+            ctx.fillStyle = '#40916c';
             ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.quadraticCurveTo(42, -20, 84, 10);
-            ctx.quadraticCurveTo(42, 6, 0, 0);
+            ctx.arc(0, -175, 68, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
-            ctx.restore();
-        });
+
+            // 나무 옆에서 응원하는 숲속 동물 디테일!
+            const animals = ['🐿️', '🐇', '🦌', '🦊'];
+            const animalNames = ['다람쥐', '산토끼', '꽃사슴', '여우'];
+            ctx.font = 'bold 58px sans-serif';
+            ctx.fillText(animals[variant % 4], -side * 55, -25 + bob);
+            ctx.fillStyle = '#fffcf5';
+            ctx.font = 'bold 18px "Gaegu", sans-serif';
+            ctx.fillText(animalNames[variant % 4], -side * 55, 8);
+
+        } else if (this.stage === 2) {
+            // 🌵 2단계 사막: 선인장 + 전갈, 사막여우, 낙타 디테일!
+            ctx.fillStyle = '#588157';
+            ctx.beginPath();
+            ctx.roundRect(-16, -145, 32, 145, 14);
+            ctx.roundRect(-48, -110, 32, 22, 10);
+            ctx.roundRect(-48, -140, 20, 45, 10);
+            ctx.roundRect(16, -95, 32, 22, 10);
+            ctx.roundRect(28, -130, 20, 50, 10);
+            ctx.fill();
+            ctx.stroke();
+
+            // 사막 동물 디테일 (전갈, 사막여우, 쌍봉낙타)
+            const desertAnimals = ['🦂', '🦊', '🐪', '🐫'];
+            const desertLabels = ['사막전갈', '사막여우', '단봉낙타', '쌍봉낙타'];
+            ctx.font = 'bold 62px sans-serif';
+            ctx.fillText(desertAnimals[variant % 4], -side * 65, -24 + bob);
+            ctx.fillStyle = '#fff3b0';
+            ctx.font = 'bold 18px "Gaegu", sans-serif';
+            ctx.fillText(desertLabels[variant % 4], -side * 65, 10);
+
+        } else if (this.stage === 3) {
+            // Coral & 🦈 3단계 해저: 산호초 + 상어, 열대어 물고기, 고래, 문어 디테일!
+            ctx.fillStyle = '#ff6b6b';
+            ctx.beginPath();
+            ctx.roundRect(-18, -125, 36, 125, 16);
+            ctx.fill();
+            ctx.stroke();
+
+            const seaCreatures = ['🦈', '🐠', '🐋', '🐙'];
+            const seaLabels = ['백상아리', '열대어', '대왕고래', '바다문어'];
+            ctx.font = 'bold 64px sans-serif';
+            ctx.fillText(seaCreatures[variant % 4], -side * 65, -55 + bob * 1.8);
+            ctx.fillStyle = '#caf0f8';
+            ctx.font = 'bold 18px "Gaegu", sans-serif';
+            ctx.fillText(seaLabels[variant % 4], -side * 65, -12);
+
+        } else if (this.stage === 4) {
+            // 🌆 4단계 도시 (타임스퀘어 밤): 네온 전광판 타워 & 노란 택시 & 가로등!
+            ctx.fillStyle = '#2b2d42';
+            ctx.fillRect(-45, -210, 90, 210);
+            ctx.strokeRect(-45, -210, 90, 210);
+
+            // 네온 전광판
+            ctx.fillStyle = variant % 2 === 0 ? '#ff007f' : '#00f5d4';
+            ctx.fillRect(-36, -185, 72, 55);
+            ctx.strokeRect(-36, -185, 72, 55);
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 20px "Comic Neue", sans-serif';
+            ctx.fillText('TIMES SQ', 0, -152);
+
+            // 타임스퀘어 노란 택시 🚕
+            ctx.font = 'bold 54px sans-serif';
+            ctx.fillText('🚕', -side * 65, -18);
+
+        } else if (this.stage === 5) {
+            // ⚡ 5단계 글리치 보이드: 깨진 디지털 기둥 & 에러 큐브
+            const glitchShift = (Math.random() - 0.5) * 18;
+            ctx.fillStyle = variant % 2 === 0 ? '#ff007f' : '#00f5d4';
+            ctx.fillRect(-30 + glitchShift, -190, 60, 190);
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 24px monospace';
+            ctx.fillText('ERR_404', glitchShift, -110);
+        }
+
         ctx.restore();
     }
 
-    // 트랙 위 장애물 & 아이템 렌더링 (Z-order 정렬)
+    // 5단계 글리치 보이드 화면 노이즈 오버레이
+    renderGlitchOverlay(ctx, width, height, time) {
+        ctx.save();
+        for (let i = 0; i < 6; i++) {
+            if (Math.random() < 0.45) {
+                const gy = Math.random() * height;
+                const gh = 4 + Math.random() * 18;
+                ctx.fillStyle = i % 2 === 0 ? 'rgba(0, 245, 212, 0.18)' : 'rgba(255, 0, 127, 0.18)';
+                ctx.fillRect(0, gy, width, gh);
+            }
+        }
+        ctx.restore();
+    }
+
+    // 🏫 5단계 클리어 시 나타나는 정겨운 학교(초등학교) 건물!
+    drawSchoolEndingBuilding(ctx, cx, cy) {
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 4;
+        ctx.lineJoin = 'round';
+
+        // 학교 본관 건물
+        ctx.fillStyle = '#f8edeb';
+        ctx.fillRect(-260, -180, 520, 200);
+        ctx.strokeRect(-260, -180, 520, 200);
+
+        // 빨간 벽돌 지붕 & 중앙 시계탑 박공
+        ctx.fillStyle = '#d64531';
+        ctx.beginPath();
+        ctx.moveTo(-280, -180);
+        ctx.lineTo(0, -255);
+        ctx.lineTo(280, -180);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // 학교 시계탑 & 간판
+        ctx.fillStyle = '#fffcf5';
+        ctx.beginPath();
+        ctx.arc(0, -210, 26, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#1a1612';
+        ctx.font = 'bold 26px "Gaegu", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('🏫 스마일 초등학교 (6학년 교실)', 0, -142);
+
+        // 창문들
+        ctx.fillStyle = '#90e0ef';
+        [-190, -120, 120, 190].forEach(wx => {
+            ctx.fillRect(wx - 24, -110, 48, 52);
+            ctx.strokeRect(wx - 24, -110, 48, 52);
+        });
+
+        // 학교 정문 아치
+        ctx.fillStyle = '#8d5b3c';
+        ctx.beginPath();
+        ctx.roundRect(-48, -85, 96, 105, [24, 24, 0, 0]);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.restore();
+    }
+
+    // 트랙 위 장애물 & 아이템 렌더링
     renderEntities(ctx, width, height, time, zMin = 0, zMax = 1.2) {
         const renderList = [];
 
@@ -455,63 +645,60 @@ class TrackManager {
     }
 
     drawItem(ctx, item, p, time) {
-        const bounce = Math.abs(Math.sin(time * 6 + item.z * 12)) * 20 * p.scale;
+        const bounce = Math.abs(Math.sin(time * 6 + item.z * 12)) * 18 * p.scale;
+        const rampOffset = item.onRamp ? 78 * p.scale : 0;
         ctx.save();
-        ctx.translate(p.x, p.y - 28 * p.scale - bounce);
+        ctx.translate(p.x, p.y - 26 * p.scale - bounce - rampOffset);
         ctx.scale(p.scale, p.scale);
         ctx.strokeStyle = '#1a1612';
         ctx.lineWidth = 3.8;
 
         if (item.type === 'coin') {
-            // 황금 별 코인
             ctx.fillStyle = '#d4a62a';
             ctx.beginPath();
-            ctx.ellipse(7, 0, 26, 36, 0.08, 0, Math.PI * 2);
+            ctx.ellipse(6, 0, 24, 34, 0.08, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
 
             ctx.fillStyle = '#f6d54a';
             ctx.beginPath();
-            ctx.ellipse(0, 0, 26, 36, 0.08, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
-
-            // 가운데 별 각인 ★
-            ctx.fillStyle = '#fff5b8';
-            ctx.lineWidth = 2.2;
-            ctx.beginPath();
-            for (let i = 0; i < 5; i++) {
-                const oa = (i * 72 - 90) * Math.PI / 180;
-                const ia = ((i * 72 + 36) - 90) * Math.PI / 180;
-                if (i === 0) ctx.moveTo(Math.cos(oa) * 14, Math.sin(oa) * 16);
-                else ctx.lineTo(Math.cos(oa) * 14, Math.sin(oa) * 16);
-                ctx.lineTo(Math.cos(ia) * 6, Math.sin(ia) * 7);
-            }
-            ctx.closePath();
+            ctx.ellipse(0, 0, 24, 34, 0.08, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
         } else if (item.type === 'banana') {
-            // 황금 미니 바나나 부스트 아이템
             ctx.fillStyle = '#ffea79';
             ctx.beginPath();
-            ctx.arc(0, 0, 38, 0, Math.PI * 2);
+            ctx.arc(0, 0, 36, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
-            ctx.font = 'bold 38px sans-serif';
+            ctx.font = 'bold 36px sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText('🍌', 0, 2);
         } else if (item.type === 'shield') {
-            // 바나나 보호막 실드 아이템
-            ctx.fillStyle = '#90e0ef';
+            // 🛡️ 특별 아이템: 기물에 무적이 되는 황금빛 방패 아이템!
+            const glow = ctx.createRadialGradient(0, 0, 10, 0, 0, 56);
+            glow.addColorStop(0, 'rgba(0, 245, 212, 0.85)');
+            glow.addColorStop(1, 'rgba(0, 245, 212, 0)');
+            ctx.fillStyle = glow;
+            ctx.beginPath();
+            ctx.arc(0, 0, 56, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#00b4d8';
             ctx.beginPath();
             ctx.arc(0, 0, 38, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
-            ctx.font = 'bold 34px sans-serif';
+            ctx.font = 'bold 36px sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText('🛡️', 0, 2);
+
+            ctx.fillStyle = '#fffcf5';
+            ctx.font = 'bold 16px "Gaegu", sans-serif';
+            ctx.strokeText('무적 방패!', 0, -46);
+            ctx.fillText('무적 방패!', 0, -46);
         }
 
         ctx.restore();
@@ -522,92 +709,123 @@ class TrackManager {
         ctx.translate(p.x, p.y);
         ctx.scale(p.scale, p.scale);
         ctx.strokeStyle = '#1a1612';
-        ctx.lineWidth = 4.2;
+        ctx.lineWidth = 4.0;
         ctx.lineJoin = 'round';
 
-        if (obs.type === 'log') {
-            // 1) 낮은 통나무 바리케이드 (JUMP 표시 안내 포함!)
-            ctx.fillStyle = 'rgba(26, 22, 18, 0.25)';
+        if (obs.type === 'ramp') {
+            // 🪜 1) 톰 골드런 스타일 위로 올라가 달릴 수 있는 경사로 플랫폼!
+            ctx.fillStyle = '#4ea8de';
             ctx.beginPath();
-            ctx.ellipse(0, 6, 88, 18, 0, 0, Math.PI * 2);
-            ctx.fill();
-
-            // 통나무 몸통
-            ctx.fillStyle = '#8d5b3c';
-            ctx.beginPath();
-            ctx.roundRect(-78, -56, 156, 56, 24);
+            ctx.moveTo(-72, 0);
+            ctx.lineTo(-56, -92);
+            ctx.lineTo(56, -92);
+            ctx.lineTo(72, 0);
+            ctx.closePath();
             ctx.fill();
             ctx.stroke();
 
-            // 통나무 나이테 단면
-            ctx.fillStyle = '#dfc396';
-            ctx.beginPath();
-            ctx.ellipse(68, -28, 16, 26, 0, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
-
-            // 나무 껍질 펜선 & JUMP 뱃지
+            // 경사로 화살표 스트라이프
             ctx.fillStyle = '#ffd166';
             ctx.beginPath();
-            ctx.roundRect(-42, -88, 84, 28, 10);
+            ctx.moveTo(0, -78);
+            ctx.lineTo(-34, -22);
+            ctx.lineTo(34, -22);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#fffcf5';
+            ctx.font = 'bold 20px "Gaegu", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.strokeText('⏫ 위로 올라가!', 0, -105);
+            ctx.fillText('⏫ 위로 올라가!', 0, -105);
+
+        } else if (obs.type === 'rolling_stone') {
+            // 🪨 2) 나를 향해 데구르르 굴러오는 움직이는 거대 바위!
+            ctx.fillStyle = 'rgba(26, 22, 18, 0.3)';
+            ctx.beginPath();
+            ctx.ellipse(0, 6, 65, 18, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.save();
+            ctx.translate(0, -56);
+            ctx.rotate(obs.rot || time * 8);
+
+            ctx.fillStyle = '#7f7f7f';
+            ctx.beginPath();
+            ctx.arc(0, 0, 56, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // 바위 균열 디테일
+            ctx.beginPath();
+            ctx.moveTo(-25, -20);
+            ctx.lineTo(0, 5);
+            ctx.lineTo(28, -12);
+            ctx.stroke();
+            ctx.restore();
+
+            ctx.fillStyle = '#ffbe0b';
+            ctx.font = 'bold 19px "Gaegu", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.strokeText('🪨 굴러오는 돌!', 0, -122);
+            ctx.fillText('🪨 굴러오는 돌!', 0, -122);
+
+        } else if (obs.type === 'log') {
+            ctx.fillStyle = '#8d5b3c';
+            ctx.beginPath();
+            ctx.roundRect(-74, -52, 148, 52, 22);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#ffd166';
+            ctx.beginPath();
+            ctx.roundRect(-42, -84, 84, 26, 10);
             ctx.fill();
             ctx.stroke();
             ctx.fillStyle = '#1a1612';
             ctx.font = 'bold 17px "Gaegu", sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText('▲ 점프!', 0, -68);
+            ctx.fillText('▲ 점프!', 0, -66);
 
         } else if (obs.type === 'arch') {
-            // 2) 높은 사원 덩굴 현수막 아치 (SLIDE 표시 안내 포함!)
-            // 양쪽 기둥
             ctx.fillStyle = '#cbb183';
-            ctx.fillRect(-86, -240, 26, 240);
-            ctx.strokeRect(-86, -240, 26, 240);
-            ctx.fillRect(60, -240, 26, 240);
-            ctx.strokeRect(60, -240, 26, 240);
+            ctx.fillRect(-82, -230, 24, 230);
+            ctx.strokeRect(-82, -230, 24, 230);
+            ctx.fillRect(58, -230, 24, 230);
+            ctx.strokeRect(58, -230, 24, 230);
 
-            // 상단 가로 막대 석재 & 가시 덩굴 (아래쪽 공간은 비어 있어서 슬라이딩으로 통과!)
             ctx.fillStyle = '#d64531';
-            ctx.fillRect(-94, -245, 188, 125);
-            ctx.strokeRect(-94, -245, 188, 125);
+            ctx.fillRect(-90, -235, 180, 120);
+            ctx.strokeRect(-90, -235, 180, 120);
 
-            // 안내 문구
             ctx.fillStyle = '#fffcf5';
-            ctx.font = 'bold 24px "Gaegu", sans-serif';
+            ctx.font = 'bold 22px "Gaegu", sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText('▼ 슬라이딩(↓)', 0, -175);
+            ctx.fillText('▼ 슬라이딩(↓)', 0, -168);
 
         } else if (obs.type === 'pillar') {
-            // 3) 레인 전체를 막는 불타는 사원 화로 기둥 (좌/우 이동으로 회피!)
             ctx.fillStyle = '#9c8970';
             ctx.beginPath();
-            ctx.roundRect(-56, -185, 112, 185, 14);
+            ctx.roundRect(-52, -175, 104, 175, 14);
             ctx.fill();
             ctx.stroke();
 
-            // 화로 불꽃
             const f = Math.sin(time * 14) * 8;
             ctx.fillStyle = '#ff9f1c';
             ctx.beginPath();
-            ctx.moveTo(-42, -185);
-            ctx.quadraticCurveTo(-20, -255, f, -270);
-            ctx.quadraticCurveTo(25, -255, 42, -185);
+            ctx.moveTo(-38, -175);
+            ctx.quadraticCurveTo(-18, -240, f, -255);
+            ctx.quadraticCurveTo(22, -240, 38, -175);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
-
-            ctx.fillStyle = '#fff3b0';
-            ctx.font = 'bold 20px "Gaegu", sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText('◀ 피하세요 ▶', 0, -90);
         }
 
         ctx.restore();
     }
 
-    // 전경 잎사귀, 파티클, 팝업 렌더링
     renderEffects(ctx, width, height) {
-        // 파티클
         this.particles.forEach(pt => {
             ctx.save();
             ctx.globalAlpha = Math.max(0, pt.alpha);
@@ -621,11 +839,10 @@ class TrackManager {
             ctx.restore();
         });
 
-        // 점수/상태 팝업
         this.popups.forEach(pp => {
             ctx.save();
             ctx.globalAlpha = Math.max(0, pp.alpha);
-            ctx.font = 'bold 32px "Gaegu", cursive';
+            ctx.font = 'bold 30px "Gaegu", cursive';
             ctx.textAlign = 'center';
             ctx.strokeStyle = '#fffcf5';
             ctx.lineWidth = 6;

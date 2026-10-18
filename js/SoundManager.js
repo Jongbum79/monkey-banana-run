@@ -1,11 +1,7 @@
 /**
  * Smile Games - 원숭이의 바나나 런
- * Web Audio API 기반 밝고 흥미진진한 어드벤처 BGM 시퀀서 & 효과음 엔진
- * 제작: 최지훈, 박주아, 김이수, 최우영, 전준우
- *
- * 특징:
- * - 외부 오디오 파일 없이도 모든 브라우저에서 즉시 재생되는 경쾌한 정글/피너츠 재즈-어드벤처 BGM!
- * - 멜로디(밝은 실로폰/피아노 톤) + 워킹 베이스(흥미진진한 추격 리듬) + 드럼 퍼커션 3트랙 합주
+ * Web Audio API 기반 BGM & 특수 효과음 엔진
+ * (멋진 특별 아이템 사운드, 굴러오는 돌 소리, 5단계 치지직 글리치 소리, 학교 종소리 포함)
  */
 
 class SoundManager {
@@ -15,21 +11,20 @@ class SoundManager {
         this.bgmPlaying = false;
         this.bgmInterval = null;
         this.step = 0;
+        this.currentStage = 1;
 
-        // 밝고 흥미진진한 C장조-A단조-F장조-G7 어드벤처 멜로디 시퀀스 (32스텝 = 2마디 루프)
         this.melodyNotes = [
-            523.25, 659.25, 783.99, 659.25,  880.00, 0,      783.99, 659.25, // C64: 도 미 솔 미 라 - 솔 미
-            587.33, 659.25, 783.99, 880.00,  783.99, 0,      659.25, 523.25, // 레 미 솔 라 솔 - 미 도
-            698.46, 880.00, 1046.5, 880.00,  783.99, 659.25, 587.33, 523.25, // 파 라 높은도 라 솔 미 레 도
-            587.33, 659.25, 698.46, 783.99,  880.00, 987.77, 1046.5, 0       // 레 미 파 솔 라 시 높은도!
+            523.25, 659.25, 783.99, 659.25,  880.00, 0,      783.99, 659.25,
+            587.33, 659.25, 783.99, 880.00,  783.99, 0,      659.25, 523.25,
+            698.46, 880.00, 1046.5, 880.00,  783.99, 659.25, 587.33, 523.25,
+            587.33, 659.25, 698.46, 783.99,  880.00, 987.77, 1046.5, 0
         ];
 
-        // 흥미진진하게 통통 튀는 워킹 베이스 시퀀스
         this.bassNotes = [
-            130.81, 0, 164.81, 0,  196.00, 0, 164.81, 0, // C3 - E3 - G3 - E3
-            110.00, 0, 130.81, 0,  164.81, 0, 130.81, 0, // A2 - C3 - E3 - C3
-            174.61, 0, 220.00, 0,  261.63, 0, 220.00, 0, // F3 - A3 - C4 - A3
-            196.00, 0, 246.94, 0,  293.66, 0, 246.94, 196.00 // G3 - B3 - D4 - B3 - G3
+            130.81, 0, 164.81, 0,  196.00, 0, 164.81, 0,
+            110.00, 0, 130.81, 0,  164.81, 0, 130.81, 0,
+            174.61, 0, 220.00, 0,  261.63, 0, 220.00, 0,
+            196.00, 0, 246.94, 0,  293.66, 0, 246.94, 196.00
         ];
     }
 
@@ -49,39 +44,38 @@ class SoundManager {
         this.bgmPlaying = true;
         this.step = 0;
 
-        // 140 BPM의 16분음표 간격 (약 110ms)
         this.bgmInterval = setInterval(() => {
             if (this.muted || !this.bgmPlaying || !this.ctx) return;
             if (this.ctx.state === 'suspended') this.ctx.resume();
 
             const s = this.step % 32;
+            const pitchShift = this.currentStage === 5 ? (Math.random() < 0.25 ? 1.06 : 1.0) : 1.0;
 
-            // 1. 밝고 경쾌한 마림바/피아노 멜로디
-            const mFreq = this.melodyNotes[s];
+            const mFreq = this.melodyNotes[s] * pitchShift;
             if (mFreq > 0) {
-                this.playNote(mFreq, 'triangle', 0.14, 0.075);
-                // 옥타브 위 은은한 하모니 추가
+                const wave = this.currentStage === 5 ? 'sawtooth' : 'triangle';
+                this.playNote(mFreq, wave, 0.14, 0.07);
                 this.playNote(mFreq * 2, 'sine', 0.08, 0.025);
             }
 
-            // 2. 흥미진진한 워킹 베이스
             const bFreq = this.bassNotes[s];
             if (bFreq > 0) {
                 this.playNote(bFreq, 'sine', 0.18, 0.09);
-                this.playNote(bFreq * 1.5, 'triangle', 0.12, 0.03);
             }
 
-            // 3. 경쾌한 러닝 드럼 비트 (킥 & 하이햇)
             if (s % 4 === 0) {
-                // 쿵! (Kick)
                 this.playTone(110, 'sine', 0.09, 0.10, 42);
             } else if (s % 2 === 1) {
-                // 칙! (Hi-hat / Shaker 느낌)
                 this.playHiHat(0.035, 0.025);
             }
 
+            // 5단계 글리치 보이드일 때 주기적으로 치지직 노이즈 사운드 발생!
+            if (this.currentStage === 5 && s % 8 === 3) {
+                this.playGlitchStatic(0.12, 0.06);
+            }
+
             this.step++;
-        }, 115);
+        }, 112);
     }
 
     stopBGM() {
@@ -94,9 +88,7 @@ class SoundManager {
 
     toggleMute() {
         this.muted = !this.muted;
-        if (!this.muted && !this.bgmPlaying) {
-            this.startBGM();
-        }
+        if (!this.muted && !this.bgmPlaying) this.startBGM();
         return this.muted;
     }
 
@@ -107,11 +99,9 @@ class SoundManager {
         const gain = this.ctx.createGain();
         osc.type = type;
         osc.frequency.setValueAtTime(freq, now);
-
         gain.gain.setValueAtTime(0.001, now);
-        gain.gain.linearRampToValueAtTime(vol, now + 0.012);
+        gain.gain.linearRampToValueAtTime(vol, now + 0.01);
         gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-
         osc.connect(gain);
         gain.connect(this.ctx.destination);
         osc.start(now);
@@ -124,11 +114,9 @@ class SoundManager {
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'square';
-        osc.frequency.setValueAtTime(3200 + Math.random() * 1200, now);
-
+        osc.frequency.setValueAtTime(3400 + Math.random() * 1200, now);
         gain.gain.setValueAtTime(vol, now);
         gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-
         osc.connect(gain);
         gain.connect(this.ctx.destination);
         osc.start(now);
@@ -139,59 +127,103 @@ class SoundManager {
         if (this.muted) return;
         this.init();
         if (!this.ctx) return;
-
         const now = this.ctx.currentTime;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = type;
         osc.frequency.setValueAtTime(freq, now);
-        if (slideFreq) {
-            osc.frequency.exponentialRampToValueAtTime(slideFreq, now + duration);
-        }
-
+        if (slideFreq) osc.frequency.exponentialRampToValueAtTime(slideFreq, now + duration);
         gain.gain.setValueAtTime(vol, now);
         gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-
         osc.connect(gain);
         gain.connect(this.ctx.destination);
         osc.start(now);
         osc.stop(now + duration);
     }
 
-    playJump() {
-        this.playTone(300, 'sine', 0.22, 0.16, 660);
+    // 🛡️ 특별 아이템(무적 방패 / 황금 부스트) 획득 시 웅장하고 멋있는 파워업 사운드!
+    playSpecialItem() {
+        if (this.muted) return;
+        this.init();
+        const chord = [523.25, 659.25, 783.99, 1046.5, 1318.5, 1567.98];
+        chord.forEach((f, idx) => {
+            setTimeout(() => {
+                this.playTone(f, 'triangle', 0.35, 0.20, f * 1.05);
+                this.playTone(f * 0.5, 'sine', 0.35, 0.15);
+            }, idx * 55);
+        });
     }
 
-    playSlide() {
-        this.playTone(440, 'triangle', 0.18, 0.14, 190);
+    // 🪨 움직이는 돌이 나를 향해 굴러올 때 나는 묵직한 돌 구르는 소리 (우르르르 쿵!)
+    playRollingStone() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        for (let i = 0; i < 4; i++) {
+            setTimeout(() => {
+                this.playTone(95 - i * 10, 'sawtooth', 0.16, 0.16, 52);
+                this.playTone(68, 'triangle', 0.18, 0.20, 40);
+            }, i * 90);
+        }
     }
 
-    playLaneMove() {
-        this.playTone(360, 'sine', 0.08, 0.09, 460);
+    // ⚡ 5단계 글리치 보이드 '치지직~' 노이즈 사운드
+    playGlitchStatic(duration = 0.18, vol = 0.09) {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const bufferSize = this.ctx.sampleRate * duration;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = (Math.random() * 2 - 1) * (i % 40 < 20 ? 1 : 0.2);
+        }
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+        noise.connect(gain);
+        gain.connect(this.ctx.destination);
+        noise.start();
     }
 
+    // 🏫 5단계 클리어 후 학교 도착 시 정겨운 학교 종소리 & 축하 팡파레!
+    playSchoolBellAndFanfare() {
+        if (this.muted) return;
+        this.init();
+        // 학교 종이 땡땡땡 (솔솔 라라 솔솔 미~)
+        const notes = [
+            { f: 783.99, t: 0 },
+            { f: 783.99, t: 220 },
+            { f: 880.00, t: 440 },
+            { f: 880.00, t: 660 },
+            { f: 783.99, t: 880 },
+            { f: 783.99, t: 1100 },
+            { f: 659.25, t: 1320 }
+        ];
+        notes.forEach(n => {
+            setTimeout(() => this.playTone(n.f, 'triangle', 0.25, 0.20), n.t);
+        });
+    }
+
+    playJump() { this.playTone(300, 'sine', 0.22, 0.16, 660); }
+    playSlide() { this.playTone(440, 'triangle', 0.18, 0.14, 190); }
+    playLaneMove() { this.playTone(360, 'sine', 0.08, 0.09, 460); }
     playCoin() {
         this.playTone(987.77, 'sine', 0.08, 0.14);
         setTimeout(() => this.playTone(1318.5, 'sine', 0.15, 0.14), 55);
     }
-
     playCorrect() {
         [523.25, 659.25, 783.99, 1046.5].forEach((f, idx) => {
             setTimeout(() => this.playTone(f, 'triangle', 0.22, 0.18), idx * 70);
         });
     }
-
     playHeal() {
         [440, 554.37, 659.25, 880].forEach((f, idx) => {
             setTimeout(() => this.playTone(f, 'sine', 0.18, 0.15), idx * 60);
         });
     }
-
-    playHit() {
-        this.playTone(165, 'sawtooth', 0.32, 0.22, 52);
-    }
-
-    playRoar() {
-        this.playTone(135, 'sawtooth', 0.65, 0.22, 42);
-    }
+    playHit() { this.playTone(165, 'sawtooth', 0.32, 0.22, 52); }
+    playRoar() { this.playTone(135, 'sawtooth', 0.65, 0.22, 42); }
 }
