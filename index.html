@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smile Games - 원숭이의 바나나 런 (스누피 스타일)</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+    <div id="canvas-container"></div>
+
+    <!-- UI 오버레이 -->
+    <div class="ui-overlay">
+        <!-- 상단 헤더 -->
+        <header class="header-box">
+            <span class="company-tag">Smile Games Official</span>
+            <h1 class="game-title">🍌 원숭이의 바나나 런</h1>
+            <p class="team-list">
+                <strong>개발팀:</strong> 최지훈, 박주아, 김이수, 최우영, 전준우
+            </p>
+        </header>
+
+        <!-- 우측 상단 스누피 컨셉 아트 카드 -->
+        <div class="concept-badge">
+            <img src="assets/images/monkey_snoopy.jpg" alt="스누피 스타일 원숭이">
+            <span>🐾 피너츠 코믹스 원숭이</span>
+        </div>
+
+        <!-- 하단 조작 가이드 & 테스트 컨트롤 버튼 -->
+        <div class="controls-card">
+            <h3>🎮 캐릭터 모션 & 조작 테스트 (Step 1)</h3>
+            <div class="key-guide">
+                <div class="key-item">
+                    <span class="badge">← / A</span> <span>왼쪽 레인</span>
+                </div>
+                <div class="key-item">
+                    <span class="badge">→ / D</span> <span>오른쪽 레인</span>
+                </div>
+                <div class="key-item">
+                    <span class="badge">Space / ↑</span> <span>점프!</span>
+                </div>
+                <div class="key-item">
+                    <span class="badge">마우스 드래그</span> <span>360° 회전</span>
+                </div>
+            </div>
+            <div class="btn-group">
+                <button class="btn" id="btn-left">◀ 좌측 레인</button>
+                <button class="btn btn-jump" id="btn-jump">🚀 점프</button>
+                <button class="btn" id="btn-right">우측 레인 ▶</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 스크립트 로드 -->
+    <script src="js/Character.js"></script>
+    <script>
+        // --- 1. Three.js 기본 씬 & 렌더러 설정 ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        // 스누피 만화책의 따뜻한 파스텔 하늘빛
+        scene.background = new THREE.Color(0xbde0fe);
+        scene.fog = new THREE.Fog(0xbde0fe, 25, 65);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 3.6, 6.2);
+        camera.lookAt(0, 1.2, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        // 궤도 카메라 컨트롤
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 - 0.02;
+        controls.target.set(0, 1.2, 0);
+
+        // --- 2. 카툰 툰 셰이딩을 돋보이게 하는 조명 ---
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0xcddafd, 0.85);
+        scene.add(hemiLight);
+
+        const dirLight = new THREE.DirectionalLight(0xfff3b0, 1.0);
+        dirLight.position.set(8, 16, 12);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        dirLight.shadow.bias = -0.001;
+        scene.add(dirLight);
+
+        // --- 3. 피너츠 감성의 3레인 트랙 & 바닥 ---
+        const trackLength = 100;
+        const trackWidth = 7.4;
+        
+        // 흙길 트랙
+        const groundGeo = new THREE.PlaneGeometry(trackWidth, trackLength);
+        const groundMat = new THREE.MeshToonMaterial({ color: 0xddb892 }); // 따뜻한 베이지 황토
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.z = -30;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        // 레인 구분 잉크 선
+        const lineMat = new THREE.MeshBasicMaterial({ color: 0x221d19, transparent: true, opacity: 0.25 });
+        [-1.2, 1.2].forEach(x => {
+            const lineGeo = new THREE.BoxGeometry(0.06, 0.015, trackLength);
+            const line = new THREE.Mesh(lineGeo, lineMat);
+            line.position.set(x, 0.01, -30);
+            scene.add(line);
+        });
+
+        // 양옆 잔디 지면
+        const grassGeo = new THREE.PlaneGeometry(200, 200);
+        const grassMat = new THREE.MeshToonMaterial({ color: 0x90be6d }); // 올리브 파스텔 그린
+        const grass = new THREE.Mesh(grassGeo, grassMat);
+        grass.rotation.x = -Math.PI / 2;
+        grass.position.y = -0.05;
+        grass.receiveShadow = true;
+        scene.add(grass);
+
+        // 트랙 양옆 귀여운 카툰 나무들 (피너츠 스타일)
+        function createCartoonTree(x, z) {
+            const treeGroup = new THREE.Group();
+            treeGroup.position.set(x, 0, z);
+
+            // 기둥
+            const trunkGeo = new THREE.CylinderGeometry(0.18, 0.22, 1.6, 8);
+            const trunkMat = new THREE.MeshToonMaterial({ color: 0x7f4f24 });
+            const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+            trunk.position.y = 0.8;
+            trunk.castShadow = true;
+            treeGroup.add(trunk);
+
+            // 잎 (둥근 구름 모양 3개)
+            const leavesMat = new THREE.MeshToonMaterial({ color: 0x588157 });
+            const leaf1 = new THREE.Mesh(new THREE.SphereGeometry(0.8, 12, 12), leavesMat);
+            leaf1.position.set(0, 2.0, 0);
+            leaf1.castShadow = true;
+            treeGroup.add(leaf1);
+
+            const leaf2 = new THREE.Mesh(new THREE.SphereGeometry(0.65, 10, 10), leavesMat);
+            leaf2.position.set(-0.4, 1.8, 0.2);
+            treeGroup.add(leaf2);
+
+            const leaf3 = new THREE.Mesh(new THREE.SphereGeometry(0.65, 10, 10), leavesMat);
+            leaf3.position.set(0.4, 1.8, -0.2);
+            treeGroup.add(leaf3);
+
+            scene.add(treeGroup);
+        }
+
+        // 트랙 양옆에 나무 배치
+        for (let z = 5; z > -50; z -= 8) {
+            createCartoonTree(-4.8 - Math.random() * 1.5, z);
+            createCartoonTree(4.8 + Math.random() * 1.5, z + 3);
+        }
+
+        // --- 4. 주인공 원숭이 생성 ---
+        const hero = new MonkeyHero();
+        scene.add(hero.mesh);
+
+        // 길에 놓인 샘플 황금 코인
+        const coinGeo = new THREE.CylinderGeometry(0.32, 0.32, 0.09, 16);
+        const coinMat = new THREE.MeshToonMaterial({ color: 0xffd166 });
+        const sampleCoins = [];
+        for (let i = 0; i < 5; i++) {
+            const coin = new THREE.Mesh(coinGeo, coinMat);
+            coin.rotation.z = Math.PI / 2;
+            coin.position.set(0, 0.75, -4 - i * 4);
+            coin.castShadow = true;
+            scene.add(coin);
+            sampleCoins.push(coin);
+        }
+
+        // --- 5. 키보드 & 버튼 입력 연동 ---
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') {
+                hero.changeLane(-1);
+            } else if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') {
+                hero.changeLane(1);
+            } else if (e.key === 'ArrowUp' || e.key.toLowerCase() === 'w' || e.key === ' ') {
+                hero.jump();
+            }
+        });
+
+        document.getElementById('btn-left').addEventListener('click', () => hero.changeLane(-1));
+        document.getElementById('btn-right').addEventListener('click', () => hero.changeLane(1));
+        document.getElementById('btn-jump').addEventListener('click', () => hero.jump());
+
+        // 창 크기 조절
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- 6. 애니메이션 렌더 루프 ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const deltaTime = Math.min(clock.getDelta(), 0.1);
+
+            // 원숭이 깡총깡총 피너츠 애니메이션 업데이트
+            hero.update(deltaTime);
+
+            // 코인 회전 연출
+            sampleCoins.forEach((c) => {
+                c.rotation.y += 2.2 * deltaTime;
+            });
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        animate();
+    </script>
+</body>
+</html>

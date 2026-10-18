@@ -1,0 +1,196 @@
+@import url('https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Pretendard:wght@500;700;900&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    user-select: none;
+}
+
+body, html {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Gaegu', 'Pretendard', cursive, sans-serif;
+    background-color: #f7ede2;
+}
+
+#canvas-container {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+/* UI 오버레이 */
+.ui-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 24px;
+}
+
+/* 피너츠 코믹북 스타일 헤더 */
+.header-box {
+    background: #ffffff;
+    border: 3px solid #221d19;
+    border-radius: 20px;
+    padding: 16px 24px;
+    box-shadow: 6px 6px 0px #221d19;
+    max-width: 480px;
+    pointer-events: auto;
+    position: relative;
+}
+
+.company-tag {
+    display: inline-block;
+    background: #ffd166;
+    color: #221d19;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 3px 12px;
+    border: 2px solid #221d19;
+    border-radius: 12px;
+    box-shadow: 2px 2px 0px #221d19;
+    margin-bottom: 6px;
+}
+
+.game-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: #221d19;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    letter-spacing: -0.5px;
+}
+
+.team-list {
+    font-size: 16px;
+    color: #4a4036;
+    margin-top: 6px;
+    line-height: 1.4;
+}
+
+.team-list strong {
+    color: #d94e34;
+}
+
+/* 피너츠 스타일 컨트롤 카드 */
+.controls-card {
+    background: #ffffff;
+    color: #221d19;
+    padding: 18px 24px;
+    border: 3px solid #221d19;
+    border-radius: 20px;
+    pointer-events: auto;
+    max-width: 420px;
+    box-shadow: 6px 6px 0px #221d19;
+}
+
+.controls-card h3 {
+    font-size: 20px;
+    margin-bottom: 12px;
+    color: #d94e34;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.key-guide {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    font-size: 16px;
+    margin-bottom: 16px;
+    color: #333;
+}
+
+.key-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.badge {
+    background: #fdf0d5;
+    border: 2px solid #221d19;
+    padding: 2px 8px;
+    border-radius: 8px;
+    font-family: monospace;
+    font-weight: bold;
+    color: #221d19;
+    font-size: 14px;
+    box-shadow: 2px 2px 0px #221d19;
+}
+
+/* 만화풍 액션 버튼 */
+.btn-group {
+    display: flex;
+    gap: 10px;
+}
+
+.btn {
+    flex: 1;
+    background: #ffd166;
+    border: 2.5px solid #221d19;
+    border-radius: 14px;
+    padding: 10px 14px;
+    color: #221d19;
+    font-family: 'Gaegu', cursive;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 3px 3px 0px #221d19;
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0px #221d19;
+}
+
+.btn-jump {
+    background: #06d6a0;
+    color: #ffffff;
+}
+
+/* 우측 상단 스누피 컨셉 아트 카드 */
+.concept-badge {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    background: #ffffff;
+    border: 3px solid #221d19;
+    border-radius: 20px;
+    padding: 14px;
+    text-align: center;
+    pointer-events: auto;
+    box-shadow: 6px 6px 0px #221d19;
+}
+
+.concept-badge img {
+    width: 140px;
+    height: 140px;
+    object-fit: cover;
+    border-radius: 14px;
+    border: 2px solid #221d19;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.concept-badge span {
+    font-size: 15px;
+    font-weight: 700;
+    color: #221d19;
+    display: block;
+}
