@@ -56,9 +56,9 @@ class PeanutsMonkeyHero {
         this.platformY = 0;
         this.targetPlatformY = 0;
 
-        // 캐릭터 HP 시스템 (기본 체력 60, 데미지 대폭 강화! 손오공 진화 시 최대 체력 증가!)
-        this.maxHp = 60;
-        this.hp = 60;
+        // 캐릭터 HP 시스템 (기본 체력 100으로 명확하게 설정! 손오공 진화 시 최대 체력 증가!)
+        this.maxHp = 100;
+        this.hp = 100;
     }
 
     changeLane(dir) {
@@ -1425,42 +1425,65 @@ class PeanutsMonkeyHero {
         ctx.restore();
     }
 
-    // 캐릭터 머리 위 플로팅 HP 게이지 바 (손오공 진화 표시 + 현재 체력 표시)
+    // 캐릭터 머리 위 대형 고시인성 플로팅 HP 게이지 바 (체력 100 기준 명확한 표시!)
     drawFloatingHpBar(ctx) {
         ctx.save();
-        ctx.translate(0, -460);
-        const barW = this.isWukong ? 175 : 140;
-        const barH = 24;
+        ctx.translate(0, -475);
+        const barW = this.isWukong ? 310 : 275;
+        const barH = 44;
         const ratio = Math.max(0, Math.min(1, this.hp / this.maxHp));
 
-        // 배경 틀
-        ctx.fillStyle = '#2b2118';
-        ctx.strokeStyle = this.isWukong ? '#ffbe0b' : '#1a1612';
-        ctx.lineWidth = 4;
+        // 3D 하단 그림자 & 외곽 배경 틀
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
         ctx.beginPath();
-        ctx.roundRect(-barW * 0.5, -barH * 0.5, barW, barH, 8);
+        ctx.roundRect(-barW * 0.5 + 4, -barH * 0.5 + 5, barW, barH, 12);
+        ctx.fill();
+
+        ctx.fillStyle = '#1f1812';
+        ctx.strokeStyle = this.isWukong ? '#ffbe0b' : '#ffffff';
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.roundRect(-barW * 0.5, -barH * 0.5, barW, barH, 12);
         ctx.fill();
         ctx.stroke();
 
         let hpColor = '#2a9d8f';
-        if (ratio <= 0.35) hpColor = '#e63946';
-        else if (ratio <= 0.68) hpColor = '#f5cb42';
+        if (ratio <= 0.30) hpColor = '#e63946';
+        else if (ratio <= 0.60) hpColor = '#f5cb42';
 
         if (ratio > 0) {
+            const fillW = (barW - 10) * ratio;
             ctx.fillStyle = hpColor;
             ctx.beginPath();
-            ctx.roundRect(-barW * 0.5 + 3, -barH * 0.5 + 3, (barW - 6) * ratio, barH - 6, 5);
+            ctx.roundRect(-barW * 0.5 + 5, -barH * 0.5 + 5, fillW, barH - 10, 8);
+            ctx.fill();
+
+            // 상단 유리 광택 하이라이트
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.28)';
+            ctx.beginPath();
+            ctx.roundRect(-barW * 0.5 + 7, -barH * 0.5 + 6, Math.max(8, fillW - 4), (barH - 10) * 0.4, 6);
             ctx.fill();
         }
 
-        // HP 텍스트
-        ctx.fillStyle = '#fffcf5';
+        // 25 / 50 / 75 눈금선 표시
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+        ctx.lineWidth = 2;
+        [0.25, 0.5, 0.75].forEach(tick => {
+            const tx = -barW * 0.5 + 5 + (barW - 10) * tick;
+            ctx.beginPath();
+            ctx.moveTo(tx, -barH * 0.5 + 5);
+            ctx.lineTo(tx, barH * 0.5 - 5);
+            ctx.stroke();
+        });
+
+        // 큼직하고 선명한 HP 100/100 텍스트
+        ctx.fillStyle = '#ffffff';
         ctx.strokeStyle = '#1a1612';
-        ctx.lineWidth = 3.5;
-        ctx.font = 'bold 17px "Gaegu", sans-serif';
+        ctx.lineWidth = 5.5;
+        ctx.font = 'bold 27px "Comic Neue", "Gaegu", sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        const label = this.isWukong ? `👑손오공 HP ${this.hp}/${this.maxHp}` : `HP ${this.hp}/${this.maxHp}`;
+        const label = this.isWukong ? `👑 HP ${this.hp} / ${this.maxHp}` : `❤️ HP ${this.hp} / ${this.maxHp}`;
         ctx.strokeText(label, 0, 1);
         ctx.fillText(label, 0, 1);
 

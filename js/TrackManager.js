@@ -19,7 +19,7 @@ class TrackManager {
     }
 
     reset() {
-        this.stage = 1; // 1:숲, 2:사막, 3:해저, 4:타임스퀘어 도시(밤), 5:글리치 보이드, 6:학교 엔딩
+        this.stage = 1; // 1:숲, 2:사막, 3:스폰지밥 해저, 4:타임스퀘어 도시(밤), 5:글리치 보이드, 6:학교 엔딩
         this.scrollDist = 0;
         this.obstacles = [];
         this.items = [];
@@ -27,15 +27,14 @@ class TrackManager {
         this.particles = [];
         this.stageBanner = null; // 스테이지 전환 시 상단에 깔끔하게 뜨는 배너
         this.stagePauseTimer = 0; // 스테이지 전환 시 3초 쉬고 시작하는 휴식 타이머
-        this.spawnTimer = 0.9;
+        this.spawnTimer = 0.65;
         this.coinSpawnTimer = 0.4;
+        // 동물 개체 수를 40% 이상 줄이고 간격을 넓혀 쾌적하게 배치!
         this.sideProps = [
-            { z: 0.10, variant: 0 },
-            { z: 0.27, variant: 1 },
-            { z: 0.44, variant: 2 },
-            { z: 0.61, variant: 3 },
-            { z: 0.78, variant: 4 },
-            { z: 0.95, variant: 0 }
+            { z: 0.14, variant: 0 },
+            { z: 0.39, variant: 1 },
+            { z: 0.64, variant: 2 },
+            { z: 0.89, variant: 3 }
         ];
     }
 
@@ -51,7 +50,7 @@ class TrackManager {
             // 레벨이 넘어갈 때 기존 장애물을 모두 치우고 3초 동안 안전하게 쉬고 출발!
             this.stagePauseTimer = 3.0;
             this.obstacles = [];
-            this.spawnTimer = 1.2;
+            this.spawnTimer = 0.9;
         }
     }
 
@@ -152,12 +151,13 @@ class TrackManager {
             if (p.z > 1.15) p.z -= 1.15;
         });
 
+        // 요청 반영: 장애물 출현 빈도를 대폭 늘려 더 박진감 넘치게!
         if (!mathGateActive && this.stagePauseTimer <= 0) {
             this.spawnTimer -= dt * gameSpeed * stageSpeedMult;
             if (this.spawnTimer <= 0) {
                 this.spawnObstaclePattern(callbacks);
-                const baseInterval = Math.max(1.10, 1.65 - (this.stage - 1) * 0.10);
-                this.spawnTimer = baseInterval + Math.random() * 0.45;
+                const baseInterval = Math.max(0.68, 1.02 - (this.stage - 1) * 0.08);
+                this.spawnTimer = baseInterval + Math.random() * 0.24;
             }
         }
 
@@ -190,7 +190,7 @@ class TrackManager {
         // 톰 골드런 스타일 경사로(ramp) 또는 멈춰있는 트럭/버스(climb_truck) 지붕 위에 올라가 있는지 판정
         let onRampHeight = 0;
 
-        // 장애물 업데이트 및 충돌 (장애물 히트박스 대폭 확대!)
+        // 장애물 업데이트 및 충돌 (모든 기물이 누락 없이 확실하게 데미지를 주도록 판정 전면 개선!)
         for (let i = this.obstacles.length - 1; i >= 0; i--) {
             const obs = this.obstacles[i];
             const isChaser = this.isMovingChaserType(obs.type);
@@ -211,7 +211,7 @@ class TrackManager {
                 obs.type !== 'ramp' &&
                 obs.type !== 'climb_truck' &&
                 obs.z > 0.14 &&
-                obs.z < 0.96 &&
+                obs.z < 1.00 &&
                 Math.abs(obs.lane - hero.laneX) < 0.50
             ) {
                 if (callbacks.onLaserDestroy) callbacks.onLaserDestroy(obs);
@@ -219,29 +219,46 @@ class TrackManager {
                 continue;
             }
 
-            // 톰 골드런처럼 위로 올라가서 달릴 수 있는 경사로(ramp) 및 멈춰있는 대형 트럭/버스(climb_truck)!
-            if (obs.type === 'ramp' || obs.type === 'climb_truck') {
-                const zStart = obs.type === 'climb_truck' ? 0.63 : 0.68;
-                const zEnd = obs.type === 'climb_truck' ? 1.06 : 1.03;
-                if (obs.z > zStart && obs.z < zEnd && Math.abs(hero.laneX - obs.lane) < 0.48) {
-                    onRampHeight = obs.type === 'climb_truck' ? 106 : 88;
+            // 1) 경사로(ramp): 밟고 올라가서 달릴 수 있는 경사 발판
+            if (obs.type === 'ramp') {
+                if (obs.z > 0.68 && obs.z < 1.04 && Math.abs(hero.laneX - obs.lane) < 0.48) {
+                    onRampHeight = 88;
                     if (!obs.passed) {
                         obs.passed = true;
                         callbacks.onRampClimb(obs);
                     }
                 }
-            } else if (!obs.hit && !obs.passed && obs.z > 0.78 && obs.z < 0.96) {
-                // 🎯 확대된 장애물 히트박스 판정: Z 깊이(0.78~0.96) & 좌우 폭(0.47) & 높이 판정 강화!
-                if (Math.abs(hero.laneX - obs.lane) < 0.47) {
+            } else if (obs.type === 'climb_truck') {
+                // 2) 멈춘 대형 트럭/버스(climb_truck):
+                // 점프해서 올라타거나(hero.y > 22) 이미 높은 플랫폼 위에 있으면 트럭 지붕 위를 달릴 수 있고,
+                // 점프하지 않고 맨땅에서 트럭 정면에 그대로 부딪히면 다른 장애물과 동일하게 충돌 데미지(-25 HP)가 들어감!
+                if (obs.z > 0.64 && obs.z < 1.05 && Math.abs(hero.laneX - obs.lane) < 0.48) {
+                    if (obs.climbing || hero.y > 22 || hero.platformY > 36) {
+                        obs.climbing = true;
+                        onRampHeight = 106;
+                        if (!obs.passed) {
+                            obs.passed = true;
+                            callbacks.onRampClimb(obs);
+                        }
+                    } else if (!obs.hit && obs.z > 0.80 && obs.z < 1.02) {
+                        obs.hit = true;
+                        callbacks.onObstacleHit(obs);
+                    }
+                }
+            } else if (!obs.hit) {
+                // 3) 모든 공격형 장애물(통나무, 허들, 아치, 기둥, 이동 기물, 스테이지별 돌진 기물)의 완벽한 데미지 판정!
+                // 캐릭터가 위치한 Z 구간(0.80 ~ 1.03) 전체에서 매 프레임 충돌을 검사하며,
+                // 일찍 점프했다가 기물 위에 착지하거나 옆에서 부딪혀도 데미지가 절대 씹히지 않도록 1.03 이후에만 passed 처리!
+                if (obs.z > 0.80 && obs.z < 1.03 && Math.abs(hero.laneX - obs.lane) < 0.48) {
                     let avoided = false;
                     const totalHeroHeight = hero.y + hero.platformY;
 
                     if (
                         (obs.type === 'log' || obs.type === 'hurdle' || isChaser || obs.type === 'moving_barrier') &&
-                        totalHeroHeight > 46
+                        totalHeroHeight > 44
                     ) {
                         avoided = true;
-                    } else if ((obs.type === 'arch' || obs.type === 'pillar') && totalHeroHeight > 135) {
+                    } else if ((obs.type === 'arch' || obs.type === 'pillar') && totalHeroHeight > 130) {
                         avoided = true;
                     } else if (obs.type === 'arch' && hero.isSliding) {
                         avoided = true;
@@ -250,11 +267,8 @@ class TrackManager {
                     if (!avoided) {
                         obs.hit = true;
                         callbacks.onObstacleHit(obs);
-                    } else {
-                        obs.passed = true;
-                        callbacks.onObstacleAvoided(obs);
                     }
-                } else if (obs.z > 0.94) {
+                } else if (!obs.passed && obs.z >= 1.03) {
                     obs.passed = true;
                     callbacks.onObstacleAvoided(obs);
                 }
@@ -285,18 +299,17 @@ class TrackManager {
     spawnObstaclePattern(callbacks) {
         const lanes = [-1, 0, 1];
         const chaserType = this.getStageChaserType();
-        // 톰 골드런 스타일 멈춰있는 트럭/버스 등반 기물(climb_truck)과 경사로(ramp)를 풍부하게 배치!
+        // 공격형 기물 비중을 높여 장애물이 더 풍성하고 스릴 있게 등장하도록 구성!
         const types = [
-            'climb_truck',
-            'climb_truck',
-            'ramp',
             chaserType,
             chaserType,
             'log',
             'hurdle',
             'arch',
             'pillar',
-            'moving_barrier'
+            'moving_barrier',
+            'climb_truck',
+            'ramp'
         ];
         const chosenLane = lanes[Math.floor(Math.random() * 3)];
         const chosenType = types[Math.floor(Math.random() * types.length)];
@@ -307,19 +320,22 @@ class TrackManager {
             type: chosenType,
             rot: 0,
             movePhase: Math.random() * Math.PI * 2,
+            climbing: false,
             hit: false,
             passed: false
         });
 
-        if (this.stage >= 2 && chosenType !== 'moving_barrier' && Math.random() < 0.35 + this.stage * 0.06) {
+        // 1단계부터 2레인 복합 장애물이 자주 등장하도록 확률 대폭 상향 (58% ~ 88%)
+        if (chosenType !== 'moving_barrier' && Math.random() < 0.58 + this.stage * 0.06) {
             const otherLanes = lanes.filter(l => l !== chosenLane);
             const secondLane = otherLanes[Math.floor(Math.random() * otherLanes.length)];
-            const subTypes = ['log', 'hurdle', 'pillar', 'ramp', 'climb_truck'];
+            const subTypes = ['log', 'hurdle', 'pillar', 'arch', 'climb_truck', chaserType];
             this.obstacles.push({
                 lane: secondLane,
                 z: 0.03,
                 type: subTypes[Math.floor(Math.random() * subTypes.length)],
                 rot: 0,
+                climbing: false,
                 hit: false,
                 passed: false
             });
@@ -408,6 +424,286 @@ class TrackManager {
         ctx.strokeRect(x - hw, y - h, w, h);
     }
 
+    // 🌺 스폰지밥 비키니 시티 스타일 해저 꽃구름(Tropical Flower Cloud) 렌더링 헬퍼
+    drawBikiniFlowerCloud(ctx, fx, fy, r, petalColor, centerColor, rot = 0) {
+        ctx.save();
+        ctx.translate(fx, fy);
+        ctx.rotate(rot);
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 2.6;
+        ctx.fillStyle = petalColor;
+
+        // 5개의 둥글고 통통한 하와이안 꽃잎 구름
+        const petals = 5;
+        for (let i = 0; i < petals; i++) {
+            const ang = (i / petals) * Math.PI * 2;
+            const px = Math.cos(ang) * (r * 0.58);
+            const py = Math.sin(ang) * (r * 0.58);
+            ctx.beginPath();
+            ctx.ellipse(px, py, r * 0.52, r * 0.38, ang, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        // 중앙 도넛 링
+        ctx.fillStyle = centerColor;
+        ctx.beginPath();
+        ctx.arc(0, 0, r * 0.34, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#48cae4';
+        ctx.beginPath();
+        ctx.arc(0, 0, r * 0.14, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    // 🍍 스폰지밥 비키니 시티 시그니처 하우스 4종 (파인애플 집, 징징이 모아이 집, 뚱이 바위 집, 집게리아)
+    drawBikiniHouse(ctx, hx, hy, scale, houseType, time) {
+        ctx.save();
+        ctx.translate(hx, hy);
+        ctx.scale(scale, scale);
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 3.2;
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+
+        if (houseType === 'pineapple') {
+            // 🍍 1) 스폰지밥 파인애플 하우스 (다이아몬드 격자 껍질 + 초록 잎사귀 왕관 + 굴뚝 + 동그란 철문 & 창문)
+            // 초록색 뾰족 파인애플 잎사귀 왕관 7장
+            const leafAngles = [-0.65, -0.42, -0.2, 0, 0.2, 0.42, 0.65];
+            leafAngles.forEach((la, idx) => {
+                ctx.save();
+                ctx.translate(0, -118);
+                ctx.rotate(la + Math.sin(time * 2.5 + idx) * 0.03);
+                ctx.fillStyle = idx % 2 === 0 ? '#2a9d8f' : '#52b788';
+                ctx.beginPath();
+                ctx.moveTo(-12, 0);
+                ctx.quadraticCurveTo(0, -68 - (idx % 2) * 14, 0, -76 - (idx % 2) * 12);
+                ctx.quadraticCurveTo(12, -40, 12, 0);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+                ctx.restore();
+            });
+
+            // 우측 은색 강철 굴뚝 파이프
+            ctx.fillStyle = '#adb5bd';
+            ctx.beginPath();
+            ctx.moveTo(32, -88);
+            ctx.lineTo(54, -104);
+            ctx.lineTo(54, -124);
+            ctx.lineTo(42, -124);
+            ctx.lineTo(42, -110);
+            ctx.lineTo(26, -98);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // 통통한 주황색 파인애플 본체
+            const pineGrad = ctx.createRadialGradient(-14, -72, 10, 0, -60, 68);
+            pineGrad.addColorStop(0, '#ffbe0b');
+            pineGrad.addColorStop(0.55, '#fb8500');
+            pineGrad.addColorStop(1, '#d62828');
+            ctx.fillStyle = pineGrad;
+            ctx.beginPath();
+            ctx.ellipse(0, -60, 48, 64, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // 파인애플 다이아몬드 대각선 격자 무늬
+            ctx.save();
+            ctx.beginPath();
+            ctx.ellipse(0, -60, 46, 62, 0, 0, Math.PI * 2);
+            ctx.clip();
+            ctx.strokeStyle = 'rgba(155, 34, 38, 0.55)';
+            ctx.lineWidth = 2.2;
+            for (let d = -90; d <= 90; d += 22) {
+                ctx.beginPath();
+                ctx.moveTo(d - 50, -130);
+                ctx.lineTo(d + 50, 10);
+                ctx.moveTo(d + 50, -130);
+                ctx.lineTo(d - 50, 10);
+                ctx.stroke();
+            }
+            ctx.restore();
+
+            // 둥근 잠수함 창문 2개
+            [[-20, -82], [22, -52]].forEach(([wx, wy]) => {
+                ctx.fillStyle = '#90e0ef';
+                ctx.beginPath();
+                ctx.arc(wx, wy, 11, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                ctx.strokeStyle = '#adb5bd';
+                ctx.lineWidth = 3.5;
+                ctx.stroke();
+                ctx.strokeStyle = '#1a1612';
+                ctx.lineWidth = 2.5;
+            });
+
+            // 둥근 철제 현관문 & 조타 핸들
+            ctx.fillStyle = '#6c757d';
+            ctx.beginPath();
+            ctx.roundRect(-16, -42, 32, 42, [16, 16, 0, 0]);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = '#dee2e6';
+            ctx.beginPath();
+            ctx.arc(0, -21, 7, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+        } else if (houseType === 'moai') {
+            // 🗿 2) 징징이 이스터섬 모아이 석상 하우스 (청회색 석조 얼굴 + 일자 눈썹 + 긴 코 + 둥근 눈 창문 + 나무 문)
+            const moaiGrad = ctx.createLinearGradient(-36, -135, 36, 0);
+            moaiGrad.addColorStop(0, '#457b9d');
+            moaiGrad.addColorStop(1, '#1d3557');
+            ctx.fillStyle = moaiGrad;
+            ctx.beginPath();
+            ctx.moveTo(-38, 0);
+            ctx.lineTo(-30, -135);
+            ctx.lineTo(30, -135);
+            ctx.lineTo(38, 0);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // 양옆 귀 석판
+            ctx.fillStyle = '#2a6f97';
+            ctx.fillRect(-46, -88, 9, 36);
+            ctx.strokeRect(-46, -88, 9, 36);
+            ctx.fillRect(37, -88, 9, 36);
+            ctx.strokeRect(37, -88, 9, 36);
+
+            // 굵은 일자 눈썹 돌출부
+            ctx.fillStyle = '#1d3557';
+            ctx.fillRect(-35, -112, 70, 14);
+            ctx.strokeRect(-35, -112, 70, 14);
+
+            // 눈 모양 둥근 창문 2개
+            [-17, 17].forEach(ex => {
+                ctx.fillStyle = '#ffea79';
+                ctx.beginPath();
+                ctx.arc(ex, -88, 10, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+            });
+
+            // 길고 네모난 모아이 코
+            ctx.fillStyle = '#2a6f97';
+            ctx.fillRect(-9, -96, 18, 44);
+            ctx.strokeRect(-9, -96, 18, 44);
+
+            // 아치형 나무 현관문
+            ctx.fillStyle = '#8d5b3c';
+            ctx.beginPath();
+            ctx.roundRect(-14, -38, 28, 38, [14, 14, 0, 0]);
+            ctx.fill();
+            ctx.stroke();
+
+        } else if (houseType === 'rock') {
+            // 🪨 3) 뚱이 둥근 바위 집 (반구형 갈색 바위 + 꼭대기 황금 풍향계 화살표)
+            ctx.strokeStyle = '#ffbe0b';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(0, -62);
+            ctx.lineTo(0, -86);
+            ctx.moveTo(-12, -76);
+            ctx.lineTo(12, -76);
+            ctx.stroke();
+
+            ctx.strokeStyle = '#1a1612';
+            ctx.lineWidth = 3.2;
+            const rockGrad = ctx.createRadialGradient(-12, -42, 6, 0, -25, 52);
+            rockGrad.addColorStop(0, '#9c6644');
+            rockGrad.addColorStop(1, '#582f0e');
+            ctx.fillStyle = rockGrad;
+            ctx.beginPath();
+            ctx.arc(0, 0, 46, Math.PI, 0);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            this.drawHatching(ctx, -28, -14, 24, -14, 6, 8, -0.5);
+
+        } else if (houseType === 'krusty') {
+            // 🍔 4) 집게리아(Krusty Krab) 통나무 게 통발 식당 & 대형 검은 닻
+            ctx.fillStyle = '#7f4f24';
+            ctx.beginPath();
+            ctx.roundRect(-48, -74, 96, 74, [24, 24, 0, 0]);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#caf0f8';
+            ctx.fillRect(-36, -46, 72, 34);
+            ctx.strokeRect(-36, -46, 72, 34);
+
+            // 만국기 깃발 장식
+            ['#e63946', '#ffbe0b', '#06d6a0', '#3a86ff'].forEach((fc, idx) => {
+                ctx.fillStyle = fc;
+                ctx.beginPath();
+                ctx.moveTo(-36 + idx * 18, -74);
+                ctx.lineTo(-27 + idx * 18, -58);
+                ctx.lineTo(-18 + idx * 18, -74);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            });
+
+            // 조개 간판
+            ctx.fillStyle = '#ff006e';
+            ctx.beginPath();
+            ctx.arc(0, -88, 18, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 10px "Comic Neue", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('KRUSTY', 0, -85);
+        }
+        ctx.restore();
+    }
+
+    // 🪼 스폰지밥 비키니 시티 분홍 해파리(Bikini Bottom Pink Jellyfish)
+    drawBikiniJellyfish(ctx, jx, jy, scale, time, seed = 0) {
+        ctx.save();
+        ctx.translate(jx, jy + Math.sin(time * 5 + seed) * 10);
+        ctx.scale(scale, scale);
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 2.6;
+
+        // 꿈틀거리는 분홍 촉수 4가닥
+        [-10, -3, 4, 11].forEach((tx, idx) => {
+            const wave = Math.sin(time * 9 + idx + seed) * 5;
+            ctx.strokeStyle = '#ff006e';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(tx, 4);
+            ctx.quadraticCurveTo(tx + wave, 16, tx - wave * 0.6, 26);
+            ctx.stroke();
+        });
+
+        // 분홍 반점 해파리 갓
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 2.6;
+        ctx.fillStyle = '#ff758f';
+        ctx.beginPath();
+        ctx.arc(0, 4, 18, Math.PI, 0);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#ff006e';
+        [[-8, -4, 3.2], [2, -8, 3.8], [9, -2, 2.8]].forEach(([sx, sy, sr]) => {
+            ctx.beginPath();
+            ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+            ctx.fill();
+        });
+        ctx.restore();
+    }
+
     // =========================================================================
     // 1단계~5단계 테마 배경 + 고밀도 디테일 렌더링
     // =========================================================================
@@ -419,8 +715,8 @@ class TrackManager {
 
         const themes = {
             1: { // 1단계: 숲속 (Forest)
-                skyTop: '#74c69d', skyMid: '#b7e4c7', skyBot: '#d8f3dc',
-                ground: '#52b788', roadTop: '#e6d2ab', roadBot: '#c9ada7',
+                skyTop: '#52b788', skyMid: '#95d5b2', skyBot: '#d8f3dc',
+                ground: '#40916c', roadTop: '#e6d2ab', roadBot: '#c9ada7',
                 tileA: '#ddb892', tileB: '#b08968'
             },
             2: { // 2단계: 사막 (Desert)
@@ -428,10 +724,10 @@ class TrackManager {
                 ground: '#e9c46a', roadTop: '#f4e285', roadBot: '#dda15e',
                 tileA: '#e9c46a', tileB: '#d4a373'
             },
-            3: { // 3단계: 해저 (Undersea)
-                skyTop: '#03045e', skyMid: '#0077b6', skyBot: '#00b4d8',
-                ground: '#0096c7', roadTop: '#90e0ef', roadBot: '#0077b6',
-                tileA: '#ade8f4', tileB: '#48cae4'
+            3: { // 3단계: 스폰지밥 비키니 시티 해저 (Bikini Bottom Undersea!)
+                skyTop: '#0096c7', skyMid: '#48cae4', skyBot: '#ade8f4',
+                ground: '#f4e285', roadTop: '#caf0f8', roadBot: '#48cae4',
+                tileA: '#ffea79', tileB: '#90e0ef'
             },
             4: { // 4단계: 도시 (타임스퀘어 밤 느낌)
                 skyTop: '#070714', skyMid: '#141829', skyBot: '#2b2d42',
@@ -463,7 +759,7 @@ class TrackManager {
         // 2. 스테이지별 원경 특수 배경 렌더링 (디테일 대폭 강화)
         this.renderStageSkyDetails(ctx, width, height, horizonY, centerX, time);
 
-        // 3. 지평선 지면
+        // 3. 지평선 지면 (모래언덕/잔디밭 굴곡 디테일)
         ctx.fillStyle = th.ground;
         ctx.strokeStyle = this.stage === 5 ? '#00f5d4' : '#1a1612';
         ctx.lineWidth = 3;
@@ -483,7 +779,7 @@ class TrackManager {
         const curbBotH = 22;
 
         // 좌측 3D 입체 연석 (측면 + 윗면)
-        ctx.fillStyle = this.stage === 5 ? '#7209b7' : '#5c4938';
+        ctx.fillStyle = this.stage === 5 ? '#7209b7' : (this.stage === 3 ? '#ff9f1c' : '#5c4938');
         ctx.strokeStyle = '#1a1612';
         ctx.lineWidth = 2.5;
         ctx.beginPath();
@@ -507,7 +803,7 @@ class TrackManager {
         ctx.stroke();
 
         // 우측 3D 입체 연석 (윗면)
-        ctx.fillStyle = this.stage === 5 ? '#7209b7' : '#5c4938';
+        ctx.fillStyle = this.stage === 5 ? '#7209b7' : (this.stage === 3 ? '#ff9f1c' : '#5c4938');
         ctx.beginPath();
         ctx.moveTo(centerX + topRoadW * 0.5, horizonY - curbTopH);
         ctx.lineTo(centerX + topRoadW * 0.5 + curbTopW, horizonY - curbTopH);
@@ -541,7 +837,7 @@ class TrackManager {
         ctx.fill();
         ctx.stroke();
 
-        // 3D 타일 스크롤 (입체 블록 두께 포함)
+        // 3D 타일 스크롤 (입체 블록 두께 & 하이라이트 포함)
         const numRows = 9;
         for (let i = 0; i < numRows; i++) {
             const prog = ((i + (this.scrollDist * 2.5) % 1) / numRows);
@@ -586,18 +882,22 @@ class TrackManager {
             }
         }
 
-        // 5. 양옆 스테이지별 동물 & 배경 오브젝트 렌더링 (크기와 존재감 대폭 확대!)
+        // 5. 양옆 스테이지별 동물 & 배경 오브젝트 렌더링
+        // 요청 반영: 동물 수를 40% 줄이고(한 행당 좌/우 한쪽씩만 교차 배치), 트랙에서 멀찌감치 떨어뜨려 시야를 시원하게 확보!
         if (this.stage === 6) {
             this.drawSchoolEndingBuilding(ctx, centerX, horizonY + 45);
         } else {
             const sortedProps = [...this.sideProps].sort((a, b) => a.z - b.z);
             sortedProps.forEach((prop, idx) => {
-                const pL = this.project(prop.z, -1.58, width, height);
-                const pR = this.project(prop.z, 1.58, width, height);
-                const boostScaleL = Math.max(0.36, pL.scale * 1.18);
-                const boostScaleR = Math.max(0.36, pR.scale * 1.18);
-                this.drawStageSideProp(ctx, pL.x - 52 * pL.scale, pL.y, boostScaleL, -1, (prop.variant + idx) % 5, time);
-                this.drawStageSideProp(ctx, pR.x + 52 * pR.scale, pR.y, boostScaleR, 1, (prop.variant + idx + 2) % 5, time);
+                // 레인 외곽(-2.18, +2.18) 및 추가 외곽 여백(±88)을 두어 트랙에 절대 붙지 않도록 배치!
+                const pL = this.project(prop.z, -2.18, width, height);
+                const pR = this.project(prop.z, 2.18, width, height);
+                const boostScaleL = Math.max(0.36, pL.scale * 1.15);
+                const boostScaleR = Math.max(0.36, pR.scale * 1.15);
+                const showLeftAnimal = (prop.variant % 2 === 0);
+                const showRightAnimal = !showLeftAnimal;
+                this.drawStageSideProp(ctx, pL.x - 88 * pL.scale, pL.y, boostScaleL, -1, (prop.variant + idx) % 5, time, showLeftAnimal);
+                this.drawStageSideProp(ctx, pR.x + 88 * pR.scale, pR.y, boostScaleR, 1, (prop.variant + idx + 2) % 5, time, showRightAnimal);
             });
         }
 
@@ -606,14 +906,14 @@ class TrackManager {
         }
     }
 
-    // 스테이지별 하늘/원경 초고밀도 디테일 (타임스퀘어 빌딩 숲, 비행선, 헬기, 스핑크스, 침몰선, 원경 대형 동물 등 대거 추가!)
+    // 스테이지별 하늘/원경 초고밀도 디테일 (스폰지밥 해저 시티, 타임스퀘어 빌딩 숲, 스핑크스 등)
     renderStageSkyDetails(ctx, width, height, horizonY, centerX, time) {
         ctx.save();
         ctx.strokeStyle = '#1a1612';
         ctx.lineWidth = 2.5;
 
         if (this.stage === 1) {
-            // 🌲 1단계 숲: 햇살 빛줄기, 겹겹이 쌓인 원경 산맥, 2단 에메랄드 폭포, 고대 나무 오두막, 원경 대형 숲속 동물들!
+            // 🌲 1단계 숲: 햇살 빛줄기, 겹겹이 쌓인 원경 산맥, 2단 에메랄드 폭포, 고대 나무 오두막
             ctx.fillStyle = 'rgba(255, 252, 210, 0.24)';
             for (let i = -2; i <= 2; i++) {
                 ctx.beginPath();
@@ -667,24 +967,18 @@ class TrackManager {
             ctx.fill();
             ctx.stroke();
 
-            // 지평선 언덕 위 존재감 넘치는 대형 배경 동물들 (꽃사슴, 붉은여우, 다람쥐)
+            // 우측 원경 언덕 위 포인트 꽃사슴 1마리 (트랙에서 멀리 떨어진 언덕)
             ctx.save();
-            ctx.translate(centerX - 185, horizonY - 4);
-            ctx.scale(0.68, 0.68);
-            this.drawRealForestAnimal(ctx, 0, 0, 2, time, 1); // 꽃사슴
+            ctx.translate(centerX + 280, horizonY - 6);
+            ctx.scale(0.62, 0.62);
+            this.drawRealForestAnimal(ctx, 0, 0, 2, time, -1);
             ctx.restore();
 
-            ctx.save();
-            ctx.translate(centerX + 195, horizonY - 4);
-            ctx.scale(0.68, 0.68);
-            this.drawRealForestAnimal(ctx, 0, 0, 3, time, -1); // 붉은여우
-            ctx.restore();
-
-            // 하늘을 나는 새 떼 (날개짓 애니메이션)
+            // 하늘을 나는 새 떼
             ctx.strokeStyle = '#1a1612';
             ctx.lineWidth = 2.8;
-            for (let b = 0; b < 5; b++) {
-                const bx = centerX - 180 + b * 45 + Math.sin(time * 1.2 + b) * 30;
+            for (let b = 0; b < 4; b++) {
+                const bx = centerX - 160 + b * 55 + Math.sin(time * 1.2 + b) * 30;
                 const by = horizonY - 185 - (b % 2) * 18;
                 const wingY = Math.sin(time * 9 + b) * 7;
                 ctx.beginPath();
@@ -695,14 +989,13 @@ class TrackManager {
             }
 
         } else if (this.stage === 2) {
-            // 🏜️ 2단계 사막: 이글거리는 태양, 3D 대피라미드 군락, 거대 스핑크스 석상, 오아시스 호수 & 사막 동물들!
+            // 🏜️ 2단계 사막: 이글거리는 태양, 3D 대피라미드 군락, 거대 스핑크스 석상, 오아시스 호수!
             ctx.fillStyle = '#fff3b0';
             ctx.beginPath();
             ctx.arc(centerX + 290, horizonY - 145, 56, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
 
-            // 피라미드 4개 (3D 음영 면 분할)
             const pyramids = [
                 { x: -380, h: 140 },
                 { x: -230, h: 175 },
@@ -729,8 +1022,8 @@ class TrackManager {
                 ctx.stroke();
             });
 
-            // 중앙 좌측: 고대 이집트 대스핑크스 석상 직접 그리기!
-            const spX = centerX - 85;
+            // 고대 이집트 대스핑크스 석상
+            const spX = centerX - 115;
             ctx.fillStyle = '#d4a373';
             ctx.fillRect(spX - 45, horizonY - 48, 90, 48);
             ctx.strokeRect(spX - 45, horizonY - 48, 90, 48);
@@ -750,88 +1043,80 @@ class TrackManager {
             ctx.fill();
             ctx.stroke();
 
-            // 중앙 우측: 사막 오아시스 호수
+            // 사막 오아시스 호수
             ctx.fillStyle = '#48cae4';
             ctx.beginPath();
-            ctx.ellipse(centerX + 55, horizonY - 4, 52, 12, 0, 0, Math.PI * 2);
+            ctx.ellipse(centerX + 85, horizonY - 4, 52, 12, 0, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
 
-            // 지평선 사막 언덕 위 대형 낙타 & 사막여우
+            // 우측 원경 모래언덕 위 단봉낙타 1마리
             ctx.save();
-            ctx.translate(centerX - 205, horizonY - 4);
-            ctx.scale(0.68, 0.68);
-            this.drawRealDesertAnimal(ctx, 0, 0, 2, time, 1); // 단봉낙타
-            ctx.restore();
-
-            ctx.save();
-            ctx.translate(centerX + 210, horizonY - 4);
-            ctx.scale(0.72, 0.72);
-            this.drawRealDesertAnimal(ctx, 0, 0, 1, time, -1); // 사막여우
+            ctx.translate(centerX + 275, horizonY - 5);
+            ctx.scale(0.62, 0.62);
+            this.drawRealDesertAnimal(ctx, 0, 0, 2, time, -1);
             ctx.restore();
 
         } else if (this.stage === 3) {
-            // 🦈 3단계 해저: 수면 빛내림, 침몰한 고대 해적선, 아틀란티스 신전 기둥, 더 크고 디테일한 해양 동물들!
-            ctx.fillStyle = 'rgba(144, 224, 239, 0.18)';
-            for (let i = -2; i <= 2; i++) {
-                ctx.beginPath();
-                ctx.moveTo(centerX + i * 160, 0);
-                ctx.lineTo(centerX + i * 210 - 45, horizonY);
-                ctx.lineTo(centerX + i * 210 + 45, horizonY);
-                ctx.closePath();
-                ctx.fill();
-            }
-
-            // 좌측 원경: 침몰한 해적선 실루엣 & 황금 보물상자 빛
-            ctx.save();
-            ctx.translate(centerX - 310, horizonY - 10);
-            ctx.rotate(-0.12);
-            ctx.fillStyle = '#3d2f24';
-            ctx.beginPath();
-            ctx.moveTo(-70, -45);
-            ctx.lineTo(75, -45);
-            ctx.lineTo(52, 10);
-            ctx.lineTo(-52, 10);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-            ctx.fillRect(-6, -135, 10, 90);
-            ctx.strokeRect(-6, -135, 10, 90);
-            ctx.fillStyle = 'rgba(220, 230, 242, 0.45)';
-            ctx.beginPath();
-            ctx.moveTo(4, -125);
-            ctx.quadraticCurveTo(48, -95, 4, -60);
-            ctx.fill();
-            ctx.stroke();
-            ctx.restore();
-
-            // 우측 원경: 해저 아틀란티스 고대 신전 기둥 유적
-            ctx.fillStyle = '#457b9d';
-            [250, 295, 340].forEach((colX, idx) => {
-                const colH = 95 + (idx % 2) * 28;
-                ctx.fillRect(centerX + colX, horizonY - colH, 22, colH);
-                ctx.strokeRect(centerX + colX, horizonY - colH, 22, colH);
+            // 🍍 3단계 해저 (스폰지밥 비키니 시티 감성!):
+            // 형형색색 하와이안 꽃구름 7개 + 파인애플 하우스 + 징징이 모아이 석상 집 + 뚱이 바위 집 + 집게리아 + 분홍 해파리 초원!
+            const flowerClouds = [
+                { x: -420, y: -215, r: 42, col: '#ff758f', inner: '#ffea79' },
+                { x: -255, y: -255, r: 34, col: '#ffea79', inner: '#ff006e' },
+                { x: -95,  y: -205, r: 46, col: '#80ed99', inner: '#ffffff' },
+                { x: 85,   y: -245, r: 38, col: '#c77dff', inner: '#ffea79' },
+                { x: 245,  y: -195, r: 44, col: '#ff9f1c', inner: '#caf0f8' },
+                { x: 405,  y: -235, r: 36, col: '#ff758f', inner: '#80ed99' }
+            ];
+            flowerClouds.forEach((fc, idx) => {
+                const driftX = Math.sin(time * 0.6 + idx) * 14;
+                this.drawBikiniFlowerCloud(
+                    ctx,
+                    centerX + fc.x + driftX,
+                    horizonY + fc.y,
+                    fc.r,
+                    fc.col,
+                    fc.inner,
+                    time * 0.25 + idx
+                );
             });
-            ctx.fillRect(centerX + 242, horizonY - 135, 128, 18);
-            ctx.strokeRect(centerX + 242, horizonY - 135, 128, 18);
 
-            // 수중 기포(물방울) 상승 연출
-            ctx.strokeStyle = '#caf0f8';
-            for (let b = 0; b < 12; b++) {
-                const bx = centerX + ((b * 97) % 700) - 350;
-                const by = horizonY - ((time * 45 + b * 35) % (horizonY - 20));
+            // 원경 해저 모래 언덕 (비키니 시티 특유의 민트/모래빛 해저 언덕)
+            ctx.fillStyle = '#48cae4';
+            ctx.beginPath();
+            ctx.arc(centerX - 340, horizonY, 175, Math.PI, 0);
+            ctx.arc(centerX + 320, horizonY, 185, Math.PI, 0);
+            ctx.fill();
+            ctx.stroke();
+
+            // 좌측 지평선: 스폰지밥 비키니 시티 삼총사 거리의 집 (뚱이 바위 집 ➔ 징징이 모아이 집 ➔ 스폰지밥 파인애플 하우스!)
+            this.drawBikiniHouse(ctx, centerX - 385, horizonY + 2, 0.92, 'rock', time);
+            this.drawBikiniHouse(ctx, centerX - 275, horizonY + 2, 0.96, 'moai', time);
+            this.drawBikiniHouse(ctx, centerX - 155, horizonY + 4, 1.02, 'pineapple', time);
+
+            // 우측 지평선: 집게리아(Krusty Krab) & 분홍 해파리 초원
+            this.drawBikiniHouse(ctx, centerX + 235, horizonY + 2, 0.96, 'krusty', time);
+            this.drawBikiniJellyfish(ctx, centerX + 125, horizonY - 95, 0.95, time, 1);
+            this.drawBikiniJellyfish(ctx, centerX + 345, horizonY - 125, 0.85, time, 2);
+            this.drawBikiniJellyfish(ctx, centerX - 65, horizonY - 135, 0.80, time, 3);
+
+            // 반짝이는 비눗방울 기포 상승 연출
+            ctx.strokeStyle = '#ffffff';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+            for (let b = 0; b < 10; b++) {
+                const bx = centerX + ((b * 97) % 720) - 360;
+                const by = horizonY - ((time * 48 + b * 35) % (horizonY - 20));
+                const br = 5 + (b % 4) * 3;
                 ctx.beginPath();
-                ctx.arc(bx, by, 5 + (b % 4) * 3, 0, Math.PI * 2);
+                ctx.arc(bx, by, br, 0, Math.PI * 2);
+                ctx.fill();
                 ctx.stroke();
             }
 
-            // 유유히 헤엄치는 초대형 고퀄리티 대왕고래, 백상아리, 바다거북, 열대어, 대왕문어!
-            const whaleX = centerX - 195 + Math.sin(time * 0.8) * 55;
-            const whaleY = horizonY - 112;
-            this.drawRealSeaCreature(ctx, whaleX, whaleY, 0.72, 2, time, 1); // 대왕고래
-            this.drawRealSeaCreature(ctx, centerX + 175 + Math.cos(time * 1.3) * 50, horizonY - 92, 0.68, 0, time, -1); // 백상아리
-            this.drawRealSeaCreature(ctx, centerX - 35 + Math.sin(time * 1.6) * 55, horizonY - 148, 0.62, 4, time, 1); // 바다거북
-            this.drawRealSeaCreature(ctx, centerX + 60 + Math.cos(time * 1.9) * 45, horizonY - 128, 0.64, 1, time, -1); // 열대어
+            // 상단 바다를 유유히 헤엄치는 대왕고래 1마리 (동물 과밀 방지를 위해 원경 핵심 동물만 배치!)
+            const whaleX = centerX + 25 + Math.sin(time * 0.7) * 65;
+            const whaleY = horizonY - 155;
+            this.drawRealSeaCreature(ctx, whaleX, whaleY, 0.58, 2, time, 1);
 
         } else if (this.stage === 4) {
             // 🌃 4단계 도시 (타임스퀘어 밤): 빈틈없이 꽉 찬 2중 스카이라인 빌딩 숲 + 원 타임스퀘어 새해 볼 타워 + 비행선 + 경찰 헬기!
@@ -2340,8 +2625,8 @@ class TrackManager {
         ctx.restore();
     }
 
-    // 양옆 스테이지별 동물 & 오브젝트 디테일 (동물 크기 2배 이상 확대 & 트랙 쪽을 바라보도록 배치!)
-    drawStageSideProp(ctx, x, y, scale, side, variant, time) {
+    // 양옆 스테이지별 동물 & 오브젝트 디테일 (트랙에서 멀리 떨어뜨리고 동물 개체수 40% 이상 절감 + 비키니 시티 해저 디테일!)
+    drawStageSideProp(ctx, x, y, scale, side, variant, time, showAnimal = true) {
         ctx.save();
         ctx.translate(x, y);
         ctx.scale(scale, scale);
@@ -2351,14 +2636,17 @@ class TrackManager {
         ctx.textAlign = 'center';
 
         const bob = Math.sin(time * 5 + variant) * 6;
-        // 트랙 안쪽(주인공이 달리는 도로 방향)을 바라보도록 방향 설정
+        // 트랙 안쪽을 바라보되, 위치(animalX)는 트랙 바깥쪽으로 충분히 떨어뜨림!
         const faceDir = side < 0 ? 1 : -1;
-        const animalX = -side * 34;
+        const animalX = side * 38;
 
         if (this.stage === 1) {
-            // 🌲 1단계 숲: 다층 수관 나무(뒤쪽) + 초대형 고디테일 숲속 동물들(앞쪽)!
-            const treeX = side * 48;
-            ctx.fillStyle = '#7f4f24';
+            // 🌲 1단계 숲: 다층 입체 수관 나무(바깥쪽) + 선택적 숲속 동물(트랙과 거리를 둔 바깥쪽)
+            const treeX = side * 92;
+            const trunkGrad = ctx.createLinearGradient(treeX - 18, -175, treeX + 18, 0);
+            trunkGrad.addColorStop(0, '#9c6644');
+            trunkGrad.addColorStop(1, '#582f0e');
+            ctx.fillStyle = trunkGrad;
             ctx.fillRect(treeX - 18, -175, 36, 175);
             ctx.strokeRect(treeX - 18, -175, 36, 175);
             this.drawHatching(ctx, treeX - 8, -150, treeX - 8, -20, 8, 10, 0.4);
@@ -2376,20 +2664,31 @@ class TrackManager {
             ctx.fill();
             ctx.stroke();
 
-            const animalNames = ['🐿️ 다람쥐', '🐇 산토끼', '🦌 꽃사슴', '🦊 붉은여우', '🦉 숲부엉이'];
-            this.drawRealForestAnimal(ctx, animalX, -8 + bob * 0.5, variant % 5, time, faceDir);
+            // 수관 하이라이트
+            ctx.fillStyle = 'rgba(149, 213, 178, 0.45)';
+            ctx.beginPath();
+            ctx.arc(treeX - 16, -226, 28, 0, Math.PI * 2);
+            ctx.fill();
 
-            ctx.font = 'bold 22px "Gaegu", sans-serif';
-            ctx.lineWidth = 5;
-            ctx.strokeStyle = '#1a1612';
-            ctx.strokeText(animalNames[variant % 5], animalX, 32);
-            ctx.fillStyle = '#fffcf5';
-            ctx.fillText(animalNames[variant % 5], animalX, 32);
+            if (showAnimal) {
+                const animalNames = ['🐿️ 다람쥐', '🐇 산토끼', '🦌 꽃사슴', '🦊 붉은여우', '🦉 숲부엉이'];
+                this.drawRealForestAnimal(ctx, animalX, -8 + bob * 0.5, variant % 5, time, faceDir);
+
+                ctx.font = 'bold 21px "Gaegu", sans-serif';
+                ctx.lineWidth = 5;
+                ctx.strokeStyle = '#1a1612';
+                ctx.strokeText(animalNames[variant % 5], animalX, 32);
+                ctx.fillStyle = '#fffcf5';
+                ctx.fillText(animalNames[variant % 5], animalX, 32);
+            }
 
         } else if (this.stage === 2) {
-            // 🌵 2단계 사막: 거대 선인장(뒤쪽) + 초대형 고디테일 사막 동물들(앞쪽)!
-            const cactX = side * 52;
-            ctx.fillStyle = '#588157';
+            // 🌵 2단계 사막: 거대 사구아로 선인장(바깥쪽) + 선택적 사막 동물
+            const cactX = side * 94;
+            const cactGrad = ctx.createLinearGradient(cactX - 20, -155, cactX + 20, 0);
+            cactGrad.addColorStop(0, '#74a862');
+            cactGrad.addColorStop(1, '#3a5a40');
+            ctx.fillStyle = cactGrad;
             ctx.beginPath();
             ctx.roundRect(cactX - 16, -155, 32, 155, 14);
             ctx.roundRect(cactX - 48, -115, 32, 22, 10);
@@ -2399,63 +2698,104 @@ class TrackManager {
             ctx.fill();
             ctx.stroke();
 
-            const desertLabels = ['🦂 황제전갈', '🦊 사막여우', '🐪 단봉낙타', '🐫 쌍봉낙타', '🦎 목도리도마뱀'];
-            this.drawRealDesertAnimal(ctx, animalX, -6 + bob * 0.4, variant % 5, time, faceDir);
+            if (showAnimal) {
+                const desertLabels = ['🦂 황제전갈', '🦊 사막여우', '🐪 단봉낙타', '🐫 쌍봉낙타', '🦎 목도리도마뱀'];
+                this.drawRealDesertAnimal(ctx, animalX, -6 + bob * 0.4, variant % 5, time, faceDir);
 
-            ctx.font = 'bold 22px "Gaegu", sans-serif';
-            ctx.lineWidth = 5;
-            ctx.strokeStyle = '#1a1612';
-            ctx.strokeText(desertLabels[variant % 5], animalX, 34);
-            ctx.fillStyle = '#fff3b0';
-            ctx.fillText(desertLabels[variant % 5], animalX, 34);
+                ctx.font = 'bold 21px "Gaegu", sans-serif';
+                ctx.lineWidth = 5;
+                ctx.strokeStyle = '#1a1612';
+                ctx.strokeText(desertLabels[variant % 5], animalX, 34);
+                ctx.fillStyle = '#fff3b0';
+                ctx.fillText(desertLabels[variant % 5], animalX, 34);
+            }
 
         } else if (this.stage === 3) {
-            // 🦈 3단계 해저: 산호초(뒤쪽) + 초대형 고디테일 해양 동물들(앞쪽)!
-            const coralX = side * 52;
-            ctx.fillStyle = variant % 2 === 0 ? '#ff6b6b' : '#ff9f1c';
-            ctx.beginPath();
-            ctx.roundRect(coralX - 16, -140, 32, 140, 14);
-            ctx.roundRect(coralX - 44, -100, 28, 68, 12);
-            ctx.roundRect(coralX + 16, -110, 28, 78, 12);
-            ctx.fill();
-            ctx.stroke();
+            // 🍍 3단계 비키니 해저 시티: 스폰지밥 스타일 구멍 뚫린 튜브 산호초 & 해저 꽃 + 선택적 해양 동물!
+            const coralX = side * 94;
+            const tubeColors = [
+                { main: '#ff6b9d', rim: '#ff477e', hole: '#a4133c' },
+                { main: '#ffd166', rim: '#ffb703', hole: '#c87d00' },
+                { main: '#b5179e', rim: '#7209b7', hole: '#3c096c' }
+            ];
+            const tc = tubeColors[variant % tubeColors.length];
 
-            const seaLabels = ['🦈 백상아리', '🐠 황제열대어', '🐋 대왕고래', '🐙 대왕문어', '🐢 푸른바다거북'];
-            this.drawRealSeaCreature(ctx, animalX, -64 + bob * 1.4, 1.0, variant % 5, time, faceDir);
+            // 스폰지밥 특유의 원통형 튜브 산호 3기둥
+            const tubes = [
+                { dx: -26, w: 24, h: 105 },
+                { dx: 0, w: 30, h: 148 },
+                { dx: 28, w: 22, h: 92 }
+            ];
+            for (const tb of tubes) {
+                ctx.fillStyle = tc.main;
+                ctx.beginPath();
+                ctx.roundRect(coralX + tb.dx - tb.w / 2, -tb.h, tb.w, tb.h, 10);
+                ctx.fill();
+                ctx.stroke();
 
-            ctx.font = 'bold 22px "Gaegu", sans-serif';
-            ctx.lineWidth = 5;
-            ctx.strokeStyle = '#1a1612';
-            ctx.strokeText(seaLabels[variant % 5], animalX, 18);
-            ctx.fillStyle = '#caf0f8';
-            ctx.fillText(seaLabels[variant % 5], animalX, 18);
+                // 튜브 상단 구멍 입구
+                ctx.fillStyle = tc.rim;
+                ctx.beginPath();
+                ctx.ellipse(coralX + tb.dx, -tb.h, tb.w * 0.62, 8, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = tc.hole;
+                ctx.beginPath();
+                ctx.ellipse(coralX + tb.dx, -tb.h, tb.w * 0.35, 4.5, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 스폰지 구멍 무늬
+                ctx.fillStyle = tc.hole;
+                ctx.beginPath();
+                ctx.arc(coralX + tb.dx - 4, -tb.h * 0.65, 3.5, 0, Math.PI * 2);
+                ctx.arc(coralX + tb.dx + 5, -tb.h * 0.42, 4.2, 0, Math.PI * 2);
+                ctx.arc(coralX + tb.dx - 2, -tb.h * 0.22, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            if (showAnimal) {
+                const seaLabels = ['🦈 백상아리', '🐠 황제열대어', '🐋 대왕고래', '🐙 대왕문어', '🐢 푸른바다거북'];
+                this.drawRealSeaCreature(ctx, animalX, -64 + bob * 1.4, 1.0, variant % 5, time, faceDir);
+
+                ctx.font = 'bold 21px "Gaegu", sans-serif';
+                ctx.lineWidth = 5;
+                ctx.strokeStyle = '#1a1612';
+                ctx.strokeText(seaLabels[variant % 5], animalX, 18);
+                ctx.fillStyle = '#ffea00';
+                ctx.fillText(seaLabels[variant % 5], animalX, 18);
+            } else {
+                // 동물이 없는 쪽에는 귀여운 분홍 해파리 1마리가 둥둥!
+                this.drawBikiniJellyfish(ctx, animalX, -85, 0.78, time + variant);
+            }
 
         } else if (this.stage === 4) {
             // 🌆 4단계 도시 (타임스퀘어 밤): 3D 네온 광고판 타워 & 가로등
-            this.draw3DBox(ctx, 0, 0, 86, 210, -side * 16, -16, '#2b2d42', '#495057', '#151624');
+            const cityX = side * 46;
+            this.draw3DBox(ctx, cityX, 0, 86, 210, -side * 16, -16, '#2b2d42', '#495057', '#151624');
 
             ctx.fillStyle = variant % 2 === 0 ? '#ff007f' : '#00f5d4';
-            ctx.fillRect(-34, -185, 68, 56);
-            ctx.strokeRect(-34, -185, 68, 56);
+            ctx.fillRect(cityX - 34, -185, 68, 56);
+            ctx.strokeRect(cityX - 34, -185, 68, 56);
             ctx.fillStyle = '#fff';
             ctx.font = 'bold 18px "Comic Neue", sans-serif';
-            ctx.fillText(variant % 2 === 0 ? 'TIMES SQ' : 'BROADWAY', 0, -152);
+            ctx.fillText(variant % 2 === 0 ? 'TIMES SQ' : 'BROADWAY', cityX, -152);
 
             ctx.strokeStyle = '#adb5bd';
             ctx.lineWidth = 5;
             ctx.beginPath();
-            ctx.moveTo(-side * 55, 0);
-            ctx.lineTo(-side * 55, -110);
-            ctx.lineTo(-side * 35, -110);
+            ctx.moveTo(cityX - side * 55, 0);
+            ctx.lineTo(cityX - side * 55, -110);
+            ctx.lineTo(cityX - side * 35, -110);
             ctx.stroke();
             ctx.fillStyle = '#ffea79';
             ctx.beginPath();
-            ctx.arc(-side * 35, -106, 10, 0, Math.PI * 2);
+            ctx.arc(cityX - side * 35, -106, 10, 0, Math.PI * 2);
             ctx.fill();
 
         } else if (this.stage === 5) {
             // ⚡ 5단계 글리치 보이드: 깨진 3D 디지털 기둥 & 에러 홀로그램
-            const glitchShift = (Math.random() - 0.5) * 20;
+            const glitchShift = side * 42 + (Math.random() - 0.5) * 18;
             this.draw3DBox(
                 ctx,
                 glitchShift,

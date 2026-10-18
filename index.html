@@ -48,15 +48,15 @@
                     <span style="color:#b53421;">🪙 점수: <span id="score-val">0</span></span>
                     <span style="font-size:15px; color:#5c4938;">🏆 1위: <span id="best-score-val">0</span></span>
                 </div>
-                <!-- 캐릭터 HP 게이지 바 (체력 60으로 축소 / 장애물 3회 충돌 시 소멸 / 문제 정답 시 회복) -->
-                <div class="hp-bar-wrap">
+                <!-- 캐릭터 HP 게이지 바 (체력 100 기준 명확한 표시 / 기물 충돌 -25 / 문제 정답 시 +20 회복) -->
+                <div class="hp-bar-wrap" style="height:28px; border:3px solid #1a1612;">
                     <div class="hp-bar-fill" id="hp-bar-fill"></div>
                     <div class="hp-bar-ticks">
                         <div class="hp-tick"></div>
                         <div class="hp-tick"></div>
                         <div class="hp-tick"></div>
                     </div>
-                    <div class="hp-bar-label" id="hp-bar-label">❤️ 체력(HP) 60/60 (3회 충돌 시 소멸)</div>
+                    <div class="hp-bar-label" id="hp-bar-label" style="font-size:16px; font-weight:900; letter-spacing:0.3px;">❤️ HP 100 / 100 (기물 충돌 -25)</div>
                 </div>
                 <!-- 드래곤 추격 거리 바 -->
                 <div class="dragon-meter">

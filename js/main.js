@@ -87,12 +87,12 @@ const STAGE_INFO = {
         ko: '"2단계 사막 진입! 달려오는 독침 전갈을 조심해!"'
     },
     3: {
-        badge: '🦈 3단계: 신비한 해저',
-        bannerTitle: '🦈 STAGE 3 : 신비한 해저',
-        bannerSub: '🦈 정면에서 이빨을 드러내고 돌진하는 백상아리를 피하세요!',
+        badge: '🍍 3단계: 비키니 해저 시티',
+        bannerTitle: '🍍 STAGE 3 : 스폰지밥 해저 시티',
+        bannerSub: '🌺 꽃구름과 파인애플 하우스 바다! 돌진하는 백상아리를 피하세요!',
         color: '#00b4d8',
         speedBase: 1.10,
-        ko: '"3단계 해저 터널! 정면에서 돌진하는 거대 백상아리 상어를 피해!"'
+        ko: '"3단계 스폰지밥 비키니 해저 시티! 파인애플 집과 모아이 석상 사이로 백상아리를 피해!"'
     },
     4: {
         badge: '🌃 4단계: 도시 타임스퀘어 밤',
@@ -221,15 +221,15 @@ function updateHUD() {
     const hpPercent = Math.ceil(hpRatio * 100);
     hpBarFillEl.style.width = `${hpPercent}%`;
 
-    if (hpRatio <= 0.35) {
+    if (hpRatio <= 0.30) {
         hpBarFillEl.style.background = 'linear-gradient(90deg, #e63946, #ff6b6b)';
-    } else if (hpRatio <= 0.68) {
+    } else if (hpRatio <= 0.60) {
         hpBarFillEl.style.background = 'linear-gradient(90deg, #f5cb42, #ffd166)';
     } else {
         hpBarFillEl.style.background = 'linear-gradient(90deg, #2a9d8f, #52b788)';
     }
     const wukongPrefix = hero.isWukong ? '👑손오공 ' : '❤️ ';
-    hpBarLabelEl.textContent = `${wukongPrefix}체력 ${hero.hp}/${hero.maxHp} (충돌 데미지 -30!)`;
+    hpBarLabelEl.textContent = `${wukongPrefix}HP ${hero.hp} / ${hero.maxHp} (기물 충돌 -25)`;
 
     const dist = Math.round(dragon.distance);
     dragonFillEl.style.width = `${dist}%`;
@@ -623,21 +623,21 @@ function gameLoop(now) {
 
                 sound.playHit();
                 hero.triggerStumble();
-                dragon.onPlayerMistake(28);
+                dragon.onPlayerMistake(25);
 
-                // 데미지 대폭 강화! 기물 1회 충돌 시 체력 -30 감소! (기본 체력 60 기준 2번만 부딪혀도 위험!)
-                const dmg = 30;
+                // 체력 100 기준 명확한 데미지: 기물 1회 충돌 시 HP -25 감소!
+                const dmg = 25;
                 hero.hp = Math.max(0, hero.hp - dmg);
 
-                track.addPopup(p.x, p.y - 65, `쾅!! 치명상 체력 -${dmg} 💥`, '#e63946');
+                track.addPopup(p.x, p.y - 65, `쾅!! 기물 충돌 HP -${dmg} (남은 HP: ${hero.hp}/${hero.maxHp}) 💥`, '#e63946');
                 track.addBurstParticles(p.x, p.y - 35, '#e63946', 18);
-                bubbleEn.textContent = "CRITICAL HIT!! -30 HP! GET WUKONG EVOLUTION OR SOLVE MATH!";
-                bubbleKo.textContent = `"으악! 데미지가 엄청 세! 체력이 -${dmg} 깎였어! (손오공 진화 아이템이나 문제를 풀어 회복해!)"`;
+                bubbleEn.textContent = `HIT!! -${dmg} HP! (HP: ${hero.hp}/${hero.maxHp}) DODGE OR JUMP!`;
+                bubbleKo.textContent = `"으악! 기물에 부딪혀서 HP가 -${dmg} 깎였어! (현재 HP: ${hero.hp}/${hero.maxHp})"`;
                 updateHUD();
 
                 if (hero.hp <= 0) {
                     track.addBurstParticles(p.x, height * 0.80, '#fffcf5', 28);
-                    triggerGameOver('강력한 기물 데미지로 캐릭터 체력(HP)이 모두 소진되어 사라졌어요!');
+                    triggerGameOver('기물 충돌 데미지로 캐릭터 체력(HP 100)이 모두 소진되어 사라졌어요!');
                 } else if (dragon.distance <= 0) {
                     triggerGameOver('뒤쫓아온 화염 드래곤에게 붙잡혔어요!');
                 }
@@ -657,16 +657,16 @@ function gameLoop(now) {
                 dragon.onPlayerSuccess(22);
 
                 const prevHp = hero.hp;
-                hero.hp = Math.min(hero.maxHp, hero.hp + 15);
+                hero.hp = Math.min(hero.maxHp, hero.hp + 20);
                 const healed = hero.hp - prevHp;
                 if (healed > 0) sound.playHeal();
 
                 const p = track.project(gate.z, door.lane, width, height);
-                const healText = healed > 0 ? ` +체력 회복💚` : '';
+                const healText = healed > 0 ? ` +HP ${healed} 회복💚` : '';
                 track.addPopup(p.x, p.y - 95, `정답! +100점${healText} 🎉`, '#2a9d8f');
                 track.addBurstParticles(p.x, p.y - 70, '#52b788', 18);
                 bubbleEn.textContent = `BINGO! ${gate.questionText.replace('?', gate.answer)} IS CORRECT!`;
-                bubbleKo.textContent = `"정답이야! 문이 활짝 열리며 +100점 & 체력이 복구됐어!"`;
+                bubbleKo.textContent = `"정답이야! 문이 즉시 사라지며 +100점 & HP가 ${hero.hp}/${hero.maxHp}로 복구됐어!"`;
 
                 const nextStage = Math.min(6, Math.floor(mathGate.solvedCount / 2) + 1);
                 if (nextStage > track.stage) {
@@ -687,19 +687,19 @@ function gameLoop(now) {
                 hero.triggerStumble();
                 dragon.onPlayerMistake(30);
 
-                // 오답 문 충돌 시 체력 -35 감소!
-                const wrongDmg = 35;
+                // 오답 문 충돌 시 체력 -30 감소!
+                const wrongDmg = 30;
                 hero.hp = Math.max(0, hero.hp - wrongDmg);
 
-                track.addPopup(p.x, p.y - 95, `땡! 문 안 열림! 체력 -${wrongDmg} (정답:${gate.answer}) 💥`, '#e63946');
+                track.addPopup(p.x, p.y - 95, `땡! 오답 충돌! HP -${wrongDmg} (정답:${gate.answer}) 💥`, '#e63946');
                 track.addBurstParticles(p.x, p.y - 70, '#e63946', 18);
                 bubbleEn.textContent = `BONK!! THE DOOR STAYED LOCKED! (ANSWER: ${gate.answer})`;
-                bubbleKo.textContent = `"쿵! 틀려서 문이 안 열렸어! 정답은 ${gate.answer}! 체력이 -${wrongDmg} 감소했어!"`;
+                bubbleKo.textContent = `"쿵! 틀려서 문이 안 열렸어! 정답은 ${gate.answer}! HP가 -${wrongDmg} 감소했어!"`;
                 updateHUD();
 
                 if (hero.hp <= 0) {
                     track.addBurstParticles(p.x, height * 0.80, '#fffcf5', 28);
-                    triggerGameOver(`문이 열리지 않고 충돌해 캐릭터 체력이 0이 되어 사라졌어요! (정답: ${gate.answer})`);
+                    triggerGameOver(`문이 열리지 않고 충돌해 캐릭터 체력(HP 100)이 0이 되어 사라졌어요! (정답: ${gate.answer})`);
                 } else if (dragon.distance <= 0) {
                     triggerGameOver(`계산 문제의 문이 열리지 않아 드래곤에게 붙잡혔어요! (정답: ${gate.answer})`);
                 }
