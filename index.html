@@ -27,20 +27,34 @@
     <div class="ui-overlay">
         <!-- 좌측 상단 Smile Games 헤더 & 실시간 HUD -->
         <header class="header-box">
-            <span class="company-tag">Smile Games Official</span>
+            <div class="header-top-row">
+                <span class="company-tag">Smile Games Official</span>
+                <button class="bgm-btn" id="btn-bgm">🎵 BGM ON</button>
+            </div>
             <h1 class="game-title">🍌 원숭이의 바나나 런</h1>
             <p class="team-list">
                 <strong>개발팀:</strong> 최지훈, 박주아, 김이수, 최우영, 전준우
             </p>
             <div class="hud-stats">
                 <div class="hud-row">
-                    <span>❤️ 체력: <span id="hearts-val">❤️❤️❤️</span></span>
+                    <span>🏃 도전자: <strong id="hud-player-name" style="color:#d64531;">플레이어</strong></span>
                     <span>🧮 정답: <span id="math-solved-val">0</span>회</span>
                 </div>
                 <div class="hud-row">
                     <span style="color:#b53421;">🪙 점수: <span id="score-val">0</span></span>
-                    <span style="font-size:15px; color:#5c4938;">🏆 최고: <span id="best-score-val">0</span></span>
+                    <span style="font-size:15px; color:#5c4938;">🏆 1위: <span id="best-score-val">0</span></span>
                 </div>
+                <!-- 캐릭터 HP 게이지 바 (장애물 3회 충돌 시 소멸 / 문제 정답 시 회복) -->
+                <div class="hp-bar-wrap">
+                    <div class="hp-bar-fill" id="hp-bar-fill"></div>
+                    <div class="hp-bar-ticks">
+                        <div class="hp-tick"></div>
+                        <div class="hp-tick"></div>
+                        <div class="hp-tick"></div>
+                    </div>
+                    <div class="hp-bar-label" id="hp-bar-label">❤️ HP 100% (장애물 3회 충돌 시 소멸)</div>
+                </div>
+                <!-- 드래곤 추격 거리 바 -->
                 <div class="dragon-meter">
                     <div class="dragon-meter-fill" id="dragon-meter-fill"></div>
                     <div class="dragon-meter-label" id="dragon-meter-label">🐉 드래곤과 거리 75m</div>
@@ -48,16 +62,17 @@
             </div>
         </header>
 
-        <!-- 우측 상단 스누피 컨셉 아트 비교 카드 -->
+        <!-- 우측 상단 스누피 컨셉 아트 & 랭킹 보기 카드 -->
         <div class="concept-badge">
             <img src="assets/images/monkey_snoopy.jpg" alt="스누피 컨셉 아트 원본">
             <span>🐾 스누피 카툰 스타일</span>
+            <button class="rank-open-btn" id="btn-open-rank">🏆 랭킹 & 이름변경</button>
         </div>
 
         <!-- 하단 컨트롤 바 & 서명 -->
         <div class="bottom-bar">
             <div class="controls-card">
-                <h3>🎮 조작 방법 (장애물 회피 & 3개의 문 계산 문제)</h3>
+                <h3>🎮 조작 방법 (장애물 3회 충돌 시 소멸 / 문제 풀면 HP 회복!)</h3>
                 <div class="key-guide">
                     <div class="key-item"><span class="badge">← / →</span> <span>문 선택 / 레인 이동</span></div>
                     <div class="key-item"><span class="badge">↑ / Space</span> <span>점프 (통나무 넘기)</span></div>
@@ -77,18 +92,50 @@
         </div>
     </div>
 
-    <!-- 게임 오버 모달 -->
+    <!-- 1. 시작 화면: 플레이어 이름 입력 & 명예의 전당 랭킹 모달 -->
+    <div class="modal-backdrop active" id="start-modal">
+        <div class="modal-card">
+            <span class="company-tag" style="margin-bottom:8px;">Smile Games Presents</span>
+            <h2>🍌 원숭이의 바나나 런</h2>
+            <p style="font-size:16px; color:#5c4938;">
+                개발자: <strong>최지훈, 박주아, 김이수, 최우영, 전준우</strong>
+            </p>
+            <p style="margin-top:8px; font-weight:700;">
+                플레이어 이름을 입력하고 황금 바나나 탈출을 시작하세요!
+            </p>
+            <div class="name-input-group">
+                <input type="text" id="player-name-input" class="name-input" placeholder="플레이어 이름 입력" maxlength="12" />
+                <button class="start-btn" id="btn-start-game">🚀 출발!</button>
+            </div>
+
+            <div class="ranking-box">
+                <h3>🏆 Smile Games 명예의 전당 (Top 10)</h3>
+                <ul class="ranking-list" id="start-ranking-list"></ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. 게임 오버 & 랭킹 결과 모달 -->
     <div class="modal-backdrop" id="gameover-modal">
         <div class="modal-card">
             <h2>🐉 게임 오버!</h2>
-            <p id="gameover-reason">드래곤에게 황금 바나나를 빼앗겼어요!</p>
-            <p style="margin-top:12px; font-weight:700; font-size:24px; color:#b53421;">
-                최종 점수: <span id="final-score">0</span>점
+            <p id="gameover-reason">장애물에 3번 부딪혀 캐릭터 HP가 모두 소진되었어요!</p>
+            <p style="margin-top:8px; font-weight:700; font-size:24px; color:#b53421;">
+                <span id="final-player-name">플레이어</span>님의 점수: <span id="final-score">0</span>점
             </p>
             <p style="font-size:18px; color:#2a9d8f; font-weight:700;">
                 풀어낸 계산 문제: <span id="final-math">0</span>개
             </p>
-            <button class="restart-btn" id="btn-restart">🍌 다시 도망가기! (Enter)</button>
+
+            <div class="ranking-box">
+                <h3>🏆 실시간 랭킹 보드</h3>
+                <ul class="ranking-list" id="gameover-ranking-list"></ul>
+            </div>
+
+            <div style="display:flex; gap:10px; justify-content:center; margin-top:16px;">
+                <button class="restart-btn" id="btn-restart">🍌 다시 도망가기! (Enter)</button>
+                <button class="restart-btn" id="btn-change-name" style="background:#90e0ef;">✏️ 이름 바꾸기</button>
+            </div>
         </div>
     </div>
 

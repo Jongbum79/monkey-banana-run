@@ -46,6 +46,10 @@ class PeanutsMonkeyHero {
         this.stumbleTimer = 0;
         this.boostTimer = 0;
         this.shieldActive = false;
+
+        // 캐릭터 HP 시스템 (장애물 3회 충돌 시 0이 되어 소멸, 문제 해결 시 조금씩 회복)
+        this.maxHp = 99;
+        this.hp = 99;
     }
 
     changeLane(dir) {
@@ -244,6 +248,9 @@ class PeanutsMonkeyHero {
         if (this.shieldActive) {
             this.drawShieldBubble(ctx);
         }
+
+        // 캐릭터 머리 위 실시간 HP 바 표시
+        this.drawFloatingHpBar(ctx);
 
         ctx.restore();
     }
@@ -1108,6 +1115,59 @@ class PeanutsMonkeyHero {
         ctx.arc(0, 0, 195, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
+        ctx.restore();
+    }
+
+    // 캐릭터 머리 위 플로팅 HP 게이지 바 (3칸 구분선 + 현재 체력 비율 표시)
+    drawFloatingHpBar(ctx) {
+        ctx.save();
+        ctx.translate(0, -455);
+        const barW = 140;
+        const barH = 22;
+        const ratio = Math.max(0, Math.min(1, this.hp / this.maxHp));
+
+        // 배경 틀
+        ctx.fillStyle = '#2b2118';
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.roundRect(-barW * 0.5, -barH * 0.5, barW, barH, 8);
+        ctx.fill();
+        ctx.stroke();
+
+        // 체력 채움 색상 (높을 때 초록, 중간 노랑, 낮을 때 빨강)
+        let hpColor = '#2a9d8f';
+        if (ratio <= 0.35) hpColor = '#e63946';
+        else if (ratio <= 0.68) hpColor = '#f5cb42';
+
+        if (ratio > 0) {
+            ctx.fillStyle = hpColor;
+            ctx.beginPath();
+            ctx.roundRect(-barW * 0.5 + 3, -barH * 0.5 + 3, (barW - 6) * ratio, barH - 6, 5);
+            ctx.fill();
+        }
+
+        // 3칸 구분선 (장애물 3회 충돌 기준선)
+        ctx.strokeStyle = 'rgba(26, 22, 18, 0.55)';
+        ctx.lineWidth = 2.5;
+        [-barW / 6, barW / 6].forEach(divX => {
+            ctx.beginPath();
+            ctx.moveTo(divX, -barH * 0.5);
+            ctx.lineTo(divX, barH * 0.5);
+            ctx.stroke();
+        });
+
+        // HP 텍스트
+        ctx.fillStyle = '#fffcf5';
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 3.5;
+        ctx.font = 'bold 17px "Gaegu", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const hpPercent = Math.ceil((this.hp / this.maxHp) * 100);
+        ctx.strokeText(`HP ${hpPercent}%`, 0, 1);
+        ctx.fillText(`HP ${hpPercent}%`, 0, 1);
+
         ctx.restore();
     }
 }
