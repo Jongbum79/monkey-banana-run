@@ -70,12 +70,54 @@ if (playerName) {
 }
 
 const STAGE_INFO = {
-    1: { badge: '🌲 1단계: 동물들의 숲', speedBase: 1.05, ko: '"1단계 숲속! 굴러오는 진짜 바위를 피하고 손오공 진화 & 슈퍼점프를 먹어봐!"' },
-    2: { badge: '🏜️ 2단계: 황금 사막 (속도 UP!)', speedBase: 1.25, ko: '"2단계 사막 진입! 속도가 빨라졌어! 달려오는 독침 전갈을 조심해!"' },
-    3: { badge: '🦈 3단계: 신비한 해저 (초고속!)', speedBase: 1.48, ko: '"3단계 해저 터널! 정면에서 돌진하는 거대 백상아리 상어를 피해!"' },
-    4: { badge: '🌃 4단계: 도시 타임스퀘어 밤 (극한속도!)', speedBase: 1.72, ko: '"4단계 타임스퀘어 밤! 빵빵~ 헤드라이트를 켜고 달려오는 자동차를 피해!"' },
-    5: { badge: '⚡ 5단계: 글리치 보이드 (FINAL 최고속도!)', speedBase: 2.00, ko: '"치지직... 마지막 5단계 글리치 보이드! 여길 넘으면 학교에 도착해!"' },
-    6: { badge: '🏫 엔딩: 스마일 초등학교 도착!', speedBase: 1.0, ko: '"딩동댕동~ 드디어 6학년 교실이 있는 학교에 무사히 도착했어! 축하해!"' }
+    1: {
+        badge: '🌲 1단계: 동물들의 숲',
+        bannerTitle: '🌲 STAGE 1 : 동물들의 숲',
+        bannerSub: '🪨 굴러오는 진짜 바위를 피하고 손오공으로 진화하세요!',
+        color: '#52b788',
+        speedBase: 0.90,
+        ko: '"1단계 숲속! 굴러오는 진짜 바위를 피하고 손오공 진화 & 슈퍼점프를 먹어봐!"'
+    },
+    2: {
+        badge: '🏜️ 2단계: 황금 사막',
+        bannerTitle: '🏜️ STAGE 2 : 황금 사막',
+        bannerSub: '🦂 집게발을 세우고 달려오는 사막 독침 전갈을 조심하세요!',
+        color: '#ffbe0b',
+        speedBase: 1.00,
+        ko: '"2단계 사막 진입! 달려오는 독침 전갈을 조심해!"'
+    },
+    3: {
+        badge: '🦈 3단계: 신비한 해저',
+        bannerTitle: '🦈 STAGE 3 : 신비한 해저',
+        bannerSub: '🦈 정면에서 이빨을 드러내고 돌진하는 백상아리를 피하세요!',
+        color: '#00b4d8',
+        speedBase: 1.10,
+        ko: '"3단계 해저 터널! 정면에서 돌진하는 거대 백상아리 상어를 피해!"'
+    },
+    4: {
+        badge: '🌃 4단계: 도시 타임스퀘어 밤',
+        bannerTitle: '🌃 STAGE 4 : 타임스퀘어 밤',
+        bannerSub: '🚕 헤드라이트를 켜고 빵빵~ 달려오는 택시 자동차를 피하세요!',
+        color: '#ff007f',
+        speedBase: 1.22,
+        ko: '"4단계 타임스퀘어 밤! 빵빵~ 헤드라이트를 켜고 달려오는 자동차를 피해!"'
+    },
+    5: {
+        badge: '⚡ 5단계: 글리치 보이드 (FINAL)',
+        bannerTitle: '⚡ STAGE 5 : 글리치 보이드',
+        bannerSub: '👾 치지직... 마지막 관문! 여길 돌파하면 학교에 도착합니다!',
+        color: '#00f5d4',
+        speedBase: 1.35,
+        ko: '"치지직... 마지막 5단계 글리치 보이드! 여길 넘으면 학교에 도착해!"'
+    },
+    6: {
+        badge: '🏫 엔딩: 스마일 초등학교 도착!',
+        bannerTitle: '🏫 스마일 초등학교 도착!',
+        bannerSub: '🎓 축하합니다! 5단계를 모두 통과하고 6학년 교실에 도착했어요!',
+        color: '#ffd166',
+        speedBase: 0.90,
+        ko: '"딩동댕동~ 드디어 6학년 교실이 있는 학교에 무사히 도착했어! 축하해!"'
+    }
 };
 
 // =========================================================================
@@ -207,7 +249,7 @@ function setStage(newStage) {
         const info = STAGE_INFO[clamped];
         if (clamped === 5) {
             sound.playGlitchStatic();
-            bubbleEn.textContent = "BZZZT!! STAGE 5: GLITCH VOID!! MAXIMUM SPEED!!";
+            bubbleEn.textContent = "BZZZT!! STAGE 5: GLITCH VOID!! FINAL STAGE!!";
         } else if (clamped === 6) {
             gameState = 'SCHOOL_ENDING';
             schoolEndingTimer = 0;
@@ -222,7 +264,8 @@ function setStage(newStage) {
             bubbleEn.textContent = `STAGE ${clamped} UNLOCKED! SPEED UP!`;
         }
         bubbleKo.textContent = info.ko;
-        track.addPopup(width * 0.5, height * 0.35, `🎉 ${info.badge} 진입!`, '#f72585');
+        // 스테이지가 바뀔 때마다 화면 중앙으로 큰 글씨 배너가 시원하게 지나가게 함!
+        track.triggerStageBanner(info.bannerTitle, info.bannerSub, info.color);
         track.addBurstParticles(width * 0.5, height * 0.4, '#ffea79', 26);
         updateHUD();
     }
@@ -245,7 +288,7 @@ function startNewGame(skipPrologue = false) {
     dragon.reset();
     sound.currentStage = 1;
     score = 0;
-    gameSpeed = 1.0;
+    gameSpeed = 0.90;
     schoolEndingTimer = 0;
     gameOverModal.classList.remove('active');
     updateHUD();
@@ -253,8 +296,10 @@ function startNewGame(skipPrologue = false) {
     if (skipPrologue) {
         gameState = 'PLAYING';
         hero.triggerLookBack(1.2, 'happy');
+        const st1 = STAGE_INFO[1];
+        track.triggerStageBanner(st1.bannerTitle, st1.bannerSub, st1.color);
         bubbleEn.textContent = "STAGE 1: FOREST! DODGE BOULDERS, GET SUPER JUMP & WUKONG EVOLUTION!";
-        bubbleKo.textContent = STAGE_INFO[1].ko;
+        bubbleKo.textContent = st1.ko;
     } else {
         gameState = 'PROLOGUE';
         bubbleEn.textContent = "SHHH! STEALING THE ANCIENT DRAGON'S GOLDEN BANANA!";
@@ -439,6 +484,12 @@ function gameLoop(now) {
         schoolEndingTimer += dt;
         hero.update(dt, 1.0);
         track.scrollDist += dt * 0.4;
+        if (track.stageBanner) {
+            track.stageBanner.elapsed += dt;
+            if (track.stageBanner.elapsed >= track.stageBanner.duration) {
+                track.stageBanner = null;
+            }
+        }
         if (schoolEndingTimer > 4.2) {
             triggerGameClear();
         }
@@ -447,8 +498,9 @@ function gameLoop(now) {
     // 3. 본 게임 플레이 업데이트
     if (gameState === 'PLAYING') {
         const stInfo = STAGE_INFO[track.stage] || STAGE_INFO[1];
-        gameSpeed = stInfo.speedBase + Math.min(0.30, score / 4500);
-        const effectiveSpeed = (hero.boostTimer > 0 || hero.invincibleTimer > 0) ? gameSpeed * 1.25 : gameSpeed;
+        // 최고 속도를 30% 낮추어 후반 스테이지에서도 쾌적한 조작 보장!
+        gameSpeed = stInfo.speedBase + Math.min(0.14, score / 7000);
+        const effectiveSpeed = (hero.boostTimer > 0 || hero.invincibleTimer > 0) ? gameSpeed * 1.15 : gameSpeed;
 
         hero.update(dt, effectiveSpeed);
         dragon.update(dt);

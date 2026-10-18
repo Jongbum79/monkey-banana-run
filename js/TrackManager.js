@@ -25,6 +25,7 @@ class TrackManager {
         this.items = [];
         this.popups = [];
         this.particles = [];
+        this.stageBanner = null; // 스테이지 전환 시 화면을 가로질러 지나가는 초대형 배너
         this.spawnTimer = 0.9;
         this.coinSpawnTimer = 0.4;
         this.sideProps = [
@@ -34,6 +35,16 @@ class TrackManager {
             { z: 0.72, variant: 3 },
             { z: 0.92, variant: 4 }
         ];
+    }
+
+    triggerStageBanner(title, subtitle, bgColor = '#ffbe0b') {
+        this.stageBanner = {
+            title,
+            subtitle,
+            bgColor,
+            elapsed: 0,
+            duration: 2.6
+        };
     }
 
     project(z, lane, width, height) {
@@ -90,12 +101,19 @@ class TrackManager {
     }
 
     update(dt, gameSpeed, hero, mathGateActive, callbacks) {
+        if (this.stageBanner) {
+            this.stageBanner.elapsed += dt;
+            if (this.stageBanner.elapsed >= this.stageBanner.duration) {
+                this.stageBanner = null;
+            }
+        }
+
         if (this.stage === 6) return;
 
-        // 단계가 올라갈수록 훨씬 더 빠르게 진행되도록 가속 배율 강화!
-        const stageSpeedTable = { 1: 1.0, 2: 1.24, 3: 1.50, 4: 1.80, 5: 2.15 };
+        // 최고 속도를 기존 대비 30% 이상 낮추어 단계가 올라가도 쾌적하게 컨트롤 가능하도록 조정!
+        const stageSpeedTable = { 1: 0.90, 2: 1.02, 3: 1.14, 4: 1.26, 5: 1.38 };
         const stageSpeedMult = stageSpeedTable[this.stage] || 1.0;
-        const dz = dt * gameSpeed * stageSpeedMult * 0.38;
+        const dz = dt * gameSpeed * stageSpeedMult * 0.30;
         this.scrollDist += dz;
 
         this.sideProps.forEach(p => {
@@ -107,12 +125,12 @@ class TrackManager {
             this.spawnTimer -= dt * gameSpeed * stageSpeedMult;
             if (this.spawnTimer <= 0) {
                 this.spawnObstaclePattern(callbacks);
-                const baseInterval = Math.max(0.95, 1.55 - (this.stage - 1) * 0.12);
+                const baseInterval = Math.max(1.10, 1.65 - (this.stage - 1) * 0.10);
                 this.spawnTimer = baseInterval + Math.random() * 0.45;
             }
         }
 
-        this.coinSpawnTimer -= dt * gameSpeed * (1 + (this.stage - 1) * 0.12);
+        this.coinSpawnTimer -= dt * gameSpeed * (1 + (this.stage - 1) * 0.08);
         if (this.coinSpawnTimer <= 0 && !mathGateActive) {
             this.spawnCoinLine();
             this.coinSpawnTimer = 1.5 + Math.random() * 0.7;
@@ -143,8 +161,8 @@ class TrackManager {
         for (let i = this.obstacles.length - 1; i >= 0; i--) {
             const obs = this.obstacles[i];
             const isChaser = this.isMovingChaserType(obs.type);
-            // 나를 향해 다가오는 돌/전갈/상어/차는 일반 기물보다 훨씬 빠르게 돌진!
-            const extraSpeed = isChaser ? dz * 0.48 : 0;
+            // 나를 향해 다가오는 돌/전갈/상어/차 추가 속도도 30% 완만하게 조정
+            const extraSpeed = isChaser ? dz * 0.34 : 0;
             obs.z += dz + extraSpeed;
 
             if (obs.type === 'rolling_stone' || obs.type === 'glitch_hazard') {
@@ -1334,5 +1352,65 @@ class TrackManager {
             ctx.fillText(pp.text, pp.x, pp.y);
             ctx.restore();
         });
+
+        // 스테이지가 바뀔 때마다 화면 중앙으로 큼직하게 지나가는 스테이지 전환 배너 연출!
+        if (this.stageBanner) {
+            const sb = this.stageBanner;
+            const p = sb.elapsed / sb.duration; // 0 ~ 1
+            let offsetX = 0;
+            if (p < 0.20) {
+                // 오른쪽에서 중앙으로 빠르게 진입
+                const t = 1 - Math.pow(1 - p / 0.20, 3);
+                offsetX = (1 - t) * (width * 0.95);
+            } else if (p < 0.78) {
+                // 중앙에서 천천히 이동하며 플레이어가 큰 글씨를 확실히 읽게 함
+                const t = (p - 0.20) / 0.58;
+                offsetX = (0.5 - t) * 90;
+            } else {
+                // 왼쪽으로 시원하게 빠져나감
+                const t = Math.pow((p - 0.78) / 0.22, 3);
+                offsetX = -45 - t * (width * 1.05);
+            }
+
+            const cx = width * 0.5 + offsetX;
+            const cy = height * 0.43;
+            const bannerW = Math.min(width * 0.88, 780);
+            const bannerH = 136;
+
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(-0.025); // 역동적인 사선 기울기
+
+            // 그림자 및 배경 리본 박스
+            ctx.fillStyle = 'rgba(26, 22, 18, 0.88)';
+            ctx.strokeStyle = sb.bgColor;
+            ctx.lineWidth = 7;
+            ctx.beginPath();
+            ctx.roundRect(-bannerW * 0.5, -bannerH * 0.5, bannerW, bannerH, 24);
+            ctx.fill();
+            ctx.stroke();
+
+            // 상단/하단 포인트 라인
+            ctx.fillStyle = sb.bgColor;
+            ctx.fillRect(-bannerW * 0.46, -bannerH * 0.5 + 10, bannerW * 0.92, 6);
+            ctx.fillRect(-bannerW * 0.46, bannerH * 0.5 - 16, bannerW * 0.92, 6);
+
+            // 초대형 스테이지 타이틀 글씨
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.font = 'bold 58px "Comic Neue", "Gaegu", sans-serif';
+            ctx.strokeStyle = '#1a1612';
+            ctx.lineWidth = 9;
+            ctx.strokeText(sb.title, 0, -14);
+            ctx.fillStyle = '#fffcf5';
+            ctx.fillText(sb.title, 0, -14);
+
+            // 서브타이틀 설명 글씨
+            ctx.font = 'bold 28px "Gaegu", sans-serif';
+            ctx.fillStyle = sb.bgColor;
+            ctx.fillText(sb.subtitle, 0, 36);
+
+            ctx.restore();
+        }
     }
 }
