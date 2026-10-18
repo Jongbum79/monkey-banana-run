@@ -42,17 +42,20 @@ class PeanutsMonkeyHero {
         this.lookBackBlend = 0;    // 0: 완전 뒷모습, 1: 뒤돌아본 모습 (부드러운 회전 전환)
         this.lookBackMood = 'happy'; // 'happy' | 'scared' | 'proud'
 
-        // 피격(장애물/오답 충돌) 및 부스트, 무적 방패 상태
+        // 피격(장애물/오답 충돌) 및 부스트, 무적 방패, 슈퍼점프, 손오공 진화 상태
         this.stumbleTimer = 0;
         this.boostTimer = 0;
         this.shieldActive = false;
-        this.invincibleTimer = 0; // 방패 아이템 획득 시 기물 완전 무적 타이머
+        this.invincibleTimer = 0; // 방패 아이템 획득 시 기물 무적 타이머 (3.2초로 단축)
+        this.superJumpTimer = 0;  // 슈퍼점프 아이템 획득 시 5초간 초고도 점프!
+        this.isWukong = false;    // 손오공 진화 여부 (체력 대폭 상승 + 긴고아/여의봉/근두운 장착)
+        this.wukongLevel = 0;
 
         // 톰 골드런 스타일 장애물(경사로/버스 지붕) 위로 올라가 달리기 높이
         this.platformY = 0;
         this.targetPlatformY = 0;
 
-        // 캐릭터 HP 시스템 (체력을 60으로 줄여 긴장감 부여, 3회 충돌 시 0 소멸, 문제 해결 시 조금씩 복구)
+        // 캐릭터 HP 시스템 (기본 체력 60, 데미지 대폭 강화! 손오공 진화 시 최대 체력 증가!)
         this.maxHp = 60;
         this.hp = 60;
     }
@@ -73,7 +76,8 @@ class PeanutsMonkeyHero {
         }
         if (!this.isJumping) {
             this.isJumping = true;
-            this.vy = 19.5;
+            // 슈퍼점프 5초 적용 중일 때는 훨씬 높이 점프!
+            this.vy = this.superJumpTimer > 0 ? 27.5 : 19.5;
             return true;
         }
         return false;
@@ -82,7 +86,7 @@ class PeanutsMonkeyHero {
     slide() {
         if (this.isJumping) {
             // 공중에서 아래 키를 누르면 급강하!
-            this.vy = -24;
+            this.vy = -26;
         }
         this.isSliding = true;
         this.slideTimer = 0.65;
@@ -105,10 +109,24 @@ class PeanutsMonkeyHero {
         this.triggerLookBack(1.3, 'proud');
     }
 
-    triggerInvincibleShield(duration = 7.0) {
+    triggerInvincibleShield(duration = 3.2) {
         this.invincibleTimer = duration;
         this.shieldActive = true;
-        this.triggerLookBack(1.4, 'proud');
+        this.triggerLookBack(1.2, 'proud');
+    }
+
+    triggerSuperJump(duration = 5.0) {
+        this.superJumpTimer = duration;
+        this.triggerLookBack(1.3, 'happy');
+    }
+
+    triggerWukongEvolution() {
+        this.isWukong = true;
+        this.wukongLevel++;
+        this.maxHp += 30; // 최대 체력 +30 증가!
+        this.hp = Math.min(this.maxHp, this.hp + 45); // 체력 대폭 회복!
+        this.triggerBoost(2.5);
+        this.triggerLookBack(1.6, 'proud');
     }
 
     update(dt, speedMultiplier = 1.0) {
@@ -141,9 +159,12 @@ class PeanutsMonkeyHero {
             }
         }
 
-        // 피격 및 부스트, 무적 방패 타이머
+        // 피격 및 부스트, 무적 방패, 슈퍼점프 타이머
         if (this.stumbleTimer > 0) this.stumbleTimer -= dt;
         if (this.boostTimer > 0) this.boostTimer -= dt;
+        if (this.superJumpTimer > 0) {
+            this.superJumpTimer = Math.max(0, this.superJumpTimer - dt);
+        }
         if (this.invincibleTimer > 0) {
             this.invincibleTimer -= dt;
             if (this.invincibleTimer <= 0) {
@@ -225,8 +246,8 @@ class PeanutsMonkeyHero {
             ctx.globalAlpha = 0.72;
         }
 
-        // 부스트 오라 이펙트
-        if (this.boostTimer > 0) {
+        // 부스트 또는 손오공 황금 오라 이펙트
+        if (this.boostTimer > 0 || this.isWukong) {
             this.drawBoostAura(ctx);
         }
 
@@ -234,15 +255,15 @@ class PeanutsMonkeyHero {
         const cosSwing = Math.cos(this.runCycle);
         const isLookingBack = this.lookBackBlend > 0.35;
 
-        // =====================================================================
-        // 도망가는 원숭이 레이어 순서 (뒷모습 기준):
-        // 1. 앞쪽으로 뻗은 왼팔 (몸통 앞/너머에 있으므로 먼저 그림)
-        // 2. 오른팔 & 껍질 벗겨진 황금 바나나 (오른쪽 옆으로 자랑스럽게 들고 뜀)
-        // 3. 몸통 등판 (빨간 러닝 탱크톱 등판 + 파란 반바지 엉덩이)
-        // 4. 양다리 & 발바닥 가로 밑창 줄무늬가 번갈아 보이는 스니커즈
-        // 5. 머리 (기본은 복슬복슬한 뒤통수, 뒤돌아볼 때는 고개를 돌려 얼굴 노출!)
-        // 6. 엉덩이에서 뻗어 나와 맨 뒤(카메라 쪽)에서 살랑거리는 S자 긴 꼬리!
-        // =====================================================================
+        // 손오공 진화 시 발밑 황금 근두운(구름) & 등 뒤 여의봉 렌더링
+        if (this.isWukong) {
+            this.drawWukongNimbusAndStaff(ctx, swing);
+        }
+
+        // 슈퍼점프 5초 활성화 시 발밑 스프링 날개 링 이펙트
+        if (this.superJumpTimer > 0) {
+            this.drawSuperJumpAura(ctx);
+        }
 
         this.drawLeftArmRunningAway(ctx, swing);
         this.drawRightArmAndBanana(ctx, swing, cosSwing);
@@ -255,6 +276,11 @@ class PeanutsMonkeyHero {
         } else {
             // 앞을 보고 열심히 도망가는 귀여운 원숭이 뒤통수!
             this.drawBackOfHead(ctx, swing, cosSwing);
+        }
+
+        // 손오공 진화 시 머리 위 금테 머리띠(긴고아)와 붉은 봉황 깃털 2가닥!
+        if (this.isWukong) {
+            this.drawWukongCrown(ctx, swing);
         }
 
         // 맨 앞(플레이어 쪽)에 위치한 반바지 엉덩이 & S자 꼬리
@@ -1165,24 +1191,137 @@ class PeanutsMonkeyHero {
         ctx.restore();
     }
 
-    // 캐릭터 머리 위 플로팅 HP 게이지 바 (3칸 구분선 + 현재 체력 비율 표시)
+    // 🚀 슈퍼점프 5초 활성화 시 발밑 탄성 스프링 링 & 날개 효과
+    drawSuperJumpAura(ctx) {
+        ctx.save();
+        ctx.strokeStyle = '#00f5d4';
+        ctx.fillStyle = 'rgba(0, 245, 212, 0.25)';
+        ctx.lineWidth = 5;
+        for (let i = 0; i < 2; i++) {
+            const r = 75 + i * 32 + Math.sin(this.time * 12 + i) * 10;
+            ctx.beginPath();
+            ctx.ellipse(0, -18 - i * 22, r, r * 0.28, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+        }
+        ctx.fillStyle = '#00bbf9';
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 4;
+        ctx.font = 'bold 26px "Gaegu", sans-serif';
+        ctx.textAlign = 'center';
+        const txt = `🚀 슈퍼점프 ${this.superJumpTimer.toFixed(1)}초`;
+        ctx.strokeText(txt, 0, -505);
+        ctx.fillText(txt, 0, -505);
+        ctx.restore();
+    }
+
+    // 👑 손오공 진화 1: 발밑 황금 근두운(구름) & 등 뒤 여의봉(Ruyi Jingu Bang)
+    drawWukongNimbusAndStaff(ctx, swing) {
+        ctx.save();
+        // 1) 등 뒤에 대각선으로 메고 있는 붉고 황금빛 나는 여의봉(如意棒)!
+        ctx.save();
+        ctx.translate(-10, -185);
+        ctx.rotate(-0.58 + swing * 0.05);
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 4;
+        // 여의봉 붉은 기둥 본체
+        ctx.fillStyle = '#d62828';
+        ctx.beginPath();
+        ctx.roundRect(-11, -145, 22, 290, 8);
+        ctx.fill();
+        ctx.stroke();
+        // 양끝 황금 테두리 장식
+        ctx.fillStyle = '#ffbe0b';
+        ctx.fillRect(-13, -145, 26, 42);
+        ctx.strokeRect(-13, -145, 26, 42);
+        ctx.fillRect(-13, 103, 26, 42);
+        ctx.strokeRect(-13, 103, 26, 42);
+        ctx.restore();
+
+        // 2) 발밑에 몽글몽글 피어오르는 황금 근두운(Flying Nimbus Cloud)!
+        ctx.save();
+        ctx.translate(0, -12 + Math.sin(this.time * 8) * 6);
+        ctx.fillStyle = '#ffea79';
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 4;
+        const puffs = [
+            { x: -75, y: 4, r: 30 },
+            { x: -38, y: -6, r: 38 },
+            { x: 0,   y: -10, r: 44 },
+            { x: 40,  y: -5, r: 36 },
+            { x: 75,  y: 5, r: 28 }
+        ];
+        ctx.beginPath();
+        puffs.forEach(pf => {
+            ctx.moveTo(pf.x + pf.r, pf.y);
+            ctx.arc(pf.x, pf.y, pf.r, 0, Math.PI * 2);
+        });
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+
+        ctx.restore();
+    }
+
+    // 👑 손오공 진화 2: 머리 위 황금 머리띠(긴고아) & 바람에 휘날리는 붉은 봉황 깃털 2가닥
+    drawWukongCrown(ctx, swing) {
+        ctx.save();
+        ctx.translate(0, -342);
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 4;
+        ctx.lineJoin = 'round';
+
+        // 1) 머리 위로 길게 뻗어 휘날리는 붉은 봉황 깃털 2가닥
+        [-1, 1].forEach(side => {
+            ctx.save();
+            const wave = Math.sin(this.time * 9 + side) * 14;
+            ctx.strokeStyle = '#e63946';
+            ctx.lineWidth = 7;
+            ctx.beginPath();
+            ctx.moveTo(side * 16, -24);
+            ctx.bezierCurveTo(side * 55, -95, side * 95 + wave, -135, side * 125 + wave, -105);
+            ctx.stroke();
+
+            ctx.strokeStyle = '#ffbe0b';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            ctx.restore();
+        });
+
+        // 2) 이마/뒤통수를 감싸는 황금 긴고아(Golden Headband)
+        ctx.fillStyle = '#ffbe0b';
+        ctx.beginPath();
+        ctx.roundRect(-86, -16, 172, 22, 10);
+        ctx.fill();
+        ctx.stroke();
+
+        // 중앙 V자 황금 문양
+        ctx.fillStyle = '#fb5607';
+        ctx.beginPath();
+        ctx.arc(0, -5, 14, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.restore();
+    }
+
+    // 캐릭터 머리 위 플로팅 HP 게이지 바 (손오공 진화 표시 + 현재 체력 표시)
     drawFloatingHpBar(ctx) {
         ctx.save();
-        ctx.translate(0, -455);
-        const barW = 140;
-        const barH = 22;
+        ctx.translate(0, -460);
+        const barW = this.isWukong ? 175 : 140;
+        const barH = 24;
         const ratio = Math.max(0, Math.min(1, this.hp / this.maxHp));
 
         // 배경 틀
         ctx.fillStyle = '#2b2118';
-        ctx.strokeStyle = '#1a1612';
+        ctx.strokeStyle = this.isWukong ? '#ffbe0b' : '#1a1612';
         ctx.lineWidth = 4;
         ctx.beginPath();
         ctx.roundRect(-barW * 0.5, -barH * 0.5, barW, barH, 8);
         ctx.fill();
         ctx.stroke();
 
-        // 체력 채움 색상 (높을 때 초록, 중간 노랑, 낮을 때 빨강)
         let hpColor = '#2a9d8f';
         if (ratio <= 0.35) hpColor = '#e63946';
         else if (ratio <= 0.68) hpColor = '#f5cb42';
@@ -1194,16 +1333,6 @@ class PeanutsMonkeyHero {
             ctx.fill();
         }
 
-        // 3칸 구분선 (장애물 3회 충돌 기준선)
-        ctx.strokeStyle = 'rgba(26, 22, 18, 0.55)';
-        ctx.lineWidth = 2.5;
-        [-barW / 6, barW / 6].forEach(divX => {
-            ctx.beginPath();
-            ctx.moveTo(divX, -barH * 0.5);
-            ctx.lineTo(divX, barH * 0.5);
-            ctx.stroke();
-        });
-
         // HP 텍스트
         ctx.fillStyle = '#fffcf5';
         ctx.strokeStyle = '#1a1612';
@@ -1211,9 +1340,9 @@ class PeanutsMonkeyHero {
         ctx.font = 'bold 17px "Gaegu", sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        const hpPercent = Math.ceil((this.hp / this.maxHp) * 100);
-        ctx.strokeText(`HP ${hpPercent}%`, 0, 1);
-        ctx.fillText(`HP ${hpPercent}%`, 0, 1);
+        const label = this.isWukong ? `👑손오공 HP ${this.hp}/${this.maxHp}` : `HP ${this.hp}/${this.maxHp}`;
+        ctx.strokeText(label, 0, 1);
+        ctx.fillText(label, 0, 1);
 
         ctx.restore();
     }

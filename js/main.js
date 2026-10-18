@@ -1,19 +1,21 @@
 /**
  * Smile Games - 원숭이의 바나나 런
- * [6학년 맞춤형 5단계 스테이지 + 방패 무적 아이템 + 등반 경사로 + 굴러오는 돌 + 학교 엔딩 완벽 통합]
+ * [피드백 완벽 반영 메인 엔진]
  * 개발자: 최지훈, 박주아, 김이수, 최우영, 전준우
  *
- * 반영 사항:
- * 1. 특별 아이템(🛡️ 방패): 획득 시 멋있는 파워업 사운드(playSpecialItem)와 함께 7초간 모든 기물에 완전 무적!
- * 2. 톰 골드런 스타일 등반 장애물(경사로 ramp): 부딪히지 않고 그 위로 올라가서 달릴 수 있음!
- * 3. 움직이는 돌(rolling_stone): 플레이어를 향해 굴러오며 묵직한 바위 굴러가는 소리(playRollingStone) 재생!
- * 4. 초등학교 6학년 맞춤형 5단계 레벨 & 낮은 체력(HP 60, 3회 충돌 시 소멸, 문제 풀면 회복):
- *    - 1단계: 숲 (다람쥐, 토끼, 사슴, 여우 등 동물 디테일)
- *    - 2단계: 사막 (전갈, 사막여우, 낙타, 피라미드 디테일)
- *    - 3단계: 해저 (상어, 열대어, 고래, 문어, 산호초 디테일)
- *    - 4단계: 도시 (타임스퀘어 화려한 밤 네온 전광판 & 노란 택시 디테일)
- *    - 5단계: 글리치 보이드 (마지막 스테이지! 주변에 '치지직' 노이즈 소리와 함께 가장 빠른 난이도)
- *    - 엔딩: 5단계를 클리어하면 드디어 🏫 스마일 초등학교(6학년 교실)가 나오며 해피엔딩 클리어!
+ * 최신 반영 사항:
+ * 1. 데미지 대폭 강화(충돌 시 체력 -30, 오답 시 -35) & 무적 방패 스폰율 축소 + 지속시간 3.2초로 단축!
+ * 2. 신규 아이템 2종 추가:
+ *    - 🚀 슈퍼점프 (5초): 5초 동안 초고도 점프로 높은 아치/기둥까지 뛰어넘음!
+ *    - 👑 손오공 진화 (체력 올리기): 최대 체력 +30 증가 & 체력 +45 회복 + 긴고아/여의봉/근두운 장착!
+ * 3. 스테이지별 전용 돌진 위협 기물 & 전용 효과음:
+ *    - 1단계(숲): 울퉁불퉁한 진짜 바위 돌 (우르르 돌 굴러가는 소리)
+ *    - 2단계(사막): 독침을 세운 거대 전갈 (집게발 위협음)
+ *    - 3단계(해저): 이빨을 드러낸 백상아리 상어 (물살 가르는 상어 위협음)
+ *    - 4단계(도시): 헤드라이트를 켜고 달려오는 자동차/택시 (빵빵! 클락션 경적음)
+ *    - 5단계(글리치 보이드): 글리치 해골 큐브 (치지직 노이즈 사운드)
+ * 4. 단계가 올라갈수록 속도 대폭 가속 & 초대형 상단 문제 칠판으로 가독성 완벽 해결!
+ * 5. 신나면서도 가볍지 않은 웅장한 D단조 액션 어드벤처 BGM 적용!
  */
 
 const canvas = document.getElementById('game-canvas');
@@ -68,16 +70,16 @@ if (playerName) {
 }
 
 const STAGE_INFO = {
-    1: { badge: '🌲 1단계: 동물들의 숲', speedBase: 1.0, ko: '"1단계 숲속! 다람쥐와 사슴이 응원해! 경사로 위로 올라가고 굴러오는 돌을 피해!"' },
-    2: { badge: '🏜️ 2단계: 황금 사막', speedBase: 1.15, ko: '"2단계 사막 진입! 전갈, 사막여우, 낙타가 있는 사막을 돌파하자!"' },
-    3: { badge: '🦈 3단계: 신비한 해저', speedBase: 1.28, ko: '"3단계 해저 터널! 상어와 고래, 물고기들이 헤엄치는 바다 밑을 달리자!"' },
-    4: { badge: '🌃 4단계: 도시 (타임스퀘어 밤)', speedBase: 1.42, ko: '"4단계 타임스퀘어 야경! 네온 전광판과 노란 택시 사이를 질주하자!"' },
-    5: { badge: '⚡ 5단계: 글리치 보이드 (FINAL)', speedBase: 1.62, ko: '"치지직... 마지막 5단계 글리치 보이드! 여길 넘으면 학교에 도착해!"' },
+    1: { badge: '🌲 1단계: 동물들의 숲', speedBase: 1.05, ko: '"1단계 숲속! 굴러오는 진짜 바위를 피하고 손오공 진화 & 슈퍼점프를 먹어봐!"' },
+    2: { badge: '🏜️ 2단계: 황금 사막 (속도 UP!)', speedBase: 1.25, ko: '"2단계 사막 진입! 속도가 빨라졌어! 달려오는 독침 전갈을 조심해!"' },
+    3: { badge: '🦈 3단계: 신비한 해저 (초고속!)', speedBase: 1.48, ko: '"3단계 해저 터널! 정면에서 돌진하는 거대 백상아리 상어를 피해!"' },
+    4: { badge: '🌃 4단계: 도시 타임스퀘어 밤 (극한속도!)', speedBase: 1.72, ko: '"4단계 타임스퀘어 밤! 빵빵~ 헤드라이트를 켜고 달려오는 자동차를 피해!"' },
+    5: { badge: '⚡ 5단계: 글리치 보이드 (FINAL 최고속도!)', speedBase: 2.00, ko: '"치지직... 마지막 5단계 글리치 보이드! 여길 넘으면 학교에 도착해!"' },
     6: { badge: '🏫 엔딩: 스마일 초등학교 도착!', speedBase: 1.0, ko: '"딩동댕동~ 드디어 6학년 교실이 있는 학교에 무사히 도착했어! 축하해!"' }
 };
 
 // =========================================================================
-// 🏆 랭킹 시스템 (localStorage 기반 + Smile Games 개발팀 초기 명예의 전당)
+// 🏆 랭킹 시스템
 // =========================================================================
 const RANKING_STORAGE_KEY = 'smilegames_monkey_rankings_v1';
 
@@ -156,23 +158,22 @@ window.addEventListener('resize', resize);
 resize();
 
 // =========================================================================
-// HUD 업데이트 (단계, 방패 무적 타이머, 축소된 체력 HP 60, 점수, 드래곤 거리)
+// HUD 업데이트
 // =========================================================================
 function updateHUD() {
     const stInfo = STAGE_INFO[track.stage] || STAGE_INFO[1];
     stageBadgeEl.textContent = stInfo.badge;
 
-    if (hero.invincibleTimer > 0) {
-        shieldStatusEl.textContent = `🛡️ 무적 ${ hero.invincibleTimer.toFixed(1) }초`;
-    } else {
-        shieldStatusEl.textContent = '';
-    }
+    const statusParts = [];
+    if (hero.isWukong) statusParts.push(`👑손오공 Lv.${hero.wukongLevel}`);
+    if (hero.invincibleTimer > 0) statusParts.push(`🛡️${hero.invincibleTimer.toFixed(1)}s`);
+    if (hero.superJumpTimer > 0) statusParts.push(`🚀${hero.superJumpTimer.toFixed(1)}s`);
+    shieldStatusEl.textContent = statusParts.join(' ');
 
     hudPlayerNameEl.textContent = playerName || '플레이어';
     scoreEl.textContent = score;
     mathSolvedEl.textContent = mathGate.solvedCount;
 
-    // 낮춘 체력(maxHp = 60, 장애물 1회 충돌 시 -20 감소 -> 3회 충돌 시 0 소멸!)
     const hpRatio = Math.max(0, Math.min(1, hero.hp / hero.maxHp));
     const hpPercent = Math.ceil(hpRatio * 100);
     hpBarFillEl.style.width = `${hpPercent}%`;
@@ -184,8 +185,8 @@ function updateHUD() {
     } else {
         hpBarFillEl.style.background = 'linear-gradient(90deg, #2a9d8f, #52b788)';
     }
-    const remainHits = Math.ceil(hero.hp / 20);
-    hpBarLabelEl.textContent = `❤️ 체력 ${hero.hp}/${hero.maxHp} (남은 충돌 한도: ${remainHits}회)`;
+    const wukongPrefix = hero.isWukong ? '👑손오공 ' : '❤️ ';
+    hpBarLabelEl.textContent = `${wukongPrefix}체력 ${hero.hp}/${hero.maxHp} (충돌 데미지 -30!)`;
 
     const dist = Math.round(dragon.distance);
     dragonFillEl.style.width = `${dist}%`;
@@ -206,9 +207,8 @@ function setStage(newStage) {
         const info = STAGE_INFO[clamped];
         if (clamped === 5) {
             sound.playGlitchStatic();
-            bubbleEn.textContent = "BZZZT!! STAGE 5: GLITCH VOID!! WATCH OUT!!";
+            bubbleEn.textContent = "BZZZT!! STAGE 5: GLITCH VOID!! MAXIMUM SPEED!!";
         } else if (clamped === 6) {
-            // 5단계 클리어 -> 학교 도착 엔딩!
             gameState = 'SCHOOL_ENDING';
             schoolEndingTimer = 0;
             track.obstacles = [];
@@ -219,7 +219,7 @@ function setStage(newStage) {
             bubbleEn.textContent = "DING-DONG-DANG-DONG! ARRIVED AT SMILE ELEMENTARY SCHOOL!";
         } else {
             sound.playSpecialItem();
-            bubbleEn.textContent = `STAGE ${clamped} UNLOCKED! KEEP RUNNING TO SCHOOL!`;
+            bubbleEn.textContent = `STAGE ${clamped} UNLOCKED! SPEED UP!`;
         }
         bubbleKo.textContent = info.ko;
         track.addPopup(width * 0.5, height * 0.35, `🎉 ${info.badge} 진입!`, '#f72585');
@@ -253,7 +253,7 @@ function startNewGame(skipPrologue = false) {
     if (skipPrologue) {
         gameState = 'PLAYING';
         hero.triggerLookBack(1.2, 'happy');
-        bubbleEn.textContent = "STAGE 1: FOREST! CLIMB RAMPS, DODGE ROLLING STONES & GET SHIELD!";
+        bubbleEn.textContent = "STAGE 1: FOREST! DODGE BOULDERS, GET SUPER JUMP & WUKONG EVOLUTION!";
         bubbleKo.textContent = STAGE_INFO[1].ko;
     } else {
         gameState = 'PROLOGUE';
@@ -283,7 +283,7 @@ function triggerGameOver(reasonText) {
 }
 
 function triggerGameClear() {
-    score += 500; // 학교 도착 보너스 점수!
+    score += 500;
     triggerGameEndModal(
         '🏫 스마일 초등학교 도착 클리어! 🎓',
         '축하합니다! 1단계 숲부터 5단계 글리치 보이드까지 모두 돌파하고 학교에 무사히 등교했어요! (+500점 클리어 보너스)'
@@ -291,7 +291,7 @@ function triggerGameClear() {
 }
 
 // =========================================================================
-// 입력 제어 (키보드, 터치 스와이프, UI 버튼)
+// 입력 제어
 // =========================================================================
 function handleLeft() {
     if (gameState === 'PROLOGUE') { startNewGame(true); return; }
@@ -308,7 +308,7 @@ function handleRight() {
 function handleJump() {
     if (gameState === 'PROLOGUE') { startNewGame(true); return; }
     if (gameState !== 'PLAYING' && gameState !== 'SCHOOL_ENDING') return;
-    if (hero.jump()) sound.playJump();
+    if (hero.jump()) sound.playJump(hero.superJumpTimer > 0);
 }
 
 function handleSlide() {
@@ -354,7 +354,6 @@ window.addEventListener('keydown', (e) => {
     }
 });
 
-// 모바일 터치 스와이프 지원
 let touchStartX = 0;
 let touchStartY = 0;
 window.addEventListener('touchstart', (e) => {
@@ -377,7 +376,6 @@ window.addEventListener('touchend', (e) => {
     }
 }, { passive: true });
 
-// 버튼 이벤트 연결
 document.getElementById('btn-start-game').addEventListener('click', startWithPlayerName);
 document.getElementById('btn-left').addEventListener('click', handleLeft);
 document.getElementById('btn-right').addEventListener('click', handleRight);
@@ -436,22 +434,11 @@ function gameLoop(now) {
         return;
     }
 
-    // 2. 학교 도착 엔딩 연출 상태 (5단계 클리어 후!)
+    // 2. 학교 도착 엔딩 연출 상태
     if (gameState === 'SCHOOL_ENDING') {
         schoolEndingTimer += dt;
         hero.update(dt, 1.0);
-        track.roadOffset = (track.roadOffset + dt * 2.2) % 1;
-        // 파티클 업데이트
-        track.particles.forEach(pt => {
-            pt.x += pt.vx * dt;
-            pt.y += pt.vy * dt;
-            pt.vy += 400 * dt;
-            pt.life -= dt;
-        });
-        track.particles = track.particles.filter(pt => pt.life > 0);
-        track.popups.forEach(p => { p.y -= 55 * dt; p.life -= dt; });
-        track.popups = track.popups.filter(p => p.life > 0);
-
+        track.scrollDist += dt * 0.4;
         if (schoolEndingTimer > 4.2) {
             triggerGameClear();
         }
@@ -460,8 +447,8 @@ function gameLoop(now) {
     // 3. 본 게임 플레이 업데이트
     if (gameState === 'PLAYING') {
         const stInfo = STAGE_INFO[track.stage] || STAGE_INFO[1];
-        gameSpeed = stInfo.speedBase + Math.min(0.25, score / 5000);
-        const effectiveSpeed = (hero.boostTimer > 0 || hero.invincibleTimer > 0) ? gameSpeed * 1.28 : gameSpeed;
+        gameSpeed = stInfo.speedBase + Math.min(0.30, score / 4500);
+        const effectiveSpeed = (hero.boostTimer > 0 || hero.invincibleTimer > 0) ? gameSpeed * 1.25 : gameSpeed;
 
         hero.update(dt, effectiveSpeed);
         dragon.update(dt);
@@ -477,10 +464,9 @@ function gameLoop(now) {
                 updateHUD();
             },
             onBananaBundle: (item) => {
-                // 특별 아이템 먹는 멋있는 소리 재생!
                 sound.playSpecialItem();
                 score += 35;
-                hero.triggerBoost(2.8);
+                hero.triggerBoost(2.5);
                 dragon.onPlayerSuccess(15);
                 const p = track.project(item.z, item.lane, width, height);
                 track.addPopup(p.x, p.y - 55, '황금 바나나 부스트! +35 🍌', '#2a9d8f');
@@ -489,30 +475,57 @@ function gameLoop(now) {
                 updateHUD();
             },
             onShield: (item) => {
-                // 방패 아이템 획득 -> 멋있는 파워업 사운드 + 7초간 기물 완전 무적!
+                // 🛡️ 무적 방패: 지속시간을 3.2초로 줄이고 스폰율을 낮춰 밸런스 완성!
                 sound.playSpecialItem();
                 score += 25;
-                hero.triggerInvincibleShield(7.0);
+                hero.triggerInvincibleShield(3.2);
                 const p = track.project(item.z, item.lane, width, height);
-                track.addPopup(p.x, p.y - 60, '🛡️ 방패 무적 발동! (7초간 기물 파괴!)', '#00b4d8');
-                track.addBurstParticles(p.x, p.y - 35, '#90e0ef', 22);
-                bubbleEn.textContent = "SHIELD POWER-UP! INVINCIBLE TO ALL OBSTACLES FOR 7 SECONDS!";
-                bubbleKo.textContent = '"멋진 방패 아이템 획득! 7초 동안 모든 장애물에 완전 무적이야!"';
+                track.addPopup(p.x, p.y - 60, '🛡️ 방패 무적 (3.2초)!', '#00b4d8');
+                track.addBurstParticles(p.x, p.y - 35, '#90e0ef', 20);
+                bubbleEn.textContent = "SHIELD POWER-UP! INVINCIBLE FOR 3.2 SECONDS!";
+                bubbleKo.textContent = '"방패 아이템 획득! 3.2초 동안 모든 기물에 무적이야!"';
+                updateHUD();
+            },
+            onSuperJump: (item) => {
+                // 🚀 신규 아이템 1: 슈퍼점프 5초!
+                sound.playSpecialItem();
+                score += 30;
+                hero.triggerSuperJump(5.0);
+                const p = track.project(item.z, item.lane, width, height);
+                track.addPopup(p.x, p.y - 65, '🚀 슈퍼점프 5초 발동! +30', '#06d6a0');
+                track.addBurstParticles(p.x, p.y - 35, '#00f5d4', 22);
+                bubbleEn.textContent = "SUPER JUMP ACTIVATED FOR 5 SECONDS! LEAP OVER EVERYTHING!";
+                bubbleKo.textContent = '"🚀 슈퍼점프 5초 발동! 이제 점프하면 엄청 높이 날아올라!"';
+                updateHUD();
+            },
+            onWukong: (item) => {
+                // 👑 신규 아이템 2: 손오공 진화 (체력 대폭 올리기 + 근두운/여의봉/긴고아 장착)!
+                sound.playWukongEvolution();
+                score += 50;
+                hero.triggerWukongEvolution();
+                dragon.onPlayerSuccess(18);
+                const p = track.project(item.z, item.lane, width, height);
+                track.addPopup(p.x, p.y - 75, `👑 손오공 진화! 최대체력 UP (${hero.hp}/${hero.maxHp})`, '#ffbe0b');
+                track.addBurstParticles(p.x, p.y - 40, '#ffbe0b', 28);
+                bubbleEn.textContent = "SUN WUKONG EVOLUTION!! MAX HP INCREASED & NIMBUS CLOUD SUMMONED!";
+                bubbleKo.textContent = `"👑 제천대성 손오공 진화! 최대 체력이 ${hero.maxHp}으로 오르고 체력이 대폭 회복됐어!"`;
                 updateHUD();
             },
             onRampClimb: (obs) => {
-                // 톰 골드런 스타일 경사로 위로 올라가며 질주!
-                sound.playJump();
+                sound.playJump(false);
                 score += 15;
                 const p = track.project(obs.z, obs.lane, width, height);
                 track.addPopup(p.x, p.y - 85, '경사로 위 질주! +15 🏃‍♂️', '#2a9d8f');
                 track.addBurstParticles(p.x, p.y - 50, '#a8dadc', 10);
-                bubbleKo.textContent = '"신난다! 톰 골드런처럼 장애물 경사로 위로 뛰어올랐어!"';
                 updateHUD();
             },
-            onRollingStoneSpawn: () => {
-                // 움직이는 돌이 굴러올 때 돌 굴러가는 효과음 재생!
-                sound.playRollingStone();
+            onChaserSpawn: (chaserType) => {
+                // 스테이지별 전용 돌진 위협 기물 효과음 재생!
+                if (chaserType === 'rolling_stone') sound.playRollingStone();
+                else if (chaserType === 'desert_scorpion') sound.playScorpionSound();
+                else if (chaserType === 'undersea_shark') sound.playSharkSound();
+                else if (chaserType === 'city_car') sound.playCarHorn();
+                else if (chaserType === 'glitch_hazard') sound.playGlitchStatic(0.16, 0.08);
             },
             onObstacleAvoided: (obs) => {
                 score += 5;
@@ -523,33 +536,32 @@ function gameLoop(now) {
             onObstacleHit: (obs) => {
                 const p = track.project(obs.z, obs.lane, width, height);
 
-                // 방패 무적 상태일 때는 기물을 부수며 보너스 점수 획득!
                 if (hero.invincibleTimer > 0) {
                     sound.playSpecialItem();
                     score += 20;
                     track.addPopup(p.x, p.y - 65, '🛡️ 무적 방패 돌파! +20 💥', '#00b4d8');
                     track.addBurstParticles(p.x, p.y - 40, '#00f5d4', 18);
-                    bubbleKo.textContent = '"방패 무적 파워로 장애물을 쾅! 부수고 지나갔어!"';
                     updateHUD();
                     return;
                 }
 
                 sound.playHit();
                 hero.triggerStumble();
-                dragon.onPlayerMistake(25);
+                dragon.onPlayerMistake(28);
 
-                // 낮춘 체력(HP 60): 장애물 1회 충돌 시 -20 감소 (3번 충돌 시 0 소멸!)
-                hero.hp = Math.max(0, hero.hp - 20);
+                // 데미지 대폭 강화! 기물 1회 충돌 시 체력 -30 감소! (기본 체력 60 기준 2번만 부딪혀도 위험!)
+                const dmg = 30;
+                hero.hp = Math.max(0, hero.hp - dmg);
 
-                track.addPopup(p.x, p.y - 65, '쿵! 체력 -20 💥', '#e63946');
-                track.addBurstParticles(p.x, p.y - 35, '#e63946', 14);
-                bubbleEn.textContent = "OUCH!! HP DROPPED! SOLVE MATH GATES TO RECOVER!";
-                bubbleKo.textContent = `"아야! 장애물에 부딪쳐서 체력이 줄었어! (남은 체력: ${hero.hp}/${hero.maxHp})"`;
+                track.addPopup(p.x, p.y - 65, `쾅!! 치명상 체력 -${dmg} 💥`, '#e63946');
+                track.addBurstParticles(p.x, p.y - 35, '#e63946', 18);
+                bubbleEn.textContent = "CRITICAL HIT!! -30 HP! GET WUKONG EVOLUTION OR SOLVE MATH!";
+                bubbleKo.textContent = `"으악! 데미지가 엄청 세! 체력이 -${dmg} 깎였어! (손오공 진화 아이템이나 문제를 풀어 회복해!)"`;
                 updateHUD();
 
                 if (hero.hp <= 0) {
                     track.addBurstParticles(p.x, height * 0.80, '#fffcf5', 28);
-                    triggerGameOver('장애물에 3번 충돌하여 캐릭터 체력(HP)이 모두 소진되어 사라졌어요!');
+                    triggerGameOver('강력한 기물 데미지로 캐릭터 체력(HP)이 모두 소진되어 사라졌어요!');
                 } else if (dragon.distance <= 0) {
                     triggerGameOver('뒤쫓아온 화염 드래곤에게 붙잡혔어요!');
                 }
@@ -560,7 +572,7 @@ function gameLoop(now) {
         mathGate.update(dt, effectiveSpeed, hero, track, {
             onGateSpawn: (gate) => {
                 bubbleEn.textContent = `STAGE ${gate.stage} MATH GATE! SOLVE:  ${gate.questionText}`;
-                bubbleKo.textContent = `"6학년 ${gate.stage}단계 문제 등장! [ ${gate.questionText} ] 정답 문으로 가면 체력이 회복되고 다음 단계로 가!"`;
+                bubbleKo.textContent = `"화면 위 칠판을 봐! [ ${gate.questionText} ] 정답 문으로 가면 체력이 회복돼!"`;
             },
             onCorrectAnswer: (gate, door) => {
                 sound.playCorrect();
@@ -568,9 +580,8 @@ function gameLoop(now) {
                 hero.triggerBoost(2.2);
                 dragon.onPlayerSuccess(22);
 
-                // 문제를 풀 때마다 낮아진 체력 조금씩(+10) 복구!
                 const prevHp = hero.hp;
-                hero.hp = Math.min(hero.maxHp, hero.hp + 10);
+                hero.hp = Math.min(hero.maxHp, hero.hp + 15);
                 const healed = hero.hp - prevHp;
                 if (healed > 0) sound.playHeal();
 
@@ -579,9 +590,8 @@ function gameLoop(now) {
                 track.addPopup(p.x, p.y - 95, `정답! +100점${healText} 🎉`, '#2a9d8f');
                 track.addBurstParticles(p.x, p.y - 70, '#52b788', 18);
                 bubbleEn.textContent = `BINGO! ${gate.questionText.replace('?', gate.answer)} IS CORRECT!`;
-                bubbleKo.textContent = `"정답이야! 문이 활짝 열리며 +100점 & 체력이 조금 복구됐어!"`;
+                bubbleKo.textContent = `"정답이야! 문이 활짝 열리며 +100점 & 체력이 복구됐어!"`;
 
-                // 2문제 풀 때마다 다음 스테이지로 진급! (총 10문제 풀면 5단계 클리어 -> 6단계 학교 도착!)
                 const nextStage = Math.min(6, Math.floor(mathGate.solvedCount / 2) + 1);
                 if (nextStage > track.stage) {
                     setStage(nextStage);
@@ -599,13 +609,16 @@ function gameLoop(now) {
                 }
                 sound.playHit();
                 hero.triggerStumble();
-                dragon.onPlayerMistake(26);
-                hero.hp = Math.max(0, hero.hp - 20);
+                dragon.onPlayerMistake(30);
 
-                track.addPopup(p.x, p.y - 95, `땡! 문 안 열림! 체력 -20 (정답:${gate.answer}) 💥`, '#e63946');
-                track.addBurstParticles(p.x, p.y - 70, '#e63946', 14);
+                // 오답 문 충돌 시 체력 -35 감소!
+                const wrongDmg = 35;
+                hero.hp = Math.max(0, hero.hp - wrongDmg);
+
+                track.addPopup(p.x, p.y - 95, `땡! 문 안 열림! 체력 -${wrongDmg} (정답:${gate.answer}) 💥`, '#e63946');
+                track.addBurstParticles(p.x, p.y - 70, '#e63946', 18);
                 bubbleEn.textContent = `BONK!! THE DOOR STAYED LOCKED! (ANSWER: ${gate.answer})`;
-                bubbleKo.textContent = `"쿵! 틀려서 문이 안 열렸어! 정답은 ${gate.answer}! 체력이 감소했어!"`;
+                bubbleKo.textContent = `"쿵! 틀려서 문이 안 열렸어! 정답은 ${gate.answer}! 체력이 -${wrongDmg} 감소했어!"`;
                 updateHUD();
 
                 if (hero.hp <= 0) {
@@ -625,16 +638,13 @@ function gameLoop(now) {
     const shake = dragon.getScreenShakeOffset();
     ctx.translate(shake.x, shake.y);
 
-    // (A) 단계별 배경(1:숲, 2:사막, 3:해저, 4:도시 타임스퀘어, 5:글리치 보이드, 6:학교 도착) 및 3레인 트랙
     track.renderBackgroundAndRoad(ctx, width, height, hero.time);
 
-    // (B) 원숭이보다 앞쪽(지평선 방향, z <= 0.88)에 있는 장애물, 경사로, 굴러오는 돌, 방패 아이템, 수학의 문 렌더링
     track.renderEntities(ctx, width, height, hero.time, 0, 0.88);
     if (mathGate.activeGate && mathGate.activeGate.z <= 0.88) {
         mathGate.render(ctx, width, height, track);
     }
 
-    // (C) 주인공 스누피 원숭이 렌더링 (사이즈 절반 축소 + 경사로 등반 높이 및 무적 방패 오라 반영)
     if (hero.hp > 0) {
         const charScale = (Math.min(width, height) / 940) * 0.50;
         const roadBottomW = Math.min(width * 0.86, 860);
@@ -642,16 +652,13 @@ function gameLoop(now) {
         hero.render(ctx, width * 0.5, height * 0.84, charScale, lanePixelSpread);
     }
 
-    // (D) 원숭이를 막 지나친(z > 0.88) 장애물/문 렌더링
     track.renderEntities(ctx, width, height, hero.time, 0.88, 1.2);
     if (mathGate.activeGate && mathGate.activeGate.z > 0.88) {
         mathGate.render(ctx, width, height, track);
     }
 
-    // (E) 파티클 및 점수 팝업
     track.renderEffects(ctx, width, height);
 
-    // (F) 플레이어 등 뒤에서 불을 뿜으며 쫓아오는 고대 화염 드래곤 (학교 도착 시에는 사라짐)
     if (track.stage < 6) {
         dragon.renderInGameChase(ctx, width, height);
     }
