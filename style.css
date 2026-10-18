@@ -18,10 +18,10 @@ body, html {
 /* 빈티지 코믹북 종이 액자 프레임 */
 .comic-frame {
     position: absolute;
-    inset: 14px;
+    inset: 12px;
     border: 4px solid #1a1612;
     border-radius: 4px;
-    box-shadow: 0 0 0 18px #f3e5cf, inset 0 0 35px rgba(139, 105, 65, 0.22);
+    box-shadow: 0 0 0 16px #f3e5cf, inset 0 0 35px rgba(139, 105, 65, 0.22);
     pointer-events: none;
     z-index: 5;
 }
@@ -35,40 +35,40 @@ body, html {
     z-index: 1;
 }
 
-/* 피너츠 상단 구름 말풍선 (컨셉 이미지 재현) */
+/* 피너츠 상단 구름 말풍선 */
 .peanuts-speech-bubble {
     position: absolute;
-    top: 28px;
+    top: 22px;
     left: 50%;
     transform: translateX(-50%);
     background: #fffcf5;
     border: 3.5px solid #1a1612;
     border-radius: 50px;
-    padding: 12px 34px;
+    padding: 10px 30px;
     text-align: center;
     z-index: 12;
     box-shadow: 4px 4px 0px rgba(26, 22, 18, 0.18);
     pointer-events: none;
-    max-width: 680px;
+    max-width: 640px;
 }
 
 .peanuts-speech-bubble p {
     font-family: 'Comic Neue', 'Gaegu', cursive;
-    font-size: 22px;
+    font-size: 20px;
     font-weight: 700;
     color: #1a1612;
-    letter-spacing: 0.5px;
-    line-height: 1.25;
+    letter-spacing: 0.4px;
+    line-height: 1.2;
 }
 
 .peanuts-speech-bubble .sub-ko {
     font-family: 'Gaegu', cursive;
     font-size: 18px;
-    color: #5c4938;
+    font-weight: 700;
+    color: #b53421;
     margin-top: 2px;
 }
 
-/* 생각 말풍선 꼬리 방울 2개 */
 .bubble-dot-1, .bubble-dot-2 {
     position: absolute;
     background: #fffcf5;
@@ -76,33 +76,33 @@ body, html {
     border-radius: 50%;
 }
 .bubble-dot-1 {
-    width: 22px;
-    height: 16px;
-    bottom: -22px;
-    right: 120px;
+    width: 20px;
+    height: 14px;
+    bottom: -20px;
+    right: 110px;
 }
 .bubble-dot-2 {
-    width: 14px;
-    height: 11px;
-    bottom: -38px;
-    right: 138px;
+    width: 12px;
+    height: 10px;
+    bottom: -34px;
+    right: 126px;
 }
 
 /* UI 오버레이 */
 .ui-overlay {
     position: absolute;
-    inset: 14px;
+    inset: 12px;
     z-index: 10;
     pointer-events: none;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    padding: 20px;
+    padding: 18px;
 }
 
-/* 좌측 상단 Smile Games 헤더 */
+/* 좌측 상단 HUD & 스코어보드 */
 .header-box {
-    background: rgba(255, 252, 245, 0.94);
+    background: rgba(255, 252, 245, 0.95);
     border: 3px solid #1a1612;
     border-radius: 16px;
     padding: 12px 18px;
@@ -124,26 +124,72 @@ body, html {
 }
 
 .game-title {
-    font-size: 26px;
+    font-size: 25px;
     font-weight: 700;
     color: #1a1612;
 }
 
 .team-list {
-    font-size: 15px;
+    font-size: 14px;
     color: #3d3126;
-    margin-top: 3px;
+    margin-top: 2px;
 }
 
 .team-list strong {
     color: #d64531;
 }
 
-/* 우측 상단 원본 컨셉 아트 비교 카드 */
+.hud-stats {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 2px dashed #1a1612;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.hud-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* 드래곤 추격 거리 바 */
+.dragon-meter {
+    margin-top: 6px;
+    background: #e5dcc8;
+    border: 2px solid #1a1612;
+    border-radius: 10px;
+    height: 18px;
+    position: relative;
+    overflow: hidden;
+}
+
+.dragon-meter-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #e63946, #f5cb42, #2a9d8f);
+    width: 75%;
+    transition: width 0.25s;
+}
+
+.dragon-meter-label {
+    position: absolute;
+    inset: 0;
+    font-size: 12px;
+    font-weight: 700;
+    color: #1a1612;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 우측 상단 컨셉 비교 & 사운드 카드 */
 .concept-badge {
     position: absolute;
-    top: 20px;
-    right: 20px;
+    top: 18px;
+    right: 18px;
     background: rgba(255, 252, 245, 0.95);
     border: 3px solid #1a1612;
     border-radius: 16px;
@@ -154,17 +200,17 @@ body, html {
 }
 
 .concept-badge img {
-    width: 135px;
-    height: 135px;
+    width: 120px;
+    height: 120px;
     object-fit: cover;
     border-radius: 10px;
     border: 2px solid #1a1612;
     display: block;
-    margin-bottom: 6px;
+    margin-bottom: 5px;
 }
 
 .concept-badge span {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 700;
     color: #1a1612;
     display: block;
@@ -181,26 +227,26 @@ body, html {
 .controls-card {
     background: rgba(255, 252, 245, 0.95);
     color: #1a1612;
-    padding: 14px 20px;
+    padding: 12px 18px;
     border: 3px solid #1a1612;
     border-radius: 18px;
     pointer-events: auto;
-    max-width: 460px;
+    max-width: 520px;
     box-shadow: 4px 4px 0px #1a1612;
 }
 
 .controls-card h3 {
-    font-size: 18px;
-    margin-bottom: 8px;
+    font-size: 17px;
+    margin-bottom: 6px;
     color: #d64531;
 }
 
 .key-guide {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 6px 14px;
+    gap: 4px 14px;
     font-size: 15px;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
 }
 
 .key-item {
@@ -212,27 +258,27 @@ body, html {
 .badge {
     background: #f7dec1;
     border: 2px solid #1a1612;
-    padding: 1px 7px;
+    padding: 1px 6px;
     border-radius: 6px;
     font-family: monospace;
     font-weight: bold;
-    font-size: 13px;
+    font-size: 12px;
 }
 
 .btn-group {
     display: flex;
-    gap: 8px;
+    gap: 6px;
 }
 
 .btn {
     flex: 1;
     background: #f5cb42;
     border: 2.5px solid #1a1612;
-    border-radius: 12px;
-    padding: 8px 10px;
+    border-radius: 11px;
+    padding: 7px 8px;
     color: #1a1612;
     font-family: 'Gaegu', cursive;
-    font-size: 17px;
+    font-size: 16px;
     font-weight: 700;
     cursor: pointer;
     box-shadow: 2px 2px 0px #1a1612;
@@ -249,20 +295,75 @@ body, html {
     color: #fffcf5;
 }
 
-.btn-cam {
+.btn-slide {
+    background: #2a9d8f;
+    color: #fffcf5;
+}
+
+.btn-look {
     background: #5282a8;
     color: #fffcf5;
 }
 
-/* 하단 중앙 Peanuts 서명 */
 .peanuts-signature {
     font-family: 'Comic Neue', cursive;
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 700;
     color: #1a1612;
-    background: rgba(243, 229, 207, 0.85);
+    background: rgba(243, 229, 207, 0.9);
     padding: 4px 14px;
     border: 2px solid #1a1612;
     border-radius: 10px;
-    letter-spacing: 1.5px;
+    letter-spacing: 1px;
+}
+
+/* 게임 오버 모달 */
+.modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(26, 22, 18, 0.65);
+    z-index: 30;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-backdrop.active {
+    display: flex;
+}
+
+.modal-card {
+    background: #fffcf5;
+    border: 4px solid #1a1612;
+    border-radius: 24px;
+    padding: 28px 36px;
+    text-align: center;
+    max-width: 440px;
+    width: 90%;
+    box-shadow: 8px 8px 0px #1a1612;
+}
+
+.modal-card h2 {
+    font-size: 36px;
+    color: #d64531;
+    margin-bottom: 10px;
+}
+
+.modal-card p {
+    font-size: 20px;
+    color: #1a1612;
+    margin-bottom: 8px;
+}
+
+.modal-card .restart-btn {
+    margin-top: 16px;
+    background: #f5cb42;
+    border: 3px solid #1a1612;
+    border-radius: 14px;
+    padding: 12px 28px;
+    font-family: 'Gaegu', cursive;
+    font-size: 24px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 4px 4px 0px #1a1612;
 }

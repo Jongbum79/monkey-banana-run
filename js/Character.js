@@ -1,49 +1,51 @@
 /**
  * Smile Games - 원숭이의 바나나 런
- * [Step 1 마스터피스] 스누피(피너츠) 컨셉 아트 싱크로율 100% 핸드드로운 스켈레탈 캐릭터 엔진
+ * [Step 1~4 통합] 스누피(피너츠) 스타일 주인공 원숭이 캐릭터 엔진
  * 제작: 최지훈, 박주아, 김이수, 최우영, 전준우
  *
- * 특징:
- * - 찰스 슐츠(Peanuts) 특유의 잉크 펜 외곽선, 빗금 해칭(Cross-hatching), 수채화 농담 완벽 재현
- * - M자 이마 헤어라인, 정수리 삐죽 털, 볼 잔털, 아치 눈썹, 타원 점눈, 두 콧구멍, 보조개 미소
- * - 노란 파이핑 빨간 탱크톱 + 날개 달린 별(Winged Star) 엠블럼 + 노란 줄무늬 파란 반바지
- * - 껍질이 3갈래로 벗겨진 황금 바나나 & 바나나를 감싸 쥔 네 손가락 + 엄지 디테일
- * - 적갈색 노란 2선 스니커즈 & 발바닥 가로 밑창 줄무늬(Treads)
- * - 실시간 관절(Skeletal) 러닝 애니메이션, 점프, 레인 이동, 표정 변화
+ * 핵심 특징:
+ * 1. 기본 자세는 앞으로 도망가는 뒷모습(Back View):
+ *    - 복슬복슬한 뒤통수 털 + 정수리 삐죽 털 5가닥 + 양쪽 귀 뒷면
+ *    - 노란 시보리 빨간 러닝 탱크톱 등판 (날개 별 백 엠블럼) + 노란 옆줄 파란 반바지
+ *    - 엉덩이 중앙에서 S자로 살랑거리며 뻗어 나오는 긴 꼬리
+ *    - 뒤로 차올릴 때마다 스니커즈 발바닥의 가로 밑창 줄무늬(Treads)가 선명하게 보임!
+ *    - 오른손에 번쩍 들고 뛰는 껍질 벗겨진 황금 바나나!
+ * 2. 가끔 뒤를 힐끔 돌아보는 모션 (Look Back Mode):
+ *    - 주기적으로(약 4.5초마다) 또는 이벤트(정답 통과, 드래곤 접근, L키) 발생 시
+ *      고개와 상체를 뒤로 돌려 M자 이마 + 아치 눈썹 + 점눈 + 보조개 미소 얼굴을 보여줌!
+ * 3. 점프(Jump), 슬라이딩(Slide), 부스트(Boost), 충돌 어지러움(Stumble) 액션 완비
  */
 
 class PeanutsMonkeyHero {
     constructor() {
-        // 캐릭터 위치 및 물리 상태
-        this.currentLane = 0; // -1: 왼쪽, 0: 가운데, 1: 오른쪽
-        this.laneX = 0;       // 현재 보간된 레인 위치 (-1.0 ~ 1.0)
-        this.y = 0;           // 점프 높이 (px 단위 오프셋)
+        this.reset();
+    }
+
+    reset() {
+        this.currentLane = 0; // -1: 좌, 0: 중, 1: 우
+        this.laneX = 0;       // 보간된 X (-1 ~ 1)
+        this.y = 0;           // 점프 높이 (px)
         this.vy = 0;
         this.isJumping = false;
+        this.isSliding = false;
+        this.slideTimer = 0;
 
         // 애니메이션 타이머
         this.time = 0;
         this.runCycle = 0;
         this.blinkTimer = 0;
         this.isBlinking = false;
-        this.expression = 'happy'; // 'happy' | 'excited'
 
-        // 수채화 종이 질감 오프스크린 패턴 생성
-        this.watercolorPattern = this.createWatercolorPaperPattern();
-    }
+        // 뒤돌아보기(Look Back) 상태 관리
+        this.lookBackTimer = 1.8; // 다음 뒤돌아보기까지 남은 시간
+        this.lookBackDuration = 0; // 현재 뒤돌아보는 남은 시간
+        this.lookBackBlend = 0;    // 0: 완전 뒷모습, 1: 뒤돌아본 모습 (부드러운 회전 전환)
+        this.lookBackMood = 'happy'; // 'happy' | 'scared' | 'proud'
 
-    createWatercolorPaperPattern() {
-        const pCanvas = document.createElement('canvas');
-        pCanvas.width = 128;
-        pCanvas.height = 128;
-        const pCtx = pCanvas.getContext('2d');
-        for (let i = 0; i < 60; i++) {
-            pCtx.fillStyle = i % 2 === 0 ? 'rgba(120, 80, 40, 0.03)' : 'rgba(255, 250, 235, 0.04)';
-            pCtx.beginPath();
-            pCtx.arc(Math.random() * 128, Math.random() * 128, 8 + Math.random() * 24, 0, Math.PI * 2);
-            pCtx.fill();
-        }
-        return pCanvas;
+        // 피격(장애물/오답 충돌) 및 부스트 상태
+        this.stumbleTimer = 0;
+        this.boostTimer = 0;
+        this.shieldActive = false;
     }
 
     changeLane(dir) {
@@ -56,47 +58,105 @@ class PeanutsMonkeyHero {
     }
 
     jump() {
+        if (this.isSliding) {
+            this.isSliding = false;
+            this.slideTimer = 0;
+        }
         if (!this.isJumping) {
             this.isJumping = true;
-            this.vy = 18.5;
-            this.expression = 'excited';
+            this.vy = 19.5;
+            return true;
         }
+        return false;
     }
 
-    update(dt) {
+    slide() {
+        if (this.isJumping) {
+            // 공중에서 아래 키를 누르면 급강하!
+            this.vy = -24;
+        }
+        this.isSliding = true;
+        this.slideTimer = 0.65;
+        return true;
+    }
+
+    // 뒤를 돌아보게 트리거 (mood: 'happy' | 'scared' | 'proud')
+    triggerLookBack(duration = 1.4, mood = 'happy') {
+        this.lookBackDuration = duration;
+        this.lookBackMood = mood;
+    }
+
+    triggerStumble() {
+        this.stumbleTimer = 1.1;
+        this.triggerLookBack(1.1, 'scared');
+    }
+
+    triggerBoost(duration = 2.0) {
+        this.boostTimer = duration;
+        this.triggerLookBack(1.3, 'proud');
+    }
+
+    update(dt, speedMultiplier = 1.0) {
         this.time += dt;
-        this.runCycle += dt * 11.5;
+        const boostFactor = this.boostTimer > 0 ? 1.45 : 1.0;
+        this.runCycle += dt * 13.5 * speedMultiplier * boostFactor;
 
-        // 부드러운 레인 이동 보간
-        this.laneX += (this.currentLane - this.laneX) * Math.min(1, dt * 12);
+        // 레인 보간
+        this.laneX += (this.currentLane - this.laneX) * Math.min(1, dt * 13);
 
-        // 점프 물리 업데이트
+        // 점프 물리
         if (this.isJumping) {
             this.y += this.vy * (dt * 60);
-            this.vy -= 0.85 * (dt * 60);
+            this.vy -= 0.92 * (dt * 60);
             if (this.y <= 0) {
                 this.y = 0;
                 this.vy = 0;
                 this.isJumping = false;
-                this.expression = 'happy';
+            }
+        }
+
+        // 슬라이딩 타이머
+        if (this.isSliding) {
+            this.slideTimer -= dt;
+            if (this.slideTimer <= 0) {
+                this.isSliding = false;
+            }
+        }
+
+        // 피격 및 부스트 타이머
+        if (this.stumbleTimer > 0) this.stumbleTimer -= dt;
+        if (this.boostTimer > 0) this.boostTimer -= dt;
+
+        // 가끔 자동으로 뒤를 힐끔 돌아보는 타이머 (기본은 도망가는 뒷모습, 가끔 뒤돌아봄!)
+        if (this.lookBackDuration > 0) {
+            this.lookBackDuration -= dt;
+            this.lookBackBlend += (1 - this.lookBackBlend) * Math.min(1, dt * 10);
+        } else {
+            this.lookBackBlend += (0 - this.lookBackBlend) * Math.min(1, dt * 8);
+            this.lookBackTimer -= dt;
+            if (this.lookBackTimer <= 0) {
+                // 4.5~7초마다 1.2초간 뒤를 힐끔 돌아봄
+                this.lookBackDuration = 1.25;
+                this.lookBackMood = Math.random() < 0.65 ? 'happy' : 'scared';
+                this.lookBackTimer = 4.5 + Math.random() * 2.8;
             }
         }
 
         // 눈 깜빡임
         this.blinkTimer += dt;
-        if (this.blinkTimer > 3.2) {
+        if (this.blinkTimer > 3.0) {
             this.isBlinking = true;
-            if (this.blinkTimer > 3.36) {
+            if (this.blinkTimer > 3.16) {
                 this.isBlinking = false;
                 this.blinkTimer = 0;
             }
         }
     }
 
-    // 펜 해칭(빗금 음영) 그리기 헬퍼
+    // 펜 해칭(빗금 음영) 헬퍼
     drawHatching(ctx, x1, y1, x2, y2, count, len, angle = -0.6) {
         ctx.save();
-        ctx.strokeStyle = 'rgba(28, 22, 18, 0.45)';
+        ctx.strokeStyle = 'rgba(28, 22, 18, 0.42)';
         ctx.lineWidth = 1.8;
         ctx.lineCap = 'round';
         for (let i = 0; i <= count; i++) {
@@ -111,97 +171,95 @@ class PeanutsMonkeyHero {
         ctx.restore();
     }
 
-    // 삐죽삐죽한 복슬복슬 털 외곽선 패스 헬퍼
-    fuzzyCurveTo(ctx, x1, y1, x2, y2, tufts = 3, amp = 5) {
-        for (let i = 1; i <= tufts; i++) {
-            const t1 = (i - 0.5) / tufts;
-            const t2 = i / tufts;
-            const mx = x1 + (x2 - x1) * t1;
-            const my = y1 + (y2 - y1) * t1;
-            const ex = x1 + (x2 - x1) * t2;
-            const ey = y1 + (y2 - y1) * t2;
-            const nx = -(y2 - y1) / Math.hypot(x2 - x1, y2 - y1 || 1);
-            const ny = (x2 - x1) / Math.hypot(x2 - x1, y2 - y1 || 1);
-            ctx.lineTo(mx + nx * amp, my + ny * amp);
-            ctx.lineTo(ex, ey);
-        }
-    }
-
     /**
-     * 메인 캐릭터 렌더링 (컨셉 아트 monkey_snoopy.jpg와 100% 동일한 스누피 펜화 & 수채화 스타일)
+     * 메인 캐릭터 렌더링
      */
-    render(ctx, centerX, groundY, scale = 1.0) {
+    render(ctx, centerX, groundY, scale = 1.0, laneSpread = 230) {
         ctx.save();
 
-        // 현재 레인에 따른 X 좌표 및 기울기
-        const charX = centerX + this.laneX * 220 * scale;
-        const bounceY = this.isJumping ? 0 : Math.abs(Math.sin(this.runCycle)) * 18;
+        const charX = centerX + this.laneX * laneSpread * scale;
+        const bounceY = (this.isJumping || this.isSliding) ? 0 : Math.abs(Math.sin(this.runCycle)) * 20;
         const charY = groundY - (this.y + bounceY) * scale;
-        const tilt = (this.currentLane - this.laneX) * 0.14 + Math.sin(this.runCycle) * 0.03;
+        const tilt = (this.currentLane - this.laneX) * 0.16 + Math.sin(this.runCycle) * 0.035;
 
-        // 1. 바닥 펜 해칭 그림자 (점프 시 작아짐)
+        // 1. 바닥 펜 해칭 그림자
         this.drawGroundShadow(ctx, charX, groundY, scale);
 
         ctx.translate(charX, charY);
         ctx.scale(scale, scale);
         ctx.rotate(tilt);
 
-        // 관절 각도 계산 (러닝 사이클 연동)
+        // 슬라이딩 시 몸을 낮추고 기울임
+        if (this.isSliding) {
+            ctx.translate(0, 42);
+            ctx.scale(1.12, 0.62);
+        }
+
+        // 피격 시 깜빡임 효과
+        if (this.stumbleTimer > 0 && Math.floor(this.stumbleTimer * 16) % 2 === 0) {
+            ctx.globalAlpha = 0.72;
+        }
+
+        // 부스트 오라 이펙트
+        if (this.boostTimer > 0) {
+            this.drawBoostAura(ctx);
+        }
+
         const swing = Math.sin(this.runCycle);
         const cosSwing = Math.cos(this.runCycle);
+        const isLookingBack = this.lookBackBlend > 0.35;
 
         // =====================================================================
-        // LAYER 1: 길게 S자로 말려 올라간 원숭이 꼬리 (Tail)
+        // 도망가는 원숭이 레이어 순서 (뒷모습 기준):
+        // 1. 앞쪽으로 뻗은 왼팔 (몸통 앞/너머에 있으므로 먼저 그림)
+        // 2. 오른팔 & 껍질 벗겨진 황금 바나나 (오른쪽 옆으로 자랑스럽게 들고 뜀)
+        // 3. 몸통 등판 (빨간 러닝 탱크톱 등판 + 파란 반바지 엉덩이)
+        // 4. 양다리 & 발바닥 가로 밑창 줄무늬가 번갈아 보이는 스니커즈
+        // 5. 머리 (기본은 복슬복슬한 뒤통수, 뒤돌아볼 때는 고개를 돌려 얼굴 노출!)
+        // 6. 엉덩이에서 뻗어 나와 맨 뒤(카메라 쪽)에서 살랑거리는 S자 긴 꼬리!
         // =====================================================================
-        this.drawTail(ctx, swing, cosSwing);
 
-        // =====================================================================
-        // LAYER 2: 뒷다리 (오른쪽 다리 - 뒤로 차는 모션) & 줄무늬 스니커즈
-        // =====================================================================
-        this.drawBackLeg(ctx, swing, cosSwing);
-
-        // =====================================================================
-        // LAYER 3: 왼팔 (뒤쪽으로 힘차게 흔드는 팔 & 주먹 쥔 손)
-        // =====================================================================
-        this.drawLeftArm(ctx, swing);
-
-        // =====================================================================
-        // LAYER 4: 몸통 (파란 반바지 + 빨간 러닝 탱크톱 + 날개 달린 별 엠블럼)
-        // =====================================================================
-        this.drawTorsoAndShorts(ctx, swing);
-
-        // =====================================================================
-        // LAYER 5: 앞다리 (왼쪽 다리 - 앞으로 내딛는 발 & 밑창 가로 줄무늬 스니커즈)
-        // =====================================================================
-        this.drawFrontLeg(ctx, swing, cosSwing);
-
-        // =====================================================================
-        // LAYER 6: 머리 & 얼굴 (M자 이마, 통통한 양볼, 삐죽 머리털, 귀, 눈썹, 눈, 코, 보조개 미소)
-        // =====================================================================
-        this.drawHead(ctx, swing, cosSwing);
-
-        // =====================================================================
-        // LAYER 7: 오른팔 & 껍질이 3갈래로 벗겨진 황금 바나나 + 반짝이 별 이펙트
-        // =====================================================================
+        this.drawLeftArmRunningAway(ctx, swing);
         this.drawRightArmAndBanana(ctx, swing, cosSwing);
+        this.drawBackTorsoAndShorts(ctx, swing, isLookingBack);
+        this.drawRunningLegsFromBack(ctx, swing, cosSwing);
+
+        if (isLookingBack) {
+            // 고개를 휙 돌려 뒤(플레이어/드래곤 쪽)를 돌아보는 스누피 원숭이 얼굴!
+            this.drawLookBackHead(ctx, swing, cosSwing);
+        } else {
+            // 앞을 보고 열심히 도망가는 귀여운 원숭이 뒤통수!
+            this.drawBackOfHead(ctx, swing, cosSwing);
+        }
+
+        // 맨 앞(플레이어 쪽)에 위치한 반바지 엉덩이 & S자 꼬리
+        this.drawTailFromBack(ctx, swing, cosSwing);
+
+        // 피격 시 머리 위 빙글빙글 별 이펙트
+        if (this.stumbleTimer > 0) {
+            this.drawDizzyStars(ctx);
+        }
+
+        // 보호막(실드) 활성화 시 황금 비눗방울 실드
+        if (this.shieldActive) {
+            this.drawShieldBubble(ctx);
+        }
 
         ctx.restore();
     }
 
-    // 1. 피너츠 코믹스 스타일 바닥 펜 빗금 그림자
     drawGroundShadow(ctx, x, y, scale) {
         ctx.save();
         const jumpRatio = Math.max(0.35, 1 - this.y / 320);
-        const rx = 95 * scale * jumpRatio;
+        const rx = 92 * scale * jumpRatio;
         const ry = 22 * scale * jumpRatio;
 
-        ctx.translate(x, y + 10 * scale);
-        ctx.fillStyle = 'rgba(42, 32, 22, 0.22)';
+        ctx.translate(x, y + 8 * scale);
+        ctx.fillStyle = 'rgba(42, 32, 22, 0.24)';
         ctx.beginPath();
         ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // 찰스 슐츠 특유의 가로 펜 해칭 그림자 선들
         ctx.strokeStyle = 'rgba(26, 22, 18, 0.65)';
         ctx.lineWidth = 2.2 * scale;
         ctx.lineCap = 'round';
@@ -215,135 +273,11 @@ class PeanutsMonkeyHero {
         ctx.restore();
     }
 
-    // 2. S자로 우아하게 뻗은 긴 꼬리 (컨셉 이미지 오른쪽의 큰 물음표 모양 꼬리)
-    drawTail(ctx, swing, cosSwing) {
+    // 1. 왼쪽 팔 (도망가며 앞뒤로 힘차게 흔드는 팔)
+    drawLeftArmRunningAway(ctx, swing) {
         ctx.save();
-        ctx.translate(25, -135);
-        ctx.rotate(swing * 0.08);
-
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-
-        // 꼬리 외곽 잉크선 (두꺼운 스트로크 후 안쪽 갈색 수채 채색)
-        const drawTailPath = () => {
-            ctx.beginPath();
-            ctx.moveTo(0, 10);
-            ctx.bezierCurveTo(95, 25, 115, -65, 130, -135 + cosSwing * 8);
-            ctx.bezierCurveTo(145, -205, 225, -195, 225, -120 + swing * 10);
-            ctx.bezierCurveTo(225, -80, 200, -55, 190, -70);
-        };
-
-        // 검은 잉크 외곽선
-        drawTailPath();
-        ctx.strokeStyle = '#1a1612';
-        ctx.lineWidth = 28;
-        ctx.stroke();
-
-        // 갈색 털 본체
-        drawTailPath();
-        ctx.strokeStyle = '#8e5d3e';
-        ctx.lineWidth = 20;
-        ctx.stroke();
-
-        // 꼬리 위쪽 밝은 수채화 하이라이트
-        drawTailPath();
-        ctx.strokeStyle = '#a67352';
-        ctx.lineWidth = 8;
-        ctx.stroke();
-
-        // 꼬리 밑면 펜 해칭 디테일
-        this.drawHatching(ctx, 35, 12, 95, -25, 6, 7, -1.2);
-        this.drawHatching(ctx, 145, -165, 195, -165, 5, 7, 1.5);
-
-        ctx.restore();
-    }
-
-    // 3. 뒷다리 (오른다리) & 스니커즈
-    drawBackLeg(ctx, swing, cosSwing) {
-        ctx.save();
-        ctx.translate(32, -115);
-        const legAngle = -0.35 + swing * 0.55;
-        ctx.rotate(legAngle);
-
-        // 허벅지 & 종아리 갈색 털
-        ctx.fillStyle = '#7d4e31';
-        ctx.strokeStyle = '#1a1612';
-        ctx.lineWidth = 4;
-        ctx.lineJoin = 'round';
-
-        ctx.beginPath();
-        ctx.moveTo(-22, 0);
-        ctx.quadraticCurveTo(-25, 45, -12, 78);
-        ctx.lineTo(18, 72);
-        ctx.quadraticCurveTo(28, 35, 20, 0);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        // 해칭 음영
-        this.drawHatching(ctx, -18, 15, -10, 60, 5, 8, 0.3);
-
-        // 뒷발 스니커즈 (적갈색 + 노란 2줄 + 흰색 앞코 & 밑창)
-        ctx.save();
-        ctx.translate(8, 72);
-        ctx.rotate(0.45 - swing * 0.2);
-
-        // 흰색 밑창
-        ctx.fillStyle = '#f5eedc';
-        ctx.strokeStyle = '#1a1612';
-        ctx.lineWidth = 3.8;
-        ctx.beginPath();
-        ctx.ellipse(6, 12, 26, 38, -0.15, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-
-        // 적갈색 신발 갑피
-        ctx.fillStyle = '#8b3e2f';
-        ctx.beginPath();
-        ctx.ellipse(2, 4, 22, 30, -0.15, Math.PI * 0.85, Math.PI * 2.15);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        // 노란색 2줄 사선 스트라이프
-        ctx.fillStyle = '#f5cb42';
-        ctx.lineWidth = 2.5;
-        [-6, 4].forEach(dy => {
-            ctx.beginPath();
-            ctx.rect(-16, dy, 34, 6);
-            ctx.fill();
-            ctx.stroke();
-        });
-
-        // 발등의 하얀 신발끈 3줄 (컨셉 아트 디테일!)
-        ctx.strokeStyle = '#fffcf5';
-        ctx.lineWidth = 3.2;
-        [-8, -1, 6].forEach(ly => {
-            ctx.beginPath();
-            ctx.moveTo(-6, ly);
-            ctx.lineTo(12, ly - 3);
-            ctx.stroke();
-        });
-        ctx.strokeStyle = '#1a1612';
-
-        // 흰색 고무 앞코 (Toe Cap)
-        ctx.fillStyle = '#f5eedc';
-        ctx.lineWidth = 3.5;
-        ctx.beginPath();
-        ctx.arc(4, 22, 20, 0.1, Math.PI - 0.1);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        ctx.restore();
-        ctx.restore();
-    }
-
-    // 4. 왼팔 (오른쪽으로 뻗어 흔드는 팔 & 주먹 쥔 손)
-    drawLeftArm(ctx, swing) {
-        ctx.save();
-        ctx.translate(48, -212);
-        ctx.rotate(-swing * 0.45);
+        ctx.translate(-46, -212);
+        ctx.rotate(swing * 0.52);
 
         ctx.fillStyle = '#8e5d3e';
         ctx.strokeStyle = '#1a1612';
@@ -351,565 +285,46 @@ class PeanutsMonkeyHero {
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
 
-        // 어깨에서 팔꿈치로 꺾여 내려가는 복슬복슬한 털 팔
         ctx.beginPath();
-        ctx.moveTo(-10, -12);
-        ctx.quadraticCurveTo(55, -18, 82, 18);
-        // 바깥쪽 팔꿈치 삐죽 털 3가닥
-        ctx.lineTo(92, 24);
-        ctx.lineTo(84, 28);
-        ctx.lineTo(94, 38);
-        ctx.lineTo(85, 42);
-        ctx.quadraticCurveTo(96, 65, 86, 85);
-        // 손목 안쪽 털
-        ctx.lineTo(68, 82);
-        ctx.lineTo(62, 88);
-        ctx.lineTo(56, 78);
-        ctx.quadraticCurveTo(52, 45, 44, 24);
-        ctx.quadraticCurveTo(22, 15, -12, 18);
+        ctx.moveTo(8, -10);
+        ctx.quadraticCurveTo(-48, -14, -74, 22);
+        // 팔꿈치 복슬복슬 잔털 3가닥
+        ctx.lineTo(-86, 28);
+        ctx.lineTo(-76, 33);
+        ctx.lineTo(-86, 42);
+        ctx.lineTo(-76, 46);
+        ctx.quadraticCurveTo(-84, 68, -72, 84);
+        ctx.lineTo(-50, 78);
+        ctx.quadraticCurveTo(-44, 42, -36, 24);
+        ctx.quadraticCurveTo(-18, 12, 10, 16);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
-        // 팔 안쪽 펜 해칭 음영
-        this.drawHatching(ctx, 10, 12, 48, 22, 5, 7, -1.1);
+        this.drawHatching(ctx, -50, 16, -15, 18, 5, 7, -1.2);
 
-        // 왼손 주먹 (컨셉 아트 오른쪽의 귀여운 주먹 쥔 살구색 손)
+        // 왼손 주먹
         ctx.save();
-        ctx.translate(72, 92);
+        ctx.translate(-62, 86);
         ctx.fillStyle = '#f6dec2';
-        ctx.strokeStyle = '#1a1612';
         ctx.lineWidth = 3.8;
-
         ctx.beginPath();
-        ctx.arc(0, 0, 22, 0, Math.PI * 2);
+        ctx.arc(0, 0, 20, 0, Math.PI * 2);
         ctx.fill();
-        ctx.stroke();
-
-        // 주먹 쥔 손가락 말림 잉크 선
-        ctx.beginPath();
-        ctx.arc(-4, 2, 10, 0.3, Math.PI * 1.4);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(-12, 12);
-        ctx.quadraticCurveTo(-4, 4, 4, 12);
-        ctx.stroke();
-
-        ctx.restore();
-        ctx.restore();
-    }
-
-    // 5. 몸통 (파란 반바지 + 빨간 러닝 탱크톱 + 날개 달린 별 엠블럼)
-    drawTorsoAndShorts(ctx, swing) {
-        ctx.save();
-        ctx.translate(0, -125);
-
-        ctx.strokeStyle = '#1a1612';
-        ctx.lineWidth = 4.2;
-        ctx.lineJoin = 'round';
-        ctx.lineCap = 'round';
-
-        // --- (A) 파란 반바지 (Shorts) ---
-        const shortsGrad = ctx.createLinearGradient(-55, -20, 55, 40);
-        shortsGrad.addColorStop(0, '#699bc2');
-        shortsGrad.addColorStop(0.6, '#4f7fa6');
-        shortsGrad.addColorStop(1, '#3d688c');
-        ctx.fillStyle = shortsGrad;
-
-        ctx.beginPath();
-        // 허리선에서 양쪽 다리통으로 퍼지는 반바지 실루엣
-        ctx.moveTo(-44, -18);
-        ctx.quadraticCurveTo(-72, -5, -82, 16); // 왼쪽 다리통 위
-        ctx.quadraticCurveTo(-62, 34, -36, 46); // 왼쪽 바짓단
-        ctx.lineTo(-10, 22);                    // 가랑이 중앙
-        ctx.lineTo(-2, 48);                     // 오른쪽 바짓단 안쪽
-        ctx.quadraticCurveTo(32, 54, 58, 34);   // 오른쪽 바짓단 아래
-        ctx.quadraticCurveTo(54, 5, 44, -18);   // 오른쪽 옆구리
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        // 반바지 오른쪽 옆선 노란 트랙 스트라이프 2줄
-        ctx.fillStyle = '#f5cb42';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(36, -15);
-        ctx.quadraticCurveTo(46, 10, 52, 36);
-        ctx.lineTo(60, 32);
-        ctx.quadraticCurveTo(54, 8, 44, -17);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        // 반바지 바짓단 시보리 두 줄 잉크선 & 가랑이 주름 해칭
-        ctx.lineWidth = 2.8;
-        ctx.beginPath();
-        ctx.moveTo(-78, 12);
-        ctx.quadraticCurveTo(-58, 28, -33, 40);
-        ctx.moveTo(-1, 41);
-        ctx.quadraticCurveTo(28, 46, 54, 28);
-        ctx.stroke();
-        this.drawHatching(ctx, -28, 18, -8, 26, 4, 8, -0.8);
-
-        // --- (B) 빨간 러닝 탱크톱 (Red Tank Top) ---
-        const shirtGrad = ctx.createRadialGradient(-10, -65, 10, 0, -55, 85);
-        shirtGrad.addColorStop(0, '#e55942');
-        shirtGrad.addColorStop(0.7, '#d1432e');
-        shirtGrad.addColorStop(1, '#b53421');
-        ctx.fillStyle = shirtGrad;
-        ctx.lineWidth = 4.2;
-
-        ctx.beginPath();
-        ctx.moveTo(-40, -112); // 왼쪽 어깨끈
-        ctx.quadraticCurveTo(-28, -75, -45, -16); // 왼쪽 옆구리
-        ctx.quadraticCurveTo(0, 2, 46, -16);      // 아랫단 곡선
-        ctx.quadraticCurveTo(36, -65, 42, -112);  // 오른쪽 어깨끈
-        ctx.lineTo(28, -112);
-        ctx.quadraticCurveTo(0, -68, -26, -112);  // 깊은 U넥 목선
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        // 목둘레, 양쪽 진동선(팔둘레), 아랫단 노란색 시보리 파이핑 라인
-        ctx.strokeStyle = '#f5cb42';
-        ctx.lineWidth = 5.5;
-        ctx.beginPath();
-        // 목선 노란 시보리
-        ctx.moveTo(-33, -110);
-        ctx.quadraticCurveTo(0, -64, 34, -110);
-        // 왼쪽/오른쪽 팔 진동선 노란 시보리
-        ctx.moveTo(-40, -110);
-        ctx.quadraticCurveTo(-30, -78, -42, -45);
-        ctx.moveTo(41, -110);
-        ctx.quadraticCurveTo(32, -78, 43, -45);
-        // 아랫단 노란 시보리
-        ctx.moveTo(-44, -18);
-        ctx.quadraticCurveTo(0, 0, 45, -18);
-        ctx.stroke();
-
-        // 시보리 안쪽 검은 잉크 실선 마감
-        ctx.strokeStyle = '#1a1612';
-        ctx.lineWidth = 2.5;
-        ctx.beginPath();
-        ctx.moveTo(-30, -110);
-        ctx.quadraticCurveTo(0, -60, 31, -110);
-        ctx.moveTo(-37, -110);
-        ctx.quadraticCurveTo(-27, -78, -40, -45);
-        ctx.moveTo(38, -110);
-        ctx.quadraticCurveTo(29, -78, 41, -45);
-        ctx.moveTo(-44, -22);
-        ctx.quadraticCurveTo(0, -4, 45, -22);
-        ctx.stroke();
-
-        // 탱크톱 아래쪽 옷 주름 펜 해칭
-        this.drawHatching(ctx, -36, -28, -12, -22, 5, 9, -1.2);
-
-        // 목 안쪽 원숭이 가슴 털 & 턱 그림자 해칭
-        ctx.fillStyle = '#6e4227';
-        ctx.beginPath();
-        ctx.moveTo(-26, -112);
-        ctx.quadraticCurveTo(0, -70, 28, -112);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-        this.drawHatching(ctx, -18, -102, 18, -102, 6, 12, 1.5);
-
-        // --- (C) 가슴 정중앙 날개 달린 별 엠블럼 (Winged Star Emblem) ---
-        ctx.save();
-        ctx.translate(-2, -52);
-
-        // 양옆 3단 크림색 날개
-        [-1, 1].forEach(dir => {
-            ctx.save();
-            ctx.scale(dir, 1);
-            ctx.fillStyle = '#fff5dc';
-            ctx.strokeStyle = '#1a1612';
-            ctx.lineWidth = 2.8;
-            ctx.beginPath();
-            ctx.moveTo(16, -6);
-            ctx.quadraticCurveTo(38, -20, 44, -14);
-            ctx.quadraticCurveTo(38, -4, 28, -2);
-            ctx.quadraticCurveTo(39, 0, 41, 4);
-            ctx.quadraticCurveTo(34, 9, 25, 7);
-            ctx.quadraticCurveTo(32, 11, 33, 15);
-            ctx.quadraticCurveTo(24, 18, 14, 10);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-            ctx.restore();
-        });
-
-        // 바깥 노란 링 & 안쪽 하늘색 원
-        ctx.fillStyle = '#f5cb42';
-        ctx.strokeStyle = '#1a1612';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.arc(0, 2, 22, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-
-        ctx.fillStyle = '#65a6cc';
-        ctx.beginPath();
-        ctx.arc(0, 2, 17, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-
-        // 가운데 노란 오각별 ★
-        ctx.fillStyle = '#ffda44';
-        ctx.beginPath();
-        for (let i = 0; i < 5; i++) {
-            const oa = (i * 72 - 90) * Math.PI / 180;
-            const ia = ((i * 72 + 36) - 90) * Math.PI / 180;
-            const ox = Math.cos(oa) * 14;
-            const oy = 2 + Math.sin(oa) * 14;
-            const ix = Math.cos(ia) * 6;
-            const iy = 2 + Math.sin(ia) * 6;
-            if (i === 0) ctx.moveTo(ox, oy);
-            else ctx.lineTo(ox, oy);
-            ctx.lineTo(ix, iy);
-        }
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        ctx.restore();
-        ctx.restore();
-    }
-
-    // 6. 앞다리 (왼쪽 다리 - 앞으로 힘차게 내딛으며 신발 밑창 가로 줄무늬가 보이는 다리!)
-    drawFrontLeg(ctx, swing, cosSwing) {
-        ctx.save();
-        ctx.translate(-48, -105);
-        const frontLegAngle = 0.15 - swing * 0.50;
-        ctx.rotate(frontLegAngle);
-
-        // 복슬복슬한 갈색 털 허벅지 & 종아리
-        ctx.fillStyle = '#8e5d3e';
-        ctx.strokeStyle = '#1a1612';
-        ctx.lineWidth = 4;
-        ctx.lineJoin = 'round';
-
-        ctx.beginPath();
-        ctx.moveTo(-18, -8);
-        // 왼쪽 바깥 정강이 복슬복슬 털 표현
-        ctx.lineTo(-28, 12);
-        ctx.lineTo(-22, 16);
-        ctx.lineTo(-30, 34);
-        ctx.lineTo(-23, 38);
-        ctx.quadraticCurveTo(-26, 62, -18, 82);
-        ctx.lineTo(16, 85);
-        // 오른쪽 종아리 뒤쪽 잔털
-        ctx.lineTo(22, 68);
-        ctx.lineTo(16, 64);
-        ctx.lineTo(23, 46);
-        ctx.quadraticCurveTo(25, 20, 18, -4);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        // 다리 뒤쪽 해칭 음영
-        this.drawHatching(ctx, 5, 10, 12, 65, 6, 8, -2.5);
-
-        // 👟 앞발 클래식 스니커즈 (컨셉 아트처럼 발바닥 가로 밑창 줄무늬 + 옆면 노란 2줄이 모두 보이는 각도!)
-        ctx.save();
-        ctx.translate(-8, 86);
-        ctx.rotate(-0.18 + swing * 0.15);
-
-        // (1) 신발 적갈색 갑피 (윗부분)
-        ctx.fillStyle = '#8b3e2f';
-        ctx.strokeStyle = '#1a1612';
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.moveTo(-36, -6);
-        ctx.quadraticCurveTo(-18, -32, 16, -18);
-        ctx.quadraticCurveTo(32, -8, 30, 16);
-        ctx.lineTo(-42, 8);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        // 신발 옆면 노란색 2줄 스트라이프
-        ctx.fillStyle = '#f5cb42';
-        ctx.lineWidth = 2.8;
-        [-4, 7].forEach(dx => {
-            ctx.beginPath();
-            ctx.moveTo(dx, -20);
-            ctx.lineTo(dx - 6, 8);
-            ctx.lineTo(dx + 2, 9);
-            ctx.lineTo(dx + 8, -18);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-        });
-
-        // 앞코 흰색 고무 캡
-        ctx.fillStyle = '#f5eedc';
-        ctx.lineWidth = 3.5;
-        ctx.beginPath();
-        ctx.moveTo(-44, 4);
-        ctx.quadraticCurveTo(-46, -24, -16, -22);
-        ctx.quadraticCurveTo(-24, -4, -20, 8);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        // (2) 비스듬히 들려 보이는 신발 밑창(Outsole) & 가로 미끄럼방지 줄무늬(Treads)!
-        ctx.fillStyle = '#e5dcc8';
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.ellipse(-8, 8, 42, 18, 0.22, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-
-        // 안쪽 어두운 고무 바닥면
-        ctx.fillStyle = '#c4b69c';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.ellipse(-10, 10, 35, 13, 0.22, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-
-        // 바닥 가로 줄무늬 (Tread lines)
-        ctx.save();
-        ctx.beginPath();
-        ctx.ellipse(-10, 10, 35, 13, 0.22, 0, Math.PI * 2);
-        ctx.clip();
-        ctx.strokeStyle = '#1a1612';
-        ctx.lineWidth = 2.6;
-        for (let tx = -42; tx <= 24; tx += 7) {
-            ctx.beginPath();
-            ctx.moveTo(tx, -10);
-            ctx.lineTo(tx - 6, 30);
-            ctx.stroke();
-        }
-        ctx.restore();
-
-        ctx.restore();
-        ctx.restore();
-    }
-
-    // 7. 머리 & 얼굴 (컨셉 아트의 핵심! M자 헤어라인, 삐죽 정수리 털, 통통한 볼, 아치 눈썹, 점눈, 두 콧구멍, 보조개 미소)
-    drawHead(ctx, swing, cosSwing) {
-        ctx.save();
-        ctx.translate(-4, -288);
-        ctx.scale(1.16, 1.16);
-        ctx.rotate(Math.sin(this.runCycle * 0.5) * 0.04);
-
-        ctx.strokeStyle = '#1a1612';
-        ctx.lineWidth = 4.0;
-        ctx.lineJoin = 'round';
-        ctx.lineCap = 'round';
-
-        // --- (A) 양쪽 큼직한 원숭이 귀 & 구불구불한 귓바퀴 잉크 선 ---
-        // 왼쪽 귀
-        ctx.save();
-        ctx.translate(-92, 12);
-        ctx.rotate(-0.12);
-        ctx.fillStyle = '#f5dcc0';
-        ctx.beginPath();
-        ctx.ellipse(0, 0, 26, 38, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-        // 귓바퀴 안쪽 음영 & 피너츠 잉크 곡선
-        ctx.fillStyle = '#dfb995';
-        ctx.beginPath();
-        ctx.ellipse(3, 2, 15, 24, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.lineWidth = 3.5;
-        ctx.beginPath();
-        ctx.arc(4, -2, 14, Math.PI * 0.65, Math.PI * 1.85);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(6, 6, 7, Math.PI * 0.5, Math.PI * 1.6);
         ctx.stroke();
         ctx.restore();
-
-        // 오른쪽 귀
-        ctx.save();
-        ctx.translate(92, 14);
-        ctx.rotate(0.15);
-        ctx.fillStyle = '#f5dcc0';
-        ctx.lineWidth = 4.2;
-        ctx.beginPath();
-        ctx.ellipse(0, 0, 28, 40, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-        ctx.fillStyle = '#dfb995';
-        ctx.beginPath();
-        ctx.ellipse(-3, 2, 16, 25, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.lineWidth = 3.5;
-        ctx.beginPath();
-        ctx.arc(-3, -2, 15, -Math.PI * 0.85, Math.PI * 0.35);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(-5, 6, 8, -Math.PI * 0.6, Math.PI * 0.5);
-        ctx.stroke();
-        ctx.restore();
-
-        // --- (B) 갈색 털 머리 외곽 실루엣 (정수리 삐죽 털 5가닥 + 양볼 복슬복슬 잔털) ---
-        const headGrad = ctx.createRadialGradient(-20, -40, 15, 0, 0, 115);
-        headGrad.addColorStop(0, '#a67250');
-        headGrad.addColorStop(0.65, '#8d5b3c');
-        headGrad.addColorStop(1, '#704429');
-        ctx.fillStyle = headGrad;
-        ctx.lineWidth = 4.2;
-
-        ctx.beginPath();
-        // 왼쪽 귀 위에서 시작해 정수리 삐죽 털들을 거쳐 오른쪽 볼까지 한 붓으로 연결
-        ctx.moveTo(-88, -15);
-        // 왼쪽 관자놀이 잔털
-        ctx.lineTo(-96, -24);
-        ctx.lineTo(-86, -32);
-        ctx.quadraticCurveTo(-78, -72, -42, -92);
-        // 정수리 트레이드마크 삐죽 털 4가닥!
-        ctx.lineTo(-48, -106);
-        ctx.lineTo(-28, -98);
-        ctx.lineTo(-14, -118); // 제일 높은 가운데 털 1
-        ctx.lineTo(2, -104);
-        ctx.lineTo(22, -122);  // 제일 높은 가운데 털 2
-        ctx.lineTo(24, -100);
-        ctx.lineTo(48, -108);  // 오른쪽 삐죽 털
-        ctx.lineTo(44, -92);
-        // 오른쪽 정수리 곡선
-        ctx.quadraticCurveTo(82, -74, 90, -20);
-        // 오른쪽 아래 볼 털 삐죽 3가닥
-        ctx.lineTo(94, 38);
-        ctx.lineTo(104, 48);
-        ctx.lineTo(90, 52);
-        ctx.lineTo(96, 64);
-        ctx.lineTo(80, 66);
-        // 턱 아래 곡선
-        ctx.quadraticCurveTo(0, 102, -78, 66);
-        // 왼쪽 아래 볼 털 삐죽 3가닥
-        ctx.lineTo(-94, 62);
-        ctx.lineTo(-86, 52);
-        ctx.lineTo(-102, 46);
-        ctx.lineTo(-90, 36);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        // 머리털 오른쪽/아래쪽 수채화 해칭 음영
-        this.drawHatching(ctx, 52, -78, 78, -28, 7, 10, 2.4);
-
-        // --- (C) 얼굴 안쪽 밝은 살구 베이지 마스크 (M자 이마 + 통통한 땅콩형 양볼) ---
-        const faceGrad = ctx.createRadialGradient(-15, 10, 10, 0, 15, 90);
-        faceGrad.addColorStop(0, '#ffefd7');
-        faceGrad.addColorStop(0.75, '#f6dec1');
-        faceGrad.addColorStop(1, '#e5c49f');
-        ctx.fillStyle = faceGrad;
-        ctx.lineWidth = 3.8;
-
-        ctx.beginPath();
-        // M자 이마 중앙 꼭짓점에서 시작
-        ctx.moveTo(-4, -46);
-        // 오른쪽 이마 아치
-        ctx.bezierCurveTo(18, -76, 62, -62, 60, -14);
-        // 오른쪽 통통한 볼 포켓
-        ctx.bezierCurveTo(84, 6, 82, 58, 42, 74);
-        // 둥근 턱선
-        ctx.quadraticCurveTo(-2, 88, -46, 72);
-        // 왼쪽 통통한 볼 포켓
-        ctx.bezierCurveTo(-84, 56, -82, 6, -60, -14);
-        // 왼쪽 이마 아치 -> M자 중앙으로 복귀
-        ctx.bezierCurveTo(-62, -62, -22, -76, -4, -46);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        // 이마 M자 헤어라인 주변 미세한 털 해칭 디테일
-        this.drawHatching(ctx, -48, -56, -12, -56, 5, 6, -1.5);
-        this.drawHatching(ctx, 8, -56, 48, -56, 5, 6, -1.6);
-
-        // --- (D) 둥근 아치형 검은 눈썹 2개 ---
-        const browOffsetY = this.isJumping ? -5 : 0;
-        ctx.strokeStyle = '#1a1612';
-        ctx.lineWidth = 4.8;
-        // 왼쪽 눈썹
-        ctx.beginPath();
-        ctx.arc(-34, -22 + browOffsetY, 14, Math.PI * 1.15, Math.PI * 1.82);
-        ctx.stroke();
-        // 오른쪽 눈썹
-        ctx.beginPath();
-        ctx.arc(28, -22 + browOffsetY, 14, Math.PI * 1.18, Math.PI * 1.85);
-        ctx.stroke();
-
-        // --- (E) 피너츠 시그니처 세로 타원형 검은 점눈 (Dot Eyes) ---
-        ctx.fillStyle = '#1a1612';
-        const lookShift = (this.currentLane - this.laneX) * 4;
-        [-33, 27].forEach(ex => {
-            ctx.beginPath();
-            if (this.isBlinking) {
-                ctx.lineWidth = 4.5;
-                ctx.moveTo(ex - 9, -2);
-                ctx.quadraticCurveTo(ex, 3, ex + 9, -2);
-                ctx.stroke();
-            } else {
-                ctx.ellipse(ex + lookShift, -2, 8.5, 13.5, 0, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        });
-
-        // --- (F) 귀여운 원숭이 코 (두 콧구멍 괄호 라인) ---
-        ctx.lineWidth = 3.8;
-        // 왼쪽 콧구멍
-        ctx.beginPath();
-        ctx.arc(-8, 17, 5.5, Math.PI * 0.75, Math.PI * 1.95);
-        ctx.stroke();
-        // 오른쪽 콧구멍
-        ctx.beginPath();
-        ctx.arc(4, 17, 5.5, -Math.PI * 0.95, Math.PI * 0.25);
-        ctx.stroke();
-        // 코 아래 작은 음영 점선
-        ctx.beginPath();
-        ctx.arc(-2, 20, 3, 0.2, Math.PI - 0.2);
-        ctx.stroke();
-
-        // --- (G) 활짝 웃는 큰 스마일 입 & 양 끝 보조개 눈금 (컨셉 이미지 100% 재현!) ---
-        ctx.lineWidth = 4.4;
-        ctx.beginPath();
-        ctx.moveTo(-46, 30);
-        ctx.bezierCurveTo(-28, 58, 22, 58, 42, 30);
-        ctx.stroke();
-
-        // 점프할 때는 신나서 입을 살짝 벌린 미소 추가
-        if (this.isJumping) {
-            ctx.fillStyle = '#b5483a';
-            ctx.beginPath();
-            ctx.moveTo(-25, 44);
-            ctx.quadraticCurveTo(-2, 68, 21, 44);
-            ctx.quadraticCurveTo(-2, 52, -25, 44);
-            ctx.fill();
-            ctx.stroke();
-        }
-
-        // 왼쪽/오른쪽 입꼬리 보조개 눈금 (Dimple ticks)
-        ctx.lineWidth = 4.0;
-        ctx.beginPath();
-        ctx.moveTo(-51, 25);
-        ctx.lineTo(-41, 36);
-        ctx.moveTo(47, 25);
-        ctx.lineTo(37, 36);
-        ctx.stroke();
-
-        // 입 아래 턱 보조선
-        ctx.lineWidth = 2.5;
-        ctx.beginPath();
-        ctx.arc(-2, 54, 14, 0.25, Math.PI - 0.25);
-        ctx.stroke();
 
         ctx.restore();
     }
 
-    // 8. 오른팔 + 바나나를 감싸 쥔 손가락 + 껍질이 3갈래로 벗겨진 황금 바나나!
+    // 2. 오른쪽 팔 + 껍질이 벗겨진 황금 바나나 (오른쪽에 번쩍 들고 도망감!)
     drawRightArmAndBanana(ctx, swing, cosSwing) {
         ctx.save();
-        ctx.translate(-42, -210);
-        const armWave = Math.sin(this.runCycle * 0.5) * 0.06;
+        ctx.translate(44, -210);
+        const armWave = Math.sin(this.runCycle * 0.5) * 0.08;
         ctx.rotate(armWave);
 
-        // --- (A) 오른팔 갈색 털 (어깨에서 바나나 쪽으로 뻗은 팔) ---
+        // 오른쪽으로 뻗어 바나나를 치켜든 갈색 털 팔
         ctx.fillStyle = '#8e5d3e';
         ctx.strokeStyle = '#1a1612';
         ctx.lineWidth = 4.2;
@@ -917,156 +332,132 @@ class PeanutsMonkeyHero {
         ctx.lineCap = 'round';
 
         ctx.beginPath();
-        ctx.moveTo(6, -10);
-        ctx.quadraticCurveTo(-32, 8, -78, -6);
-        ctx.lineTo(-92, 16);
-        // 팔 아래쪽 복슬복슬 잔털 디테일
-        ctx.lineTo(-68, 26);
-        ctx.lineTo(-74, 32);
-        ctx.lineTo(-48, 34);
-        ctx.lineTo(-52, 40);
-        ctx.quadraticCurveTo(-18, 36, 10, 18);
+        ctx.moveTo(-6, -10);
+        ctx.quadraticCurveTo(34, 8, 78, -8);
+        ctx.lineTo(94, 14);
+        // 팔 아래 복슬복슬 잔털
+        ctx.lineTo(68, 26);
+        ctx.lineTo(74, 32);
+        ctx.lineTo(48, 34);
+        ctx.lineTo(52, 40);
+        ctx.quadraticCurveTo(18, 36, -10, 18);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
-        this.drawHatching(ctx, -65, 18, -15, 22, 6, 7, -1.8);
+        this.drawHatching(ctx, 18, 22, 65, 18, 6, 7, -1.4);
 
-        // --- (B) 껍질이 벗겨진 황금 바나나 & 바나나를 쥔 손 (위치: -102, -12) ---
+        // 🍌 껍질 벗겨진 황금 바나나 & 바나나를 감싸 쥔 손
         ctx.save();
-        ctx.translate(-105, -14);
-        ctx.rotate(-0.08 + cosSwing * 0.04);
+        ctx.translate(105, -16);
+        ctx.rotate(0.10 - cosSwing * 0.05);
 
-        // 0) 바나나 주변 따뜻한 황금 수채화 후광 (Golden Aura)
-        const auraGrad = ctx.createRadialGradient(-5, -35, 10, -5, -35, 95);
-        auraGrad.addColorStop(0, 'rgba(255, 240, 130, 0.55)');
-        auraGrad.addColorStop(0.6, 'rgba(255, 230, 100, 0.18)');
+        // 황금 수채화 후광
+        const auraGrad = ctx.createRadialGradient(5, -35, 10, 5, -35, 95);
+        auraGrad.addColorStop(0, 'rgba(255, 240, 130, 0.58)');
+        auraGrad.addColorStop(0.6, 'rgba(255, 230, 100, 0.20)');
         auraGrad.addColorStop(1, 'rgba(255, 230, 100, 0)');
         ctx.fillStyle = auraGrad;
         ctx.beginPath();
-        ctx.arc(-5, -35, 95, 0, Math.PI * 2);
+        ctx.arc(5, -35, 95, 0, Math.PI * 2);
         ctx.fill();
 
-        // 1) 뒤쪽/양옆으로 활짝 휘어지며 벗겨진 바나나 껍질들 (Peels)
-        ctx.strokeStyle = '#1a1612';
-        ctx.lineWidth = 3.8;
-
-        // 왼쪽 아래로 늘어진 큰 껍질
-        const peelGrad = ctx.createLinearGradient(-50, -30, 40, 50);
+        const peelGrad = ctx.createLinearGradient(-40, -30, 50, 50);
         peelGrad.addColorStop(0, '#fff2a6');
         peelGrad.addColorStop(0.5, '#f6d34b');
         peelGrad.addColorStop(1, '#dfb028');
 
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 3.8;
+
+        // 오른쪽 아래로 크게 휘어진 바나나 껍질
         ctx.fillStyle = peelGrad;
         ctx.beginPath();
-        ctx.moveTo(-12, -18);
-        ctx.bezierCurveTo(-52, -32, -68, 12, -54, 52);
-        ctx.bezierCurveTo(-40, 42, -36, 4, -8, -2);
+        ctx.moveTo(12, -18);
+        ctx.bezierCurveTo(52, -32, 68, 12, 54, 52);
+        ctx.bezierCurveTo(40, 42, 36, 4, 8, -2);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
-        // 왼쪽 위 뒤편 작은 껍질
-        ctx.fillStyle = '#f3cc44';
-        ctx.beginPath();
-        ctx.moveTo(-14, -22);
-        ctx.bezierCurveTo(-38, -44, -52, -30, -44, -14);
-        ctx.quadraticCurveTo(-28, -18, -12, -14);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        // 오른쪽으로 휘어진 껍질 (안쪽면 + 바깥면 입체 표현)
+        // 왼쪽으로 활짝 젖혀진 바나나 껍질
         ctx.fillStyle = '#fff5b8';
         ctx.beginPath();
-        ctx.moveTo(8, -18);
-        ctx.bezierCurveTo(38, -46, 68, -24, 76, 8);
-        ctx.bezierCurveTo(54, -4, 34, -12, 10, -2);
+        ctx.moveTo(-8, -18);
+        ctx.bezierCurveTo(-38, -46, -68, -24, -76, 8);
+        ctx.bezierCurveTo(-54, -4, -34, -12, -10, -2);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
-        // 2) 위로 솟아오른 하얗고 먹음직스러운 바나나 알맹이(Fruit Core)!
+        // 위로 솟아오른 크림빛 바나나 알맹이(Fruit Core)
         const fruitGrad = ctx.createLinearGradient(-18, -110, 18, 0);
         fruitGrad.addColorStop(0, '#fffdf2');
         fruitGrad.addColorStop(0.7, '#faecc8');
         fruitGrad.addColorStop(1, '#e8d4a2');
         ctx.fillStyle = fruitGrad;
         ctx.lineWidth = 4.0;
-
         ctx.beginPath();
-        ctx.moveTo(-15, -12);
-        ctx.bezierCurveTo(-22, -58, -12, -102, 6, -115);
-        ctx.bezierCurveTo(22, -108, 22, -56, 12, -10);
+        ctx.moveTo(15, -12);
+        ctx.bezierCurveTo(22, -58, 12, -102, -6, -115);
+        ctx.bezierCurveTo(-22, -108, -22, -56, -12, -10);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
-        // 바나나 알맹이 세로 결 잉크 라인
+        // 바나나 알맹이 세로 결
         ctx.strokeStyle = 'rgba(26, 22, 18, 0.45)';
         ctx.lineWidth = 2.2;
         ctx.beginPath();
-        ctx.moveTo(-2, -16);
-        ctx.quadraticCurveTo(-4, -64, 5, -105);
+        ctx.moveTo(2, -16);
+        ctx.quadraticCurveTo(4, -64, -5, -105);
         ctx.stroke();
 
-        // 3) 손에 쥐어진 아래쪽 노란 바나나 몸통 & 검은 꼭지
+        // 아래쪽 노란 바나나 손잡이 몸통 & 검은 꼭지
         ctx.fillStyle = peelGrad;
         ctx.strokeStyle = '#1a1612';
         ctx.lineWidth = 4.0;
         ctx.beginPath();
-        ctx.moveTo(-16, -14);
-        ctx.quadraticCurveTo(-22, 36, 36, 56);
-        ctx.lineTo(42, 48);
-        ctx.quadraticCurveTo(6, 22, 14, -14);
-        ctx.quadraticCurveTo(0, -4, -16, -14);
+        ctx.moveTo(16, -14);
+        ctx.quadraticCurveTo(22, 36, -36, 56);
+        ctx.lineTo(-42, 48);
+        ctx.quadraticCurveTo(-6, 22, -14, -14);
+        ctx.quadraticCurveTo(0, -4, 16, -14);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
-        // 정면 손 바로 위에서 앞으로 살짝 말려 내려온 4번째 앞껍질 조각 (컨셉 아트 디테일!)
+        // 정면 말려 내려온 앞껍질
         ctx.fillStyle = '#fff5b8';
         ctx.lineWidth = 3.5;
         ctx.beginPath();
-        ctx.moveTo(-12, -14);
-        ctx.quadraticCurveTo(2, -32, 18, -22);
-        ctx.quadraticCurveTo(14, -4, -4, -6);
+        ctx.moveTo(12, -14);
+        ctx.quadraticCurveTo(-2, -32, -18, -22);
+        ctx.quadraticCurveTo(-14, -4, 4, -6);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
-        // 바나나 몸통 능선 라인 & 해칭
-        ctx.lineWidth = 2.5;
-        ctx.beginPath();
-        ctx.moveTo(-2, -6);
-        ctx.quadraticCurveTo(0, 26, 34, 48);
-        ctx.stroke();
-        this.drawHatching(ctx, -8, 22, 22, 46, 5, 6, -0.5);
-
-        // 바나나 끝 검은 꼭지
+        // 검은 꼭지
         ctx.fillStyle = '#2a221b';
         ctx.beginPath();
-        ctx.arc(39, 52, 5.5, 0, Math.PI * 2);
+        ctx.arc(-39, 52, 5.5, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
 
-        // 4) 바나나를 소중하게 감싸 쥐고 있는 원숭이의 4개 손가락 & 엄지손가락!
+        // 바나나를 감싸 쥔 오른손가락 4개 + 엄지
         ctx.fillStyle = '#f6dec2';
-        ctx.strokeStyle = '#1a1612';
         ctx.lineWidth = 3.6;
-
-        // 엄지손가락 (오른쪽 위에서 바나나를 감쌈)
         ctx.beginPath();
-        ctx.ellipse(18, 6, 11, 16, 0.35, 0, Math.PI * 2);
+        ctx.ellipse(-18, 6, 11, 16, -0.35, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
 
-        // 바나나 앞쪽을 감싸 쥔 통통한 4개의 손가락 (위에서 아래로 나란히)
         const fingers = [
-            { x: -18, y: 4,  rx: 13, ry: 8.5, rot: -0.45 },
-            { x: -13, y: 17, rx: 14, ry: 8.5, rot: -0.45 },
-            { x: -6,  y: 29, rx: 13, ry: 8.0, rot: -0.45 },
-            { x: 2,   y: 40, rx: 11, ry: 7.5, rot: -0.45 }
+            { x: 18, y: 4,  rx: 13, ry: 8.5, rot: 0.45 },
+            { x: 13, y: 17, rx: 14, ry: 8.5, rot: 0.45 },
+            { x: 6,  y: 29, rx: 13, ry: 8.0, rot: 0.45 },
+            { x: -2, y: 40, rx: 11, ry: 7.5, rot: 0.45 }
         ];
         fingers.forEach(f => {
             ctx.beginPath();
@@ -1075,12 +466,12 @@ class PeanutsMonkeyHero {
             ctx.stroke();
         });
 
-        // 5) 황금 바나나 주변 만화풍 4각 반짝이 별(✦ Sparkles) & 빛 방울
+        // 4각 반짝이 별(✦)
         const sparkles = [
-            { x: -68, y: -52, s: 14, phase: 0 },
-            { x: 52,  y: -62, s: 11, phase: 1.5 },
-            { x: -46, y: -88, s: 9,  phase: 3.0 },
-            { x: -72, y: 20,  s: 11, phase: 4.2 }
+            { x: 68,  y: -52, s: 14, phase: 0 },
+            { x: -52, y: -62, s: 11, phase: 1.5 },
+            { x: 46,  y: -88, s: 9,  phase: 3.0 },
+            { x: 72,  y: 20,  s: 11, phase: 4.2 }
         ];
         sparkles.forEach(sp => {
             const pulse = 0.65 + Math.sin(this.time * 5 + sp.phase) * 0.35;
@@ -1103,6 +494,620 @@ class PeanutsMonkeyHero {
         });
 
         ctx.restore();
+        ctx.restore();
+    }
+
+    // 3. 몸통 등판 (레이서백 빨간 러닝 탱크톱 등판 + 날개 별 백엠블럼 + 노란 옆줄 파란 반바지)
+    drawBackTorsoAndShorts(ctx, swing, isLookingBack) {
+        ctx.save();
+        ctx.translate(0, -125);
+
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 4.2;
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+
+        // --- (A) 파란 반바지 뒷모습 (엉덩이 & 양옆 노란 스트라이프) ---
+        const shortsGrad = ctx.createLinearGradient(-55, -20, 55, 45);
+        shortsGrad.addColorStop(0, '#699bc2');
+        shortsGrad.addColorStop(0.6, '#4f7fa6');
+        shortsGrad.addColorStop(1, '#3b6487');
+        ctx.fillStyle = shortsGrad;
+
+        ctx.beginPath();
+        ctx.moveTo(-45, -18);
+        ctx.quadraticCurveTo(-68, 5, -62, 42);
+        ctx.quadraticCurveTo(-30, 50, -6, 32); // 왼쪽 바짓단 -> 가랑이
+        ctx.lineTo(6, 32);
+        ctx.quadraticCurveTo(30, 50, 62, 42);  // 오른쪽 바짓단
+        ctx.quadraticCurveTo(68, 5, 45, -18);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // 양옆 노란 트랙 스트라이프 2줄 (좌/우 옆선 모두 보임!)
+        ctx.fillStyle = '#f5cb42';
+        ctx.lineWidth = 3;
+        [-1, 1].forEach(side => {
+            ctx.beginPath();
+            ctx.moveTo(side * 42, -16);
+            ctx.quadraticCurveTo(side * 58, 8, side * 54, 40);
+            ctx.lineTo(side * 62, 38);
+            ctx.quadraticCurveTo(side * 66, 8, side * 48, -16);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        });
+
+        // 엉덩이 중앙 봉제선 & 주름 해칭
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, -14);
+        ctx.quadraticCurveTo(swing * 3, 10, 0, 30);
+        ctx.stroke();
+        this.drawHatching(ctx, -28, 22, 28, 22, 6, 7, 1.5);
+
+        // --- (B) 빨간 러닝 탱크톱 등판 (Back of Red Tank Top) ---
+        const shirtGrad = ctx.createRadialGradient(0, -65, 10, 0, -55, 85);
+        shirtGrad.addColorStop(0, '#e55942');
+        shirtGrad.addColorStop(0.7, '#d1432e');
+        shirtGrad.addColorStop(1, '#b53421');
+        ctx.fillStyle = shirtGrad;
+        ctx.lineWidth = 4.2;
+
+        // 어깨 털이 살짝 보이는 러닝 셔츠 등판 실루엣
+        ctx.beginPath();
+        ctx.moveTo(-38, -112);
+        ctx.quadraticCurveTo(-28, -75, -45, -16);
+        ctx.quadraticCurveTo(0, 2, 45, -16);
+        ctx.quadraticCurveTo(28, -75, 38, -112);
+        ctx.lineTo(24, -112);
+        // 등 뒤쪽 라운드 목선 (정면 U넥보다 살짝 높음)
+        ctx.quadraticCurveTo(0, -92, -24, -112);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // 등판 목선, 진동선, 아랫단 노란색 시보리 파이핑
+        ctx.strokeStyle = '#f5cb42';
+        ctx.lineWidth = 5.5;
+        ctx.beginPath();
+        ctx.moveTo(-28, -110);
+        ctx.quadraticCurveTo(0, -88, 28, -110);
+        ctx.moveTo(-38, -110);
+        ctx.quadraticCurveTo(-28, -75, -43, -35);
+        ctx.moveTo(38, -110);
+        ctx.quadraticCurveTo(28, -75, 43, -35);
+        ctx.moveTo(-44, -18);
+        ctx.quadraticCurveTo(0, 0, 44, -18);
+        ctx.stroke();
+
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(-26, -108);
+        ctx.quadraticCurveTo(0, -85, 26, -108);
+        ctx.moveTo(-44, -22);
+        ctx.quadraticCurveTo(0, -4, 44, -22);
+        ctx.stroke();
+
+        // 등판 중앙에도 날개 달린 별 백엠블럼 표시 (뒤돌아볼 때는 몸통도 살짝 비틀림 연출)
+        ctx.save();
+        ctx.translate(isLookingBack ? 6 : 0, -54);
+        [-1, 1].forEach(dir => {
+            ctx.save();
+            ctx.scale(dir, 1);
+            ctx.fillStyle = '#fff5dc';
+            ctx.strokeStyle = '#1a1612';
+            ctx.lineWidth = 2.6;
+            ctx.beginPath();
+            ctx.moveTo(15, -5);
+            ctx.quadraticCurveTo(36, -18, 42, -12);
+            ctx.quadraticCurveTo(36, -3, 26, -1);
+            ctx.quadraticCurveTo(36, 1, 38, 5);
+            ctx.quadraticCurveTo(30, 10, 22, 8);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+        });
+        ctx.fillStyle = '#f5cb42';
+        ctx.lineWidth = 2.8;
+        ctx.beginPath(); ctx.arc(0, 2, 20, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#65a6cc';
+        ctx.beginPath(); ctx.arc(0, 2, 15, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#ffda44';
+        ctx.beginPath();
+        for (let i = 0; i < 5; i++) {
+            const oa = (i * 72 - 90) * Math.PI / 180;
+            const ia = ((i * 72 + 36) - 90) * Math.PI / 180;
+            if (i === 0) ctx.moveTo(Math.cos(oa) * 12, 2 + Math.sin(oa) * 12);
+            else ctx.lineTo(Math.cos(oa) * 12, 2 + Math.sin(oa) * 12);
+            ctx.lineTo(Math.cos(ia) * 5, 2 + Math.sin(ia) * 5);
+        }
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.restore();
+
+        this.drawHatching(ctx, -34, -28, 34, -28, 8, 8, -1.3);
+        ctx.restore();
+    }
+
+    // 4. 도망갈 때 뒤에서 본 양다리 (차올리는 발은 스니커즈 밑창 가로 줄무늬가 정면으로 보임!)
+    drawRunningLegsFromBack(ctx, swing, cosSwing) {
+        // 왼쪽 다리(swing > 0일 때 뒤로 차올림) & 오른쪽 다리(swing < 0일 때 뒤로 차올림)
+        const legs = [
+            { side: -1, x: -34, phase: swing },
+            { side: 1,  x: 34,  phase: -swing }
+        ];
+
+        // 더 멀리(앞으로) 뻗은 다리를 먼저 그리고, 뒤(카메라 쪽)로 차올린 다리를 나중에 그려 입체감 부여
+        legs.sort((a, b) => a.phase - b.phase);
+
+        legs.forEach(leg => {
+            ctx.save();
+            // phase가 클수록 발을 뒤(위쪽/카메라쪽)로 번쩍 차올린 상태!
+            const liftY = leg.phase * 26;
+            const scaleKick = 1 + leg.phase * 0.14;
+            ctx.translate(leg.x, -92 - liftY * 0.4);
+            ctx.scale(scaleKick, scaleKick);
+            ctx.rotate(leg.side * 0.08 - leg.phase * 0.12);
+
+            // 갈색 털 다리
+            ctx.fillStyle = '#8e5d3e';
+            ctx.strokeStyle = '#1a1612';
+            ctx.lineWidth = 4;
+            ctx.lineJoin = 'round';
+
+            ctx.beginPath();
+            ctx.moveTo(-18, -6);
+            ctx.lineTo(-24, 24);
+            ctx.lineTo(-18, 28);
+            ctx.lineTo(-22, 58);
+            ctx.lineTo(20, 58);
+            ctx.lineTo(24, 28);
+            ctx.lineTo(18, -6);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            this.drawHatching(ctx, -14, 10, 14, 10, 4, 8, 1.5);
+
+            // 스니커즈 렌더링
+            ctx.save();
+            ctx.translate(0, 62 - liftY * 0.5);
+
+            if (leg.phase > 0.05) {
+                // 뒤(카메라 쪽)로 차올린 발: 발바닥 가로 밑창 줄무늬(Treads)가 정면으로 쫙 보임!
+                // 1) 적갈색 신발 윗부분 & 노란 2줄
+                ctx.fillStyle = '#8b3e2f';
+                ctx.beginPath();
+                ctx.arc(0, -8, 26, Math.PI, 0);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // 노란 줄무늬
+                ctx.fillStyle = '#f5cb42';
+                ctx.lineWidth = 2.5;
+                ctx.fillRect(-22, -16, 44, 6);
+                ctx.strokeRect(-22, -16, 44, 6);
+
+                // 2) 발바닥 밑창 타원 + 가로 미끄럼방지 줄무늬 7줄!
+                ctx.fillStyle = '#f5eedc';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.ellipse(0, 8, 26, 36, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#c9bba0';
+                ctx.lineWidth = 2.8;
+                ctx.beginPath();
+                ctx.ellipse(0, 8, 20, 29, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                // 가로 밑창 줄무늬 (Treads)
+                ctx.save();
+                ctx.beginPath();
+                ctx.ellipse(0, 8, 20, 29, 0, 0, Math.PI * 2);
+                ctx.clip();
+                ctx.strokeStyle = '#1a1612';
+                ctx.lineWidth = 2.8;
+                for (let ty = -18; ty <= 34; ty += 7.5) {
+                    ctx.beginPath();
+                    ctx.moveTo(-24, ty);
+                    ctx.lineTo(24, ty);
+                    ctx.stroke();
+                }
+                ctx.restore();
+            } else {
+                // 땅을 딛고 있는 발: 신발 뒤꿈치(Heel)와 노란 옆줄, 하얀 밑창이 보임
+                ctx.fillStyle = '#8b3e2f';
+                ctx.lineWidth = 3.8;
+                ctx.beginPath();
+                ctx.roundRect(-22, -12, 44, 34, 14);
+                ctx.fill();
+                ctx.stroke();
+
+                // 옆면 노란 2줄
+                ctx.fillStyle = '#f5cb42';
+                ctx.lineWidth = 2.5;
+                ctx.fillRect(-22, -4, 44, 5);
+                ctx.strokeRect(-22, -4, 44, 5);
+                ctx.fillRect(-22, 4, 44, 5);
+                ctx.strokeRect(-22, 4, 44, 5);
+
+                // 두꺼운 하얀 밑창 뒤꿈치
+                ctx.fillStyle = '#f5eedc';
+                ctx.lineWidth = 3.8;
+                ctx.beginPath();
+                ctx.roundRect(-25, 14, 50, 14, 7);
+                ctx.fill();
+                ctx.stroke();
+            }
+
+            ctx.restore();
+            ctx.restore();
+        });
+    }
+
+    // 5-A. 기본 상태: 앞을 보고 신나게 도망가는 원숭이의 귀여운 뒤통수 (Back of Head)
+    drawBackOfHead(ctx, swing, cosSwing) {
+        ctx.save();
+        ctx.translate(0, -288);
+        ctx.scale(1.16, 1.16);
+        ctx.rotate(Math.sin(this.runCycle * 0.5) * 0.045);
+
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 4.0;
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+
+        // 양쪽 귀 뒷면 (살구색 귀 테두리와 갈색 귀 뿌리)
+        [-92, 92].forEach((ex, idx) => {
+            ctx.save();
+            ctx.translate(ex, 12);
+            ctx.rotate(idx === 0 ? -0.14 : 0.14);
+            ctx.fillStyle = '#ebc59e';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 27, 39, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // 귀 뒤쪽 수채화 음영 및 해칭
+            ctx.fillStyle = '#cfa074';
+            ctx.beginPath();
+            ctx.ellipse(idx === 0 ? 6 : -6, 4, 16, 26, 0, 0, Math.PI * 2);
+            ctx.fill();
+            this.drawHatching(ctx, -8, 12, 8, 18, 4, 6, 1.2);
+            ctx.restore();
+        });
+
+        // 복슬복슬한 갈색 털 뒤통수 실루엣 (정수리 삐죽 털 5가닥 + 양볼 옆 잔털 그대로!)
+        const backHeadGrad = ctx.createRadialGradient(-20, -35, 15, 0, 10, 115);
+        backHeadGrad.addColorStop(0, '#a87452');
+        backHeadGrad.addColorStop(0.65, '#8d5b3c');
+        backHeadGrad.addColorStop(1, '#6b4025');
+        ctx.fillStyle = backHeadGrad;
+
+        ctx.beginPath();
+        ctx.moveTo(-88, -15);
+        ctx.lineTo(-96, -24);
+        ctx.lineTo(-86, -32);
+        ctx.quadraticCurveTo(-78, -72, -42, -92);
+        // 정수리 트레이드마크 삐죽 털 5가닥!
+        ctx.lineTo(-48, -106);
+        ctx.lineTo(-28, -98);
+        ctx.lineTo(-14, -118);
+        ctx.lineTo(2, -104);
+        ctx.lineTo(22, -122);
+        ctx.lineTo(24, -100);
+        ctx.lineTo(48, -108);
+        ctx.lineTo(44, -92);
+        ctx.quadraticCurveTo(82, -74, 90, -20);
+        // 오른쪽 볼 잔털 3가닥
+        ctx.lineTo(94, 38);
+        ctx.lineTo(104, 48);
+        ctx.lineTo(90, 52);
+        ctx.lineTo(96, 64);
+        ctx.lineTo(80, 66);
+        // 목덜미 털 라인 (중간에 귀여운 제비초리 잔털 2가닥)
+        ctx.quadraticCurveTo(35, 92, 12, 86);
+        ctx.lineTo(4, 96);
+        ctx.lineTo(-4, 86);
+        ctx.lineTo(-12, 95);
+        ctx.quadraticCurveTo(-40, 92, -78, 66);
+        // 왼쪽 볼 잔털 3가닥
+        ctx.lineTo(-94, 62);
+        ctx.lineTo(-86, 52);
+        ctx.lineTo(-102, 46);
+        ctx.lineTo(-90, 36);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // 뒤통수 가마(Swirl) 펜선과 피너츠 특유의 털 결 해칭 디테일!
+        ctx.strokeStyle = 'rgba(26, 22, 18, 0.55)';
+        ctx.lineWidth = 3.0;
+        // 정수리 아래 귀여운 소용돌이 가마 선
+        ctx.beginPath();
+        ctx.arc(6, -36, 18, 0.2, Math.PI * 1.4);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(-10, -24, 28, Math.PI * 0.15, Math.PI * 0.75);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(18, -12, 32, Math.PI * 0.3, Math.PI * 0.85);
+        ctx.stroke();
+
+        // 뒤통수 아래쪽 펜 해칭 그늘
+        this.drawHatching(ctx, -56, 48, 56, 48, 12, 14, 1.45);
+        this.drawHatching(ctx, 48, -68, 76, 15, 8, 11, 2.3);
+
+        ctx.restore();
+    }
+
+    // 5-B. 뒤돌아보기 상태 (Look Back): 어깨너머로 고개를 휙 돌려 뒤를 보며 웃거나 놀라는 얼굴!
+    drawLookBackHead(ctx, swing, cosSwing) {
+        ctx.save();
+        ctx.translate(4, -288);
+        ctx.scale(1.16, 1.16);
+        ctx.rotate(0.06 + Math.sin(this.runCycle * 0.5) * 0.04);
+
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 4.0;
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+
+        // 왼쪽 귀 & 오른쪽 귀 (귓바퀴 잉크 곡선 포함)
+        [-92, 92].forEach((ex, idx) => {
+            ctx.save();
+            ctx.translate(ex, 12);
+            ctx.rotate(idx === 0 ? -0.12 : 0.15);
+            ctx.fillStyle = '#f5dcc0';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 27, 39, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = '#dfb995';
+            ctx.beginPath();
+            ctx.ellipse(idx === 0 ? 3 : -3, 2, 15, 24, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.lineWidth = 3.5;
+            ctx.beginPath();
+            if (idx === 0) ctx.arc(4, -2, 14, Math.PI * 0.65, Math.PI * 1.85);
+            else ctx.arc(-3, -2, 15, -Math.PI * 0.85, Math.PI * 0.35);
+            ctx.stroke();
+            ctx.restore();
+        });
+
+        // 갈색 털 머리 외곽 실루엣
+        const headGrad = ctx.createRadialGradient(-20, -40, 15, 0, 0, 115);
+        headGrad.addColorStop(0, '#a67250');
+        headGrad.addColorStop(0.65, '#8d5b3c');
+        headGrad.addColorStop(1, '#704429');
+        ctx.fillStyle = headGrad;
+
+        ctx.beginPath();
+        ctx.moveTo(-88, -15);
+        ctx.lineTo(-96, -24);
+        ctx.lineTo(-86, -32);
+        ctx.quadraticCurveTo(-78, -72, -42, -92);
+        ctx.lineTo(-48, -106);
+        ctx.lineTo(-28, -98);
+        ctx.lineTo(-14, -118);
+        ctx.lineTo(2, -104);
+        ctx.lineTo(22, -122);
+        ctx.lineTo(24, -100);
+        ctx.lineTo(48, -108);
+        ctx.lineTo(44, -92);
+        ctx.quadraticCurveTo(82, -74, 90, -20);
+        ctx.lineTo(94, 38);
+        ctx.lineTo(104, 48);
+        ctx.lineTo(90, 52);
+        ctx.lineTo(96, 64);
+        ctx.lineTo(80, 66);
+        ctx.quadraticCurveTo(0, 102, -78, 66);
+        ctx.lineTo(-94, 62);
+        ctx.lineTo(-86, 52);
+        ctx.lineTo(-102, 46);
+        ctx.lineTo(-90, 36);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // M자 이마 + 통통한 양볼 크림베이지 마스크
+        const faceGrad = ctx.createRadialGradient(-15, 10, 10, 0, 15, 90);
+        faceGrad.addColorStop(0, '#ffefd7');
+        faceGrad.addColorStop(0.75, '#f6dec1');
+        faceGrad.addColorStop(1, '#e5c49f');
+        ctx.fillStyle = faceGrad;
+        ctx.lineWidth = 3.8;
+
+        ctx.beginPath();
+        ctx.moveTo(-4, -46);
+        ctx.bezierCurveTo(18, -76, 62, -62, 60, -14);
+        ctx.bezierCurveTo(84, 6, 82, 58, 42, 74);
+        ctx.quadraticCurveTo(-2, 88, -46, 72);
+        ctx.bezierCurveTo(-84, 56, -82, 6, -60, -14);
+        ctx.bezierCurveTo(-62, -62, -22, -76, -4, -46);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        this.drawHatching(ctx, -48, -56, -12, -56, 5, 6, -1.5);
+        this.drawHatching(ctx, 8, -56, 48, -56, 5, 6, -1.6);
+
+        // 눈썹
+        const browOffsetY = this.lookBackMood === 'scared' ? -7 : 0;
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 4.8;
+        ctx.beginPath();
+        ctx.arc(-34, -22 + browOffsetY, 14, Math.PI * 1.15, Math.PI * 1.82);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(28, -22 + browOffsetY, 14, Math.PI * 1.18, Math.PI * 1.85);
+        ctx.stroke();
+
+        // 세로 타원형 점눈
+        ctx.fillStyle = '#1a1612';
+        [-33, 27].forEach(ex => {
+            ctx.beginPath();
+            if (this.isBlinking) {
+                ctx.lineWidth = 4.5;
+                ctx.moveTo(ex - 9, -2);
+                ctx.quadraticCurveTo(ex, 3, ex + 9, -2);
+                ctx.stroke();
+            } else {
+                ctx.ellipse(ex, -2, 8.5, 13.5, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        });
+
+        // 귀여운 두 콧구멍
+        ctx.lineWidth = 3.8;
+        ctx.beginPath(); ctx.arc(-8, 17, 5.5, Math.PI * 0.75, Math.PI * 1.95); ctx.stroke();
+        ctx.beginPath(); ctx.arc(4, 17, 5.5, -Math.PI * 0.95, Math.PI * 0.25); ctx.stroke();
+
+        // 표정별 입 모양 (기본/자랑스러운 보조개 스마일 vs 드래곤에 놀란 O자 입)
+        ctx.lineWidth = 4.4;
+        if (this.lookBackMood === 'scared') {
+            // "헉! 용이 바로 뒤야!" 놀란 피너츠 물결 입 + 식은땀 한 방울
+            ctx.fillStyle = '#b5483a';
+            ctx.beginPath();
+            ctx.ellipse(-2, 42, 18, 12, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // 이마 식은땀 방울
+            ctx.fillStyle = '#a8dadc';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(-58, -18);
+            ctx.quadraticCurveTo(-68, -2, -58, 6);
+            ctx.quadraticCurveTo(-48, -2, -58, -18);
+            ctx.fill();
+            ctx.stroke();
+        } else {
+            // 활짝 웃는 큰 스마일 입 & 양 끝 보조개 눈금
+            ctx.beginPath();
+            ctx.moveTo(-46, 30);
+            ctx.bezierCurveTo(-28, 58, 22, 58, 42, 30);
+            ctx.stroke();
+
+            ctx.lineWidth = 4.0;
+            ctx.beginPath();
+            ctx.moveTo(-51, 25); ctx.lineTo(-41, 36);
+            ctx.moveTo(47, 25);  ctx.lineTo(37, 36);
+            ctx.stroke();
+
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.arc(-2, 54, 14, 0.25, Math.PI - 0.25);
+            ctx.stroke();
+        }
+
+        ctx.restore();
+    }
+
+    // 6. 반바지 엉덩이 중앙에서 뻗어 나와 살랑거리는 S자 긴 꼬리 (뒷모습의 핵심 매력!)
+    drawTailFromBack(ctx, swing, cosSwing) {
+        ctx.save();
+        ctx.translate(0, -112);
+        const tailWag = Math.sin(this.runCycle * 0.65) * 0.14;
+        ctx.rotate(tailWag);
+
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        const drawTailCurve = () => {
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.bezierCurveTo(-55, 22, -115, -35, -135, -115 + cosSwing * 10);
+            ctx.bezierCurveTo(-155, -195, -230, -180, -225, -105 + swing * 12);
+            ctx.bezierCurveTo(-222, -68, -192, -52, -184, -72);
+        };
+
+        // 검은 잉크 외곽선
+        drawTailCurve();
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 28;
+        ctx.stroke();
+
+        // 갈색 털 본체
+        drawTailCurve();
+        ctx.strokeStyle = '#8e5d3e';
+        ctx.lineWidth = 20;
+        ctx.stroke();
+
+        // 꼬리 하이라이트
+        drawTailCurve();
+        ctx.strokeStyle = '#a67352';
+        ctx.lineWidth = 7;
+        ctx.stroke();
+
+        // 꼬리 시작점(엉덩이 연결부) 털 해칭
+        this.drawHatching(ctx, -35, 8, -85, -15, 5, 7, -1.8);
+
+        ctx.restore();
+    }
+
+    // 피격 시 머리 위에서 빙글빙글 도는 만화 별 이펙트
+    drawDizzyStars(ctx) {
+        ctx.save();
+        ctx.translate(0, -430);
+        for (let i = 0; i < 3; i++) {
+            const ang = this.time * 6 + (i * Math.PI * 2) / 3;
+            const sx = Math.cos(ang) * 58;
+            const sy = Math.sin(ang) * 16;
+            ctx.save();
+            ctx.translate(sx, sy);
+            ctx.fillStyle = '#ffda44';
+            ctx.strokeStyle = '#1a1612';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            for (let k = 0; k < 5; k++) {
+                const oa = (k * 72 - 90) * Math.PI / 180;
+                const ia = ((k * 72 + 36) - 90) * Math.PI / 180;
+                if (k === 0) ctx.moveTo(Math.cos(oa) * 14, Math.sin(oa) * 14);
+                else ctx.lineTo(Math.cos(oa) * 14, Math.sin(oa) * 14);
+                ctx.lineTo(Math.cos(ia) * 6, Math.sin(ia) * 6);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+        }
+        ctx.restore();
+    }
+
+    // 부스트 시 캐릭터 주변 만화 스피드 라인 & 황금 오라
+    drawBoostAura(ctx) {
+        ctx.save();
+        ctx.translate(0, -190);
+        const grad = ctx.createRadialGradient(0, 0, 30, 0, 0, 210);
+        grad.addColorStop(0, 'rgba(255, 230, 90, 0.45)');
+        grad.addColorStop(1, 'rgba(255, 230, 90, 0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(0, 0, 210, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    }
+
+    // 바나나 실드 보호막
+    drawShieldBubble(ctx) {
+        ctx.save();
+        ctx.translate(0, -195);
+        ctx.strokeStyle = '#4ea8de';
+        ctx.fillStyle = 'rgba(144, 224, 239, 0.22)';
+        ctx.lineWidth = 4;
+        ctx.setLineDash([12, 8]);
+        ctx.beginPath();
+        ctx.arc(0, 0, 195, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
         ctx.restore();
     }
 }
