@@ -1468,11 +1468,7 @@ function gameLoop(now) {
         const shake = dragon.getScreenShakeOffset();
         ctx.translate(shake.x, shake.y);
 
-        // 🎯 실감나는 3D 카메라 뱅킹 틸트 (원숭이 좌우 이동 시 트랙 전체가 역동적으로 기울어짐)
-        ctx.translate(width * 0.5, height * 0.55);
-        ctx.rotate(-hero.laneX * 0.016);
-        ctx.translate(-width * 0.5, -height * 0.55);
-
+        // 화면(카메라)은 안정적으로 고정하고 캐릭터만 레인 위를 이동하도록 유지
         track.renderBackgroundAndRoad(ctx, width, height, hero.time);
 
         track.renderEntities(ctx, width, height, hero.time, 0, 0.88);
