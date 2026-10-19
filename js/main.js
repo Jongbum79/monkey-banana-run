@@ -410,11 +410,15 @@ window.addEventListener('keydown', (e) => {
     } else if (e.key.toLowerCase() === 'l') {
         handleLookBack();
     } else if (e.key === '1') {
-        if (gameState === 'PLAYING') { hero.currentLane = -1; sound.playLaneMove(); }
+        if (gameState === 'PLAYING') { hero.currentLane = -2; sound.playLaneMove(); }
     } else if (e.key === '2') {
-        if (gameState === 'PLAYING') { hero.currentLane = 0; sound.playLaneMove(); }
+        if (gameState === 'PLAYING') { hero.currentLane = -1; sound.playLaneMove(); }
     } else if (e.key === '3') {
+        if (gameState === 'PLAYING') { hero.currentLane = 0; sound.playLaneMove(); }
+    } else if (e.key === '4') {
         if (gameState === 'PLAYING') { hero.currentLane = 1; sound.playLaneMove(); }
+    } else if (e.key === '5') {
+        if (gameState === 'PLAYING') { hero.currentLane = 2; sound.playLaneMove(); }
     }
 });
 
@@ -799,7 +803,7 @@ function gameLoop(now) {
         // 원숭이를 적절한 스케일(0.36)로 렌더링하며 레인 간격을 바닥 트랙 타일과 1:1 일치
         const charScale = (Math.min(width, height) / 940) * 0.36;
         const pHero = track.project(1.0, 0, width, height);
-        const lanePixelSpread = (pHero.roadW / 3) / charScale;
+        const lanePixelSpread = (pHero.roadW / 5) / charScale;
         hero.render(ctx, width * 0.5, height * 0.84, charScale, lanePixelSpread);
     }
 

@@ -76,25 +76,26 @@ class TrackManager {
         const horizonY = height * 0.42;
         const groundY = height * 0.84;
         const centerX = width * 0.5;
-        const topRoadW = 130;
-        const botRoadW = Math.min(width * 0.86, 860);
+        const topRoadW = 150;
+        const botRoadW = Math.min(width * 0.94, 960);
 
         const zPow = Math.pow(Math.max(0.001, z), 1.85);
         const y = horizonY + (groundY - horizonY) * zPow;
         // 바닥 트랙 타일(renderBackgroundAndRoad)의 Y 위치별 실제 도로 폭과 100% 일치시킴!
         const roadFrac = Math.max(0.001, (y - horizonY) / (height - horizonY));
         const roadW = topRoadW + (botRoadW - topRoadW) * roadFrac;
-        const x = centerX + lane * (roadW / 3);
+        // 5레인 시스템: lane은 -2, -1, 0, 1, 2
+        const x = centerX + lane * (roadW / 5);
         const scale = 0.18 + 0.82 * zPow;
 
         return { x, y, roadW, scale, zPow, horizonY, groundY, centerX, topRoadW, botRoadW, roadFrac };
     }
 
-    // 컴팩트하게 최적화된 바닥 히트박스 4꼭짓점 계산 (요청 반영: 히트박스 크기 축소!)
+    // 컴팩트하게 최적화된 바닥 히트박스 4꼭짓점 계산 (5개 레인 완벽 호환)
     getTrackCellCorners(z, lane, width, height) {
         const p = this.project(z, lane, width, height);
         const progCenter = Math.pow(p.roadFrac, 1 / 1.85);
-        // 타일 1칸 대비 컴팩트한 히트박스(가로 폭 및 깊이 축소)
+        // 타일 1칸 대비 컴팩트한 히트박스
         const halfTileProg = (0.82 / 9) * 0.28;
         const prog1 = Math.max(0.001, progCenter - halfTileProg);
         const prog2 = Math.min(1.06, progCenter + halfTileProg);
@@ -107,11 +108,13 @@ class TrackManager {
         const w1 = p.topRoadW + (p.botRoadW - p.topRoadW) * rf1;
         const w2 = p.topRoadW + (p.botRoadW - p.topRoadW) * rf2;
 
-        // 레인 너비의 ±0.26으로 줄여 억울한 피격을 방지하고 명확한 판정 부여!
-        const x1L = p.centerX + (lane - 0.26) * (w1 / 3);
-        const x1R = p.centerX + (lane + 0.26) * (w1 / 3);
-        const x2R = p.centerX + (lane + 0.26) * (w2 / 3);
-        const x2L = p.centerX + (lane - 0.26) * (w2 / 3);
+        const halfW1 = (w1 / 5) * 0.44;
+        const halfW2 = (w2 / 5) * 0.44;
+
+        const x1L = p.centerX + lane * (w1 / 5) - halfW1;
+        const x1R = p.centerX + lane * (w1 / 5) + halfW1;
+        const x2R = p.centerX + lane * (w2 / 5) + halfW2;
+        const x2L = p.centerX + lane * (w2 / 5) - halfW2;
 
         return { x1L, y1, x1R, x2R, y2, x2L };
     }
@@ -249,7 +252,8 @@ class TrackManager {
             }
             if (obs.type === 'moving_barrier') {
                 obs.movePhase = (obs.movePhase || 0) + dt * 2.8;
-                obs.lane = Math.sin(obs.movePhase) * 0.95;
+                obs.baseLane = obs.baseLane !== undefined ? obs.baseLane : obs.lane;
+                obs.lane = Math.max(-2, Math.min(2, obs.baseLane + Math.sin(obs.movePhase) * 0.38));
             }
 
             // 🔫 레이저총(4초) 활성화 시: 유저가 있는 레인의 기물을 레이저 빔이 즉시 증발시켜 없앰!
@@ -343,11 +347,9 @@ class TrackManager {
     }
 
     spawnObstaclePattern(callbacks) {
-        const lanes = [-1, 0, 1];
+        const lanes = [-2, -1, 0, 1, 2];
         const chaserType = this.getStageChaserType();
-        // 공격형 기물 비중을 높여 장애물이 더 풍성하고 스릴 있게 등장하도록 구성!
         const types = [
-            chaserType,
             chaserType,
             'log',
             'hurdle',
@@ -357,11 +359,22 @@ class TrackManager {
             'climb_truck',
             'ramp'
         ];
-        const chosenLane = lanes[Math.floor(Math.random() * 3)];
+
+        // 🎯 억울한 충돌 방지: 현재 Z < 0.35 전방에 존재하는 기물들의 레인 조사
+        const nearObstacles = this.obstacles.filter(o => o.z < 0.35);
+        const occupiedLanes = new Set(nearObstacles.map(o => Math.round(o.lane)));
+
+        // 아직 기물이 없는 안전한 레인 후보군
+        const safeLanes = lanes.filter(l => !occupiedLanes.has(l));
+        // 전방에 이미 위험 구간이 형성되어 있다면(남은 안전 레인이 2개 미만) 추가 생성 금지하여 회피 통로 절대 보장!
+        if (safeLanes.length < 3) return;
+
+        const chosenLane = safeLanes[Math.floor(Math.random() * safeLanes.length)];
         const chosenType = types[Math.floor(Math.random() * types.length)];
 
         this.obstacles.push({
             lane: chosenLane,
+            baseLane: chosenLane,
             z: 0.03,
             type: chosenType,
             rot: 0,
@@ -371,13 +384,18 @@ class TrackManager {
             passed: false
         });
 
-        // 1단계부터 2레인 복합 장애물이 자주 등장하도록 확률 대폭 상향 (58% ~ 88%)
-        if (chosenType !== 'moving_barrier' && Math.random() < 0.58 + this.stage * 0.06) {
-            const otherLanes = lanes.filter(l => l !== chosenLane);
-            const secondLane = otherLanes[Math.floor(Math.random() * otherLanes.length)];
+        // 2번째 기물 생성: 5개 레인 중 최소 3개 레인은 항상 100% 안전하게 비어 있도록 보장!
+        const remainingLanes = safeLanes.filter(l => l !== chosenLane);
+        if (
+            chosenType !== 'moving_barrier' &&
+            remainingLanes.length >= 3 &&
+            Math.random() < 0.48 + this.stage * 0.04
+        ) {
+            const secondLane = remainingLanes[Math.floor(Math.random() * remainingLanes.length)];
             const subTypes = ['log', 'hurdle', 'pillar', 'arch', 'climb_truck', chaserType];
             this.obstacles.push({
                 lane: secondLane,
+                baseLane: secondLane,
                 z: 0.03,
                 type: subTypes[Math.floor(Math.random() * subTypes.length)],
                 rot: 0,
@@ -406,7 +424,8 @@ class TrackManager {
     }
 
     spawnCoinLine() {
-        const lane = [-1, 0, 1][Math.floor(Math.random() * 3)];
+        const lanes = [-2, -1, 0, 1, 2];
+        const lane = lanes[Math.floor(Math.random() * lanes.length)];
         const count = 2 + (Math.random() < 0.5 ? 1 : 0);
         for (let i = 0; i < count; i++) {
             let itemType = 'coin';
@@ -756,8 +775,8 @@ class TrackManager {
     renderBackgroundAndRoad(ctx, width, height, time) {
         const horizonY = height * 0.42;
         const centerX = width * 0.5;
-        const topRoadW = 130;
-        const botRoadW = Math.min(width * 0.86, 860);
+        const topRoadW = 150;
+        const botRoadW = Math.min(width * 0.94, 960);
 
         const themes = {
             1: { // 1단계: 숲속 (Forest)
@@ -897,11 +916,11 @@ class TrackManager {
             const w2 = topRoadW + (botRoadW - topRoadW) * z2;
             const lipH = 2 + z2 * 7;
 
-            for (let col = -1; col <= 1; col++) {
-                const x1L = centerX + (col - 0.44) * (w1 / 3);
-                const x1R = centerX + (col + 0.44) * (w1 / 3);
-                const x2R = centerX + (col + 0.44) * (w2 / 3);
-                const x2L = centerX + (col - 0.44) * (w2 / 3);
+            for (let col = -2; col <= 2; col++) {
+                const x1L = centerX + (col - 0.46) * (w1 / 5);
+                const x1R = centerX + (col + 0.46) * (w1 / 5);
+                const x2R = centerX + (col + 0.46) * (w2 / 5);
+                const x2L = centerX + (col - 0.46) * (w2 / 5);
 
                 // 타일 앞쪽 3D 입체 두께 단차
                 ctx.fillStyle = 'rgba(26, 22, 18, 0.35)';
@@ -938,13 +957,13 @@ class TrackManager {
                 ctx.fill();
             }
 
-            // 3D 레인 분할 점선 (True 3D Perspective Lane Dividers)
+            // 3D 레인 분할 점선 (5개 레인을 구분하는 4개의 점선)
             if (i % 2 === 0) {
-                for (const divCol of [-0.5, 0.5]) {
-                    const d1x = centerX + divCol * (w1 / 3);
-                    const d2x = centerX + divCol * (w2 / 3);
-                    const dw1 = Math.max(2.0, 4.0 * z1);
-                    const dw2 = Math.max(3.0, 6.5 * z2);
+                for (const divCol of [-1.5, -0.5, 0.5, 1.5]) {
+                    const d1x = centerX + divCol * (w1 / 5);
+                    const d2x = centerX + divCol * (w2 / 5);
+                    const dw1 = Math.max(1.8, 3.5 * z1);
+                    const dw2 = Math.max(2.5, 5.5 * z2);
 
                     ctx.fillStyle = this.stage === 5 ? '#00f5d4' : '#fffcf5';
                     ctx.beginPath();
@@ -980,21 +999,20 @@ class TrackManager {
         }
 
         // 5. 양옆 스테이지별 동물 & 배경 오브젝트 렌더링
-        // 요청 반영: 동물 수를 40% 줄이고(한 행당 좌/우 한쪽씩만 교차 배치), 트랙에서 멀찌감치 떨어뜨려 시야를 시원하게 확보!
         if (this.stage === 6) {
             this.drawSchoolEndingBuilding(ctx, centerX, horizonY + 45);
         } else {
             const sortedProps = [...this.sideProps].sort((a, b) => a.z - b.z);
             sortedProps.forEach((prop, idx) => {
-                // 레인 외곽(-2.18, +2.18) 및 추가 외곽 여백(±88)을 두어 트랙에 절대 붙지 않도록 배치!
-                const pL = this.project(prop.z, -2.18, width, height);
-                const pR = this.project(prop.z, 2.18, width, height);
+                // 5개 레인 외곽(-3.1, +3.1) 및 추가 외곽 여백(±92)을 두어 트랙에 절대 붙지 않도록 배치!
+                const pL = this.project(prop.z, -3.1, width, height);
+                const pR = this.project(prop.z, 3.1, width, height);
                 const boostScaleL = Math.max(0.36, pL.scale * 1.15);
                 const boostScaleR = Math.max(0.36, pR.scale * 1.15);
                 const showLeftAnimal = (prop.variant % 2 === 0);
                 const showRightAnimal = !showLeftAnimal;
-                this.drawStageSideProp(ctx, pL.x - 88 * pL.scale, pL.y, boostScaleL, -1, (prop.variant + idx) % 5, time, showLeftAnimal);
-                this.drawStageSideProp(ctx, pR.x + 88 * pR.scale, pR.y, boostScaleR, 1, (prop.variant + idx + 2) % 5, time, showRightAnimal);
+                this.drawStageSideProp(ctx, pL.x - 92 * pL.scale, pL.y, boostScaleL, -1, (prop.variant + idx) % 5, time, showLeftAnimal);
+                this.drawStageSideProp(ctx, pR.x + 92 * pR.scale, pR.y, boostScaleR, 1, (prop.variant + idx + 2) % 5, time, showRightAnimal);
             });
         }
 

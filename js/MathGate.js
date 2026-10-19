@@ -59,10 +59,10 @@ class MathGateManager {
             answer = ans;
         }
 
-        // 오답 2개 생성
+        // 오답 4개 생성 (5개 레인용)
         const wrongSet = new Set();
-        while (wrongSet.size < 2) {
-            const offset = (Math.floor(Math.random() * 5) + 1) * (Math.random() < 0.5 ? 1 : -1);
+        while (wrongSet.size < 4) {
+            const offset = (Math.floor(Math.random() * 7) + 1) * (Math.random() < 0.5 ? 1 : -1);
             const candidate = answer + offset;
             if (candidate > 0 && candidate !== answer) {
                 wrongSet.add(candidate);
@@ -70,9 +70,10 @@ class MathGateManager {
         }
         const wrongs = Array.from(wrongSet);
 
-        // 3개 레인(-1, 0, 1) 중 정답 레인 무작위 배정
-        const correctLane = [-1, 0, 1][Math.floor(Math.random() * 3)];
-        const doors = [-1, 0, 1].map(lane => {
+        // 5개 레인(-2, -1, 0, 1, 2) 중 정답 레인 1개 무작위 배정
+        const allLanes = [-2, -1, 0, 1, 2];
+        const correctLane = allLanes[Math.floor(Math.random() * allLanes.length)];
+        const doors = allLanes.map(lane => {
             if (lane === correctLane) {
                 return {
                     lane,
@@ -141,7 +142,7 @@ class MathGateManager {
             gate.resolved = true;
             // 문 바로 뒤에 숨어있던 기물이 시야 때문에 피하지 못하는 일이 없도록 정리
             trackManager.obstacles = trackManager.obstacles.filter(o => o.z < 0.55 || o.z > 0.98);
-            const chosenDoor = gate.doors.find(d => d.lane === hero.currentLane) || gate.doors[1];
+            const chosenDoor = gate.doors.find(d => d.lane === hero.currentLane) || gate.doors[2];
 
             // 스테이지 전환(stagePauseTimer) 등이 발생해도 문이 화면에 남아있지 않도록 먼저 즉시 제거!
             this.activeGate = null;
@@ -176,10 +177,10 @@ class MathGateManager {
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
 
-        // 1. 3D 입체 문(3D Volumetric Doors) 렌더링
+        // 1. 3D 입체 문(3D Volumetric Doors) 5개 렌더링
         gate.doors.forEach(door => {
             const pDoor = trackManager.project(gate.z, door.lane, width, height);
-            const doorW = (roadW / 3) * 0.90;
+            const doorW = (roadW / 5) * 0.90;
             const doorH = 240 * scale;
             const depthX = (-door.lane * 16 + 14) * scale; // 3D 원근 옆면 두께
             const depthY = -18 * scale;                   // 3D 원근 윗면 두께

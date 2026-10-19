@@ -77,8 +77,8 @@ class PeanutsMonkeyHero {
     }
 
     reset() {
-        this.currentLane = 0; // -1: 좌, 0: 중, 1: 우
-        this.laneX = 0;       // 보간된 X (-1 ~ 1)
+        this.currentLane = 0; // -2, -1: 좌, 0: 중, 1, 2: 우
+        this.laneX = 0;       // 보간된 X (-2 ~ 2)
         this.y = 0;           // 점프 높이 (px)
         this.vy = 0;
         this.isJumping = false;
@@ -118,7 +118,7 @@ class PeanutsMonkeyHero {
 
     changeLane(dir) {
         const next = this.currentLane + dir;
-        if (next >= -1 && next <= 1) {
+        if (next >= -2 && next <= 2) {
             this.currentLane = next;
             return true;
         }
@@ -873,7 +873,7 @@ class PeanutsMonkeyHero {
         ctx.restore();
     }
 
-    // 3-B. 클래식 신사복 (블랙 턱시도 코트, 새틴 라펠, 화이트 셔츠, 레드 보타이, 골드 단추)
+    // 3-B. 최고급 클래식 신사복 (정통 블랙 턱시도, 레드 행커치프, 골드 회중시계 체인, 새틴 라펠, 화이트 셔츠, 레드 보타이, 골드 단추)
     drawGentlemanTuxedo(ctx, swing, isLookingBack) {
         ctx.save();
         ctx.translate(0, -125);
@@ -913,32 +913,36 @@ class PeanutsMonkeyHero {
 
         // --- (B) 턱시도 자켓 코트 (Tuxedo Tailcoat Jacket) ---
         const coatGrad = ctx.createRadialGradient(0, -65, 10, 0, -55, 85);
-        coatGrad.addColorStop(0, '#2b303a');
-        coatGrad.addColorStop(0.7, '#1e2229');
-        coatGrad.addColorStop(1, '#111315');
+        coatGrad.addColorStop(0, '#2d333d');
+        coatGrad.addColorStop(0.65, '#1e2229');
+        coatGrad.addColorStop(1, '#111316');
         ctx.fillStyle = coatGrad;
         ctx.strokeStyle = '#14171a';
         ctx.lineWidth = 4.2;
 
         ctx.beginPath();
-        ctx.moveTo(-42, -112);
-        ctx.quadraticCurveTo(-30, -70, -48, -14);
-        ctx.quadraticCurveTo(0, 4, 48, -14);
-        ctx.quadraticCurveTo(30, -70, 42, -112);
+        ctx.moveTo(-44, -112);
+        ctx.quadraticCurveTo(-32, -70, -50, -14);
+        ctx.quadraticCurveTo(0, 4, 50, -14);
+        ctx.quadraticCurveTo(32, -70, 44, -112);
         ctx.lineTo(26, -112);
         ctx.quadraticCurveTo(0, -96, -26, -112);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
-        // 턱시도 깃 (Satin Peaked Lapels)
-        ctx.fillStyle = '#343a40';
+        // 고급 새틴 턱시도 깃 (Glossy Satin Peaked Lapels)
+        const lapelGrad = ctx.createLinearGradient(-35, -110, 35, -60);
+        lapelGrad.addColorStop(0, '#495057');
+        lapelGrad.addColorStop(0.5, '#343a40');
+        lapelGrad.addColorStop(1, '#212529');
+        ctx.fillStyle = lapelGrad;
         ctx.lineWidth = 3.2;
         // 좌측 라펠
         ctx.beginPath();
         ctx.moveTo(-28, -110);
-        ctx.lineTo(-44, -80);
-        ctx.lineTo(-24, -62);
+        ctx.lineTo(-46, -78);
+        ctx.lineTo(-24, -60);
         ctx.lineTo(-18, -98);
         ctx.closePath();
         ctx.fill();
@@ -946,50 +950,87 @@ class PeanutsMonkeyHero {
         // 우측 라펠
         ctx.beginPath();
         ctx.moveTo(28, -110);
-        ctx.lineTo(44, -80);
-        ctx.lineTo(24, -62);
+        ctx.lineTo(46, -78);
+        ctx.lineTo(24, -60);
         ctx.lineTo(18, -98);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
+        // 좌측 가슴 붉은 실크 행커치프 (Pocket Square)
+        ctx.fillStyle = '#d62828';
+        ctx.beginPath();
+        ctx.moveTo(22, -80);
+        ctx.lineTo(29, -90);
+        ctx.lineTo(36, -80);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
         if (isLookingBack) {
-            // 뒤돌아볼 때: 화이트 드레스 셔츠 정면 + 레드 보타이 + 골드 단추!
+            // 뒤돌아볼 때: 정면 화이트 드레스 셔츠 + 골드 회중시계 체인 + 레드 보타이 + 골드 단추!
             ctx.fillStyle = '#fffcf5';
             ctx.lineWidth = 3;
             ctx.beginPath();
-            ctx.moveTo(-16, -100);
-            ctx.lineTo(16, -100);
-            ctx.lineTo(10, -40);
-            ctx.lineTo(-10, -40);
+            ctx.moveTo(-18, -100);
+            ctx.lineTo(18, -100);
+            ctx.lineTo(12, -38);
+            ctx.lineTo(-12, -38);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
 
-            // 레드 실크 보타이 (Red Silk Bow Tie)
+            // 셔츠 세로 주름선
+            ctx.strokeStyle = '#e9ecef';
+            ctx.lineWidth = 1.8;
+            ctx.beginPath();
+            ctx.moveTo(-6, -96); ctx.lineTo(-4, -40);
+            ctx.moveTo(6, -96); ctx.lineTo(4, -40);
+            ctx.stroke();
+
+            // 🌟 골드 회중시계 체인 (Albert Watch Chain)
+            ctx.strokeStyle = '#ffd166';
+            ctx.lineWidth = 2.8;
+            ctx.beginPath();
+            ctx.moveTo(-14, -60);
+            ctx.quadraticCurveTo(-4, -46, 6, -56);
+            ctx.stroke();
+            // 골드 체인 펜던트
+            ctx.fillStyle = '#ffbe0b';
+            ctx.beginPath();
+            ctx.arc(6, -56, 3.2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 붉은 실크 보타이 (Red Silk Bow Tie)
             ctx.fillStyle = '#d62828';
-            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = '#14171a';
+            ctx.lineWidth = 2.6;
             // 좌측 날개
             ctx.beginPath();
             ctx.moveTo(0, -92);
-            ctx.lineTo(-16, -100);
-            ctx.lineTo(-16, -84);
+            ctx.lineTo(-18, -102);
+            ctx.lineTo(-18, -82);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
             // 우측 날개
             ctx.beginPath();
             ctx.moveTo(0, -92);
-            ctx.lineTo(16, -100);
-            ctx.lineTo(16, -84);
+            ctx.lineTo(18, -102);
+            ctx.lineTo(18, -82);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
-            // 중앙 매듭
+            // 보타이 리본 중앙 매듭 & 보석
+            ctx.fillStyle = '#b7094c';
             ctx.beginPath();
-            ctx.arc(0, -92, 5, 0, Math.PI * 2);
+            ctx.arc(0, -92, 5.5, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
+            ctx.fillStyle = '#ffd166';
+            ctx.beginPath();
+            ctx.arc(0, -92, 2.2, 0, Math.PI * 2);
+            ctx.fill();
 
             // 황금 조끼 단추 3개
             ctx.fillStyle = '#ffd166';
@@ -1015,7 +1056,7 @@ class PeanutsMonkeyHero {
             ctx.lineWidth = 2;
             [-12, 12].forEach(bx => {
                 ctx.beginPath();
-                ctx.arc(bx, -28, 4, 0, Math.PI * 2);
+                ctx.arc(bx, -28, 4.5, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.stroke();
             });
@@ -1031,7 +1072,7 @@ class PeanutsMonkeyHero {
         ctx.restore();
     }
 
-    // 3-C. 산타 복장 (붉은 산타 코트, 뽀송한 흰 양털 칼라 & 밑단, 검은 가죽벨트 + 황금 버클, 붉은 바지)
+    // 3-C. 최고급 산타 복장 (포근한 벨벳 레드 코트, 입체 양털 셰르파 트림, 두꺼운 가죽벨트 + 메탈릭 골드 버클, 레드 벨벳 바지)
     drawSantaSuit(ctx, swing, isLookingBack) {
         ctx.save();
         ctx.translate(0, -125);
@@ -1041,7 +1082,7 @@ class PeanutsMonkeyHero {
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
 
-        // --- (A) 산타 바지 (Red Santa Trousers) ---
+        // --- (A) 산타 벨벳 바지 (Red Santa Trousers) ---
         const pantsGrad = ctx.createLinearGradient(-55, -20, 55, 45);
         pantsGrad.addColorStop(0, '#e63946');
         pantsGrad.addColorStop(0.6, '#d62828');
@@ -1059,7 +1100,17 @@ class PeanutsMonkeyHero {
         ctx.fill();
         ctx.stroke();
 
-        // --- (B) 산타 코트 (Red Coat & White Fleece Trim) ---
+        // 바지 아랫단 포근한 흰 양털 커프 (Boot Fur Cuffs)
+        ctx.fillStyle = '#fffcf5';
+        ctx.lineWidth = 3.2;
+        [-38, 38].forEach(fx => {
+            ctx.beginPath();
+            ctx.roundRect(fx - 20, 36, 40, 16, 8);
+            ctx.fill();
+            ctx.stroke();
+        });
+
+        // --- (B) 산타 벨벳 코트 (Red Velvet Coat & Fluffy Trim) ---
         const coatGrad = ctx.createRadialGradient(0, -65, 10, 0, -55, 85);
         coatGrad.addColorStop(0, '#f03a47');
         coatGrad.addColorStop(0.7, '#d62828');
@@ -1068,71 +1119,96 @@ class PeanutsMonkeyHero {
         ctx.lineWidth = 4.2;
 
         ctx.beginPath();
-        ctx.moveTo(-44, -112);
-        ctx.quadraticCurveTo(-30, -75, -50, -16);
-        ctx.quadraticCurveTo(0, 4, 50, -16);
-        ctx.quadraticCurveTo(30, -75, 44, -112);
+        ctx.moveTo(-45, -112);
+        ctx.quadraticCurveTo(-30, -75, -52, -16);
+        ctx.quadraticCurveTo(0, 4, 52, -16);
+        ctx.quadraticCurveTo(30, -75, 45, -112);
         ctx.lineTo(26, -112);
         ctx.quadraticCurveTo(0, -94, -26, -112);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
-        // 코트 목덜미 하얀 양털 칼라 (White Fur Collar)
+        // 코트 목덜미 포근한 양털 칼라 (Voluminous Sherpa Fleece Collar)
         ctx.fillStyle = '#fffcf5';
         ctx.lineWidth = 3.8;
         ctx.beginPath();
-        ctx.roundRect(-34, -114, 68, 22, 11);
+        ctx.roundRect(-36, -115, 72, 24, 12);
         ctx.fill();
         ctx.stroke();
+        // 칼라 구름 털 볼륨
+        [-24, -8, 8, 24].forEach(cx => {
+            ctx.beginPath();
+            ctx.arc(cx, -104, 7, 0, Math.PI * 2);
+            ctx.fill();
+        });
 
-        // 굵은 가죽 벨트 (Thick Black Belt)
+        // 굵은 리얼 가죽 벨트 (Embossed Black Leather Belt)
         ctx.fillStyle = '#14171a';
         ctx.lineWidth = 3.5;
         ctx.beginPath();
-        ctx.roundRect(-46, -42, 92, 22, 4);
+        ctx.roundRect(-48, -43, 96, 24, 5);
         ctx.fill();
         ctx.stroke();
 
-        // 큼직한 황금 버클 (Shiny Gold Buckle)
-        ctx.fillStyle = '#ffbe0b';
-        ctx.strokeStyle = '#1a1612';
-        ctx.lineWidth = 3.5;
+        // 벨트 메탈 아일렛 구멍 4개
+        ctx.fillStyle = '#ffd166';
+        [-34, -26, 26, 34].forEach(ex => {
+            ctx.beginPath();
+            ctx.arc(ex, -31, 2.2, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        // 큼직하고 번쩍이는 황금 버클 (Lustrous Gold Buckle)
+        const buckleGrad = ctx.createLinearGradient(-20, -48, 20, -14);
+        buckleGrad.addColorStop(0, '#fff3b0');
+        buckleGrad.addColorStop(0.4, '#ffd166');
+        buckleGrad.addColorStop(0.8, '#ffbe0b');
+        buckleGrad.addColorStop(1, '#e09f3e');
+        ctx.fillStyle = buckleGrad;
+        ctx.strokeStyle = '#14171a';
+        ctx.lineWidth = 3.8;
         ctx.beginPath();
-        ctx.roundRect(-18, -46, 36, 30, 6);
+        ctx.roundRect(-20, -47, 40, 32, 7);
         ctx.fill();
         ctx.stroke();
 
         ctx.fillStyle = '#14171a';
-        ctx.fillRect(-8, -38, 16, 14);
+        ctx.fillRect(-10, -39, 20, 16);
 
         // 버클 핀 (Buckle Tongue)
         ctx.fillStyle = '#ffd166';
-        ctx.fillRect(-2, -40, 4, 18);
+        ctx.fillRect(-2.5, -42, 5, 20);
 
-        // 코트 아랫단 폭신한 하얀 양털 트림 (Fluffy Bottom Fur Hem)
+        // 코트 아랫단 폭신폭신한 하얀 양털 트림 (Fluffy Bottom Sherpa Hem)
         ctx.fillStyle = '#fffcf5';
         ctx.lineWidth = 3.8;
         ctx.beginPath();
-        ctx.roundRect(-48, -18, 96, 20, 10);
+        ctx.roundRect(-50, -18, 100, 22, 11);
         ctx.fill();
         ctx.stroke();
 
-        // 양털 볼륨 디테일
-        [-34, -17, 0, 17, 34].forEach(fx => {
+        // 복슬복슬 털 볼륨 구름 6개
+        [-38, -22, -7, 7, 22, 38].forEach(fx => {
             ctx.beginPath();
-            ctx.arc(fx, -8, 8, 0, Math.PI * 2);
+            ctx.arc(fx, -7, 8.5, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
         });
 
         if (isLookingBack) {
-            // 정면 화이트 버튼 / 털 트림
+            // 정면 화이트 양털 세로 여밈 & 골드 단추 2개
             ctx.fillStyle = '#fffcf5';
             ctx.beginPath();
-            ctx.roundRect(-6, -92, 12, 48, 6);
+            ctx.roundRect(-7, -92, 14, 48, 7);
             ctx.fill();
             ctx.stroke();
+
+            ctx.fillStyle = '#ffd166';
+            ctx.beginPath();
+            ctx.arc(0, -80, 3.2, 0, Math.PI * 2);
+            ctx.arc(0, -62, 3.2, 0, Math.PI * 2);
+            ctx.fill();
         }
 
         ctx.restore();
@@ -1525,135 +1601,159 @@ class PeanutsMonkeyHero {
         ctx.restore();
     }
 
-    // 5-C. 개구리 머리 (Frog Head)
+    // 5-C. 동글동글 초귀요미 개구리 머리 (Ultra-Cute Chubby Frog Head)
     drawFrogHead(ctx, swing, cosSwing, isLookingBack) {
         ctx.save();
         ctx.translate(isLookingBack ? 4 : 0, -288);
-        ctx.scale(1.16, 1.16);
+        ctx.scale(1.18, 1.18);
         ctx.rotate(isLookingBack ? (0.06 + Math.sin(this.runCycle * 0.5) * 0.04) : (Math.sin(this.runCycle * 0.5) * 0.045));
 
         ctx.strokeStyle = '#1a1612';
-        ctx.lineWidth = 4.0;
+        ctx.lineWidth = 4.2;
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
 
-        const frogGrad = ctx.createRadialGradient(0, -10, 20, 0, 10, 105);
-        frogGrad.addColorStop(0, '#74c69d');
-        frogGrad.addColorStop(0.65, '#52b788');
+        const frogGrad = ctx.createRadialGradient(-10, -20, 20, 0, 15, 110);
+        frogGrad.addColorStop(0, '#95d5b2');
+        frogGrad.addColorStop(0.45, '#74c69d');
+        frogGrad.addColorStop(0.85, '#52b788');
         frogGrad.addColorStop(1, '#2d6a4f');
 
-        // 1) 툭 튀어나온 커다란 양쪽 개구리 눈 봉우리 (Bulbous Frog Eye Mounds)
-        [-46, 46].forEach((ex, idx) => {
+        // 1) 동글동글 툭 튀어나온 커다란 양쪽 왕눈이 봉우리 (Big Bulbous Eye Mounds)
+        [-48, 48].forEach((ex, idx) => {
             ctx.save();
-            ctx.translate(ex, -72);
+            ctx.translate(ex, -74);
             ctx.fillStyle = frogGrad;
             ctx.beginPath();
-            ctx.arc(0, 0, 34, 0, Math.PI * 2);
+            ctx.arc(0, 0, 36, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
 
             if (!isLookingBack) {
-                // 뒷모습: 눈 봉우리 뒤쪽의 짙은 녹색 무늬 반점
+                // 뒷모습: 눈 봉우리 뒤쪽의 짙은 녹색 점박이 무늬
                 ctx.fillStyle = '#2d6a4f';
                 ctx.beginPath();
-                ctx.ellipse(idx === 0 ? -6 : 6, -6, 14, 20, idx === 0 ? -0.3 : 0.3, 0, Math.PI * 2);
+                ctx.ellipse(idx === 0 ? -6 : 6, -6, 15, 22, idx === 0 ? -0.3 : 0.3, 0, Math.PI * 2);
                 ctx.fill();
             }
             ctx.restore();
         });
 
-        // 2) 넓고 매끄러운 개구리 머리/턱 본체
+        // 2) 통통하고 둥글둥글한 볼살 빵빵 개구리 얼굴 본체 (Round Chubby Face Base)
         ctx.fillStyle = frogGrad;
         ctx.beginPath();
-        ctx.moveTo(-78, -35);
-        ctx.quadraticCurveTo(-86, 15, -74, 52);
-        ctx.quadraticCurveTo(-45, 86, 0, 88);
-        ctx.quadraticCurveTo(45, 86, 74, 52);
-        ctx.quadraticCurveTo(86, 15, 78, -35);
-        ctx.quadraticCurveTo(45, -62, 0, -56);
-        ctx.quadraticCurveTo(-45, -62, -78, -35);
+        ctx.moveTo(-76, -30);
+        ctx.quadraticCurveTo(-94, 15, -78, 58); // 통통하고 귀여운 볼살
+        ctx.quadraticCurveTo(-46, 94, 0, 96);
+        ctx.quadraticCurveTo(46, 94, 78, 58);
+        ctx.quadraticCurveTo(94, 15, 76, -30);
+        ctx.quadraticCurveTo(45, -64, 0, -58);
+        ctx.quadraticCurveTo(-45, -64, -76, -30);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
         if (isLookingBack) {
-            // --- 뒤돌아볼 때: 귀여운 개구리 얼굴 정면! ---
-            // 큰 왕눈이 흰자 & 빛나는 동공
-            [-46, 46].forEach(ex => {
+            // --- 뒤돌아볼 때: 반짝반짝 큰 눈망울과 발그레한 볼터치, 행복한 미소! ---
+            // 큰 왕눈이 (에메랄드빛 홍채 + 반짝이는 별빛 하이라이트)
+            [-48, 48].forEach(ex => {
                 ctx.save();
-                ctx.translate(ex, -72);
+                ctx.translate(ex, -74);
 
                 // 흰자
                 ctx.fillStyle = '#ffffff';
                 ctx.beginPath();
-                ctx.arc(0, 0, 24, 0, Math.PI * 2);
+                ctx.arc(0, 0, 26, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.stroke();
 
-                // 짙은 블랙 눈동자
+                // 영롱한 에메랄드 홍채 링
+                ctx.fillStyle = '#2ec4b6';
+                ctx.beginPath();
+                ctx.arc(ex < 0 ? 3 : -3, 2, 18, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 짙은 블랙 동공
                 ctx.fillStyle = '#1a1612';
                 ctx.beginPath();
                 ctx.ellipse(ex < 0 ? 3 : -3, 2, 13, 16, 0, 0, Math.PI * 2);
                 ctx.fill();
 
-                // 반짝이는 화이트 하이라이트
+                // 큰 메인 하이라이트
                 ctx.fillStyle = '#ffffff';
                 ctx.beginPath();
-                ctx.arc(ex < 0 ? 0 : -6, -3, 6, 0, Math.PI * 2);
+                ctx.arc(ex < 0 ? 0 : -6, -4, 7, 0, Math.PI * 2);
                 ctx.fill();
+                // 보조 하이라이트
                 ctx.beginPath();
-                ctx.arc(ex < 0 ? 7 : 1, 6, 3, 0, Math.PI * 2);
+                ctx.arc(ex < 0 ? 8 : 2, 6, 3.5, 0, Math.PI * 2);
                 ctx.fill();
+
+                // 귀여운 속눈썹
+                ctx.strokeStyle = '#1a1612';
+                ctx.lineWidth = 3.2;
+                ctx.beginPath();
+                ctx.arc(0, 0, 26, Math.PI * 1.15, Math.PI * 1.85);
+                ctx.stroke();
                 ctx.restore();
             });
 
-            // 개구리 턱/목덜미 연한 크림빛 배 (Creamy Throat)
+            // 개구리 목덜미 연한 크림빛 배 (Creamy Throat)
             ctx.fillStyle = '#d8f3dc';
             ctx.beginPath();
-            ctx.ellipse(0, 52, 44, 28, 0, 0, Math.PI * 2);
+            ctx.ellipse(0, 56, 48, 30, 0, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
 
-            // 핑크빛 발그레 볼터치 (Pink Blush Cheeks)
-            ctx.fillStyle = 'rgba(255, 143, 163, 0.72)';
-            ctx.beginPath();
-            ctx.ellipse(-52, 22, 14, 9, 0, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.ellipse(52, 22, 14, 9, 0, 0, Math.PI * 2);
-            ctx.fill();
+            // 💖 발그레한 핑크빛 볼터치 & 하이라이트
+            [-54, 54].forEach(bx => {
+                ctx.fillStyle = 'rgba(255, 117, 143, 0.78)';
+                ctx.beginPath();
+                ctx.ellipse(bx, 24, 16, 11, 0, 0, Math.PI * 2);
+                ctx.fill();
+                // 볼터치 속 화이트 반짝이
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(bx - 3, 22, 2.5, 0, Math.PI * 2);
+                ctx.arc(bx + 4, 25, 1.8, 0, Math.PI * 2);
+                ctx.fill();
+            });
 
-            // 활짝 웃는 귀여운 개구리 입 (Wide Frog Smile)
-            ctx.strokeStyle = '#1a1612';
-            ctx.lineWidth = 4.2;
+            // 활짝 웃으며 혀를 쏙 내민 사랑스러운 입 (Open Smile with Cute Tongue)
+            ctx.fillStyle = '#b5179e';
             ctx.beginPath();
-            ctx.moveTo(-52, 16);
-            ctx.quadraticCurveTo(0, 48, 52, 16);
+            ctx.arc(0, 24, 24, 0.15, Math.PI - 0.15);
+            ctx.closePath();
+            ctx.fill();
             ctx.stroke();
 
-            // 입꼬리 보조개
+            // 분홍빛 귀여운 혀
+            ctx.fillStyle = '#ff758f';
             ctx.beginPath();
-            ctx.arc(-53, 13, 3, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.arc(53, 13, 3, 0, Math.PI * 2);
+            ctx.arc(0, 36, 15, Math.PI, 0);
             ctx.fill();
 
-            // 개구리 콧구멍 2개 (작은 점)
+            // 입꼬리 앙증맞은 보조개 점
             ctx.fillStyle = '#1a1612';
             ctx.beginPath();
-            ctx.arc(-6, -6, 2.8, 0, Math.PI * 2);
-            ctx.arc(6, -6, 2.8, 0, Math.PI * 2);
+            ctx.arc(-26, 22, 2.8, 0, Math.PI * 2);
+            ctx.arc(26, 22, 2.8, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 개구리 콧구멍 2개 (귀여운 작은 점)
+            ctx.beginPath();
+            ctx.arc(-5, -4, 2.5, 0, Math.PI * 2);
+            ctx.arc(5, -4, 2.5, 0, Math.PI * 2);
             ctx.fill();
         } else {
-            // --- 뒷모습: 매끄러운 뒤통수 + 짙은 녹색 점박이 무늬 ---
-            ctx.fillStyle = '#2d6a4f';
+            // --- 뒷모습: 매끄럽고 동글동글한 뒤통수 + 파스텔톤 점박이 무늬 ---
+            ctx.fillStyle = '#40916c';
             const spots = [
-                { x: 0,   y: -18, rx: 16, ry: 11, rot: 0 },
-                { x: -32, y: 12,  rx: 13, ry: 9,  rot: -0.2 },
-                { x: 32,  y: 12,  rx: 13, ry: 9,  rot: 0.2 },
-                { x: -14, y: 44,  rx: 11, ry: 8,  rot: 0.1 },
-                { x: 16,  y: 44,  rx: 11, ry: 8,  rot: -0.1 }
+                { x: 0,   y: -16, rx: 18, ry: 12, rot: 0 },
+                { x: -36, y: 14,  rx: 14, ry: 10, rot: -0.2 },
+                { x: 36,  y: 14,  rx: 14, ry: 10, rot: 0.2 },
+                { x: -16, y: 48,  rx: 12, ry: 9,  rot: 0.1 },
+                { x: 16,  y: 48,  rx: 12, ry: 9,  rot: -0.1 }
             ];
             spots.forEach(sp => {
                 ctx.beginPath();
@@ -1661,25 +1761,25 @@ class PeanutsMonkeyHero {
                 ctx.fill();
             });
 
-            this.drawHatching(ctx, -45, 52, 45, 52, 8, 12, 1.4);
+            this.drawHatching(ctx, -48, 54, 48, 54, 8, 12, 1.4);
         }
 
         ctx.restore();
     }
 
-    // 5-D. 호랑이 머리 (Tiger Head)
+    // 5-D. 동글동글 아기 호랑이 머리 (Ultra-Cute Baby Tiger Cub Head)
     drawTigerHead(ctx, swing, cosSwing, isLookingBack) {
         ctx.save();
         ctx.translate(isLookingBack ? 4 : 0, -288);
-        ctx.scale(1.16, 1.16);
+        ctx.scale(1.18, 1.18);
         ctx.rotate(isLookingBack ? (0.06 + Math.sin(this.runCycle * 0.5) * 0.04) : (Math.sin(this.runCycle * 0.5) * 0.045));
 
         ctx.strokeStyle = '#1a1612';
-        ctx.lineWidth = 4.0;
+        ctx.lineWidth = 4.2;
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
 
-        // 1) 동글동글 호랑이 귀 (양쪽 귀)
+        // 1) 동글동글 솜뭉치 호랑이 귀 (양쪽 귀)
         [-66, 66].forEach((ex, idx) => {
             ctx.save();
             ctx.translate(ex, -68);
@@ -1688,159 +1788,176 @@ class PeanutsMonkeyHero {
             // 귀 바깥 둥근 형태 (검은 외곽 + 호랑이 주황)
             ctx.fillStyle = '#1a1612';
             ctx.beginPath();
-            ctx.arc(0, 0, 26, 0, Math.PI * 2);
+            ctx.arc(0, 0, 28, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
 
             ctx.fillStyle = '#f77f00';
             ctx.beginPath();
-            ctx.arc(0, 0, 20, 0, Math.PI * 2);
+            ctx.arc(0, 0, 22, 0, Math.PI * 2);
             ctx.fill();
 
-            // 귀 속 하얀 털 뭉치
+            // 귀 속 폭신폭신 하얀 털 뭉치
             ctx.fillStyle = '#fff8e7';
             ctx.beginPath();
-            ctx.arc(0, 3, 13, 0, Math.PI * 2);
+            ctx.arc(0, 3, 15, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
 
             // 귀 속 핑크 포인트
             ctx.fillStyle = '#ff758f';
             ctx.beginPath();
-            ctx.arc(0, 5, 6, 0, Math.PI * 2);
+            ctx.arc(0, 5, 8, 0, Math.PI * 2);
             ctx.fill();
             ctx.restore();
         });
 
-        // 2) 호랑이 주황 얼굴 본체 (양 볼 삐죽 털 tufts)
+        // 2) 통통하고 둥글둥글한 아기 호랑이 얼굴 본체 (Round Fluffy Cheeks)
         const tigerGrad = ctx.createRadialGradient(-15, -20, 15, 0, 10, 115);
-        tigerGrad.addColorStop(0, '#ffbe0b');
+        tigerGrad.addColorStop(0, '#ffd166');
         tigerGrad.addColorStop(0.55, '#f77f00');
         tigerGrad.addColorStop(1, '#d62828');
         ctx.fillStyle = tigerGrad;
 
         ctx.beginPath();
         ctx.moveTo(-54, -72);
-        ctx.quadraticCurveTo(0, -82, 54, -72);
-        ctx.quadraticCurveTo(72, -45, 78, -10);
-        // 오른쪽 볼 삐죽 털 3가닥
-        ctx.lineTo(96, 6);
-        ctx.lineTo(84, 18);
-        ctx.lineTo(98, 28);
-        ctx.lineTo(82, 40);
-        ctx.lineTo(92, 52);
-        ctx.lineTo(72, 60);
-        ctx.quadraticCurveTo(45, 88, 0, 88);
-        ctx.quadraticCurveTo(-45, 88, -72, 60);
-        // 왼쪽 볼 삐죽 털 3가닥
-        ctx.lineTo(-92, 52);
-        ctx.lineTo(-82, 40);
-        ctx.lineTo(-98, 28);
-        ctx.lineTo(-84, 18);
-        ctx.lineTo(-96, 6);
-        ctx.lineTo(-78, -10);
-        ctx.quadraticCurveTo(-72, -45, -54, -72);
+        ctx.quadraticCurveTo(0, -84, 54, -72);
+        ctx.quadraticCurveTo(76, -45, 82, -10);
+        // 오른쪽 볼 둥글둥글 털 tufts
+        ctx.quadraticCurveTo(100, 12, 88, 30);
+        ctx.quadraticCurveTo(98, 44, 82, 56);
+        ctx.quadraticCurveTo(45, 92, 0, 92);
+        ctx.quadraticCurveTo(-45, 92, -82, 56);
+        // 왼쪽 볼 둥글둥글 털 tufts
+        ctx.quadraticCurveTo(-98, 44, -88, 30);
+        ctx.quadraticCurveTo(-100, 12, -82, -10);
+        ctx.quadraticCurveTo(-76, -45, -54, -72);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
         if (isLookingBack) {
-            // --- 뒤돌아볼 때: 용맹하고 귀여운 아기 호랑이 얼굴! ---
-            // 이마의 호랑이 '王'자 검은 줄무늬
+            // --- 뒤돌아볼 때: 초롱초롱 금빛 눈망울의 아기 호랑이! ---
+            // 이마의 귀여운 둥근 호랑이 '王'자 줄무늬
             ctx.fillStyle = '#1a1612';
-            ctx.fillRect(-5, -68, 10, 32);
-            ctx.fillRect(-24, -68, 48, 7);
-            ctx.fillRect(-18, -54, 36, 6);
-            ctx.fillRect(-28, -40, 56, 7);
+            ctx.beginPath();
+            ctx.roundRect(-4.5, -68, 9, 32, 4);
+            ctx.roundRect(-22, -68, 44, 6.5, 3);
+            ctx.roundRect(-16, -54, 32, 5.5, 3);
+            ctx.roundRect(-25, -40, 50, 6.5, 3);
+            ctx.fill();
 
-            // 양 볼 옆 줄무늬 (좌우 각 2개)
+            // 양 볼 옆 깜찍한 줄무늬
             [-1, 1].forEach(dir => {
                 ctx.save();
                 ctx.scale(dir, 1);
                 ctx.beginPath();
-                ctx.moveTo(56, -14); ctx.lineTo(80, -20); ctx.lineTo(60, -2); ctx.closePath();
+                ctx.moveTo(56, -12); ctx.lineTo(76, -18); ctx.lineTo(60, -2); ctx.closePath();
                 ctx.fill();
                 ctx.beginPath();
-                ctx.moveTo(54, 12); ctx.lineTo(78, 8); ctx.lineTo(58, 22); ctx.closePath();
+                ctx.moveTo(54, 12); ctx.lineTo(74, 8); ctx.lineTo(58, 20); ctx.closePath();
                 ctx.fill();
                 ctx.restore();
             });
 
-            // 크림빛 폭신한 주둥이 (Muzzle)
+            // 💖 복슬복슬 크림빛 하트 주둥이 (Fluffy White Muzzle)
             ctx.fillStyle = '#fff8e7';
-            ctx.lineWidth = 3.5;
+            ctx.lineWidth = 3.6;
             ctx.beginPath();
-            ctx.ellipse(-18, 38, 22, 18, 0.15, 0, Math.PI * 2);
+            ctx.ellipse(-18, 38, 24, 20, 0.15, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
             ctx.beginPath();
-            ctx.ellipse(18, 38, 22, 18, -0.15, 0, Math.PI * 2);
+            ctx.ellipse(18, 38, 24, 20, -0.15, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
 
             // 턱 밑 크림빛 털
             ctx.beginPath();
-            ctx.ellipse(0, 64, 26, 16, 0, 0, Math.PI * 2);
+            ctx.ellipse(0, 68, 28, 18, 0, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
 
-            // 앙증맞은 핑크 역삼각형 코
-            ctx.fillStyle = '#e63946';
+            // 핑크빛 사랑스러운 하트 코 (Heart-shaped Pink Nose)
+            ctx.fillStyle = '#ff4d6d';
             ctx.beginPath();
-            ctx.moveTo(-11, 22);
-            ctx.lineTo(11, 22);
-            ctx.lineTo(0, 33);
+            ctx.moveTo(0, 32);
+            ctx.bezierCurveTo(-11, 20, -11, 12, 0, 19);
+            ctx.bezierCurveTo(11, 12, 11, 20, 0, 32);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
 
-            // 호랑이 입 & 수염 점
-            ctx.strokeStyle = '#1a1612';
-            ctx.lineWidth = 3.8;
+            // 방긋 웃는 아기 호랑이 입 & 핑크 혀
+            ctx.fillStyle = '#ff758f';
             ctx.beginPath();
-            ctx.moveTo(0, 33);
-            ctx.lineTo(0, 42);
-            ctx.quadraticCurveTo(-14, 52, -26, 42);
-            ctx.moveTo(0, 42);
-            ctx.quadraticCurveTo(14, 52, 26, 42);
+            ctx.arc(0, 42, 14, 0, Math.PI);
+            ctx.fill();
             ctx.stroke();
+
+            ctx.strokeStyle = '#1a1612';
+            ctx.lineWidth = 3.6;
+            ctx.beginPath();
+            ctx.moveTo(-18, 38);
+            ctx.quadraticCurveTo(0, 48, 18, 38);
+            ctx.stroke();
+
+            // 발그레한 볼터치
+            ctx.fillStyle = 'rgba(255, 117, 143, 0.65)';
+            ctx.beginPath();
+            ctx.ellipse(-52, 22, 14, 10, 0, 0, Math.PI * 2);
+            ctx.ellipse(52, 22, 14, 10, 0, 0, Math.PI * 2);
+            ctx.fill();
 
             // 수염 점
             ctx.fillStyle = '#1a1612';
             [-1, 1].forEach(dir => {
                 ctx.beginPath();
-                ctx.arc(dir * 18, 32, 2.5, 0, Math.PI * 2);
-                ctx.arc(dir * 26, 36, 2.5, 0, Math.PI * 2);
-                ctx.arc(dir * 16, 42, 2.5, 0, Math.PI * 2);
+                ctx.arc(dir * 18, 34, 2.6, 0, Math.PI * 2);
+                ctx.arc(dir * 27, 38, 2.6, 0, Math.PI * 2);
+                ctx.arc(dir * 18, 44, 2.6, 0, Math.PI * 2);
                 ctx.fill();
             });
 
-            // 반짝이는 호랑이 눈 (Golden Iris & Pupils)
+            // 🌟 반짝반짝 큰 호랑이 눈 (Golden Amber Anime Eyes with Stars)
             [-36, 36].forEach(ex => {
                 ctx.save();
                 ctx.translate(ex, -6);
                 ctx.fillStyle = '#ffd166';
-                ctx.lineWidth = 3.5;
+                ctx.lineWidth = 3.8;
                 ctx.beginPath();
-                ctx.ellipse(0, 0, 16, 18, 0, 0, Math.PI * 2);
+                ctx.ellipse(0, 0, 18, 20, 0, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.stroke();
+
+                // 호박빛 그라데이션
+                const irisGrad = ctx.createRadialGradient(0, 0, 2, 0, 0, 18);
+                irisGrad.addColorStop(0, '#ffd166');
+                irisGrad.addColorStop(0.7, '#f77f00');
+                irisGrad.addColorStop(1, '#d62828');
+                ctx.fillStyle = irisGrad;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 15, 17, 0, 0, Math.PI * 2);
+                ctx.fill();
 
                 // 검은 동공
                 ctx.fillStyle = '#1a1612';
                 ctx.beginPath();
-                ctx.ellipse(ex < 0 ? 2 : -2, 1, 9, 14, 0, 0, Math.PI * 2);
+                ctx.ellipse(ex < 0 ? 2 : -2, 1, 10, 14, 0, 0, Math.PI * 2);
                 ctx.fill();
 
-                // 눈빛 하이라이트
+                // ✦ 별빛 하이라이트
                 ctx.fillStyle = '#ffffff';
                 ctx.beginPath();
-                ctx.arc(ex < 0 ? 0 : -4, -4, 5, 0, Math.PI * 2);
+                ctx.arc(ex < 0 ? -1 : -5, -5, 6, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(ex < 0 ? 6 : 2, 5, 3, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.restore();
             });
         } else {
-            // --- 뒷모습: 뒤통수 줄무늬 5개 ---
+            // --- 뒷모습: 뒤통수 귀여운 줄무늬 ---
             ctx.fillStyle = '#1a1612';
             ctx.beginPath();
             ctx.moveTo(-8, -80); ctx.lineTo(8, -80); ctx.lineTo(0, -35); ctx.closePath(); ctx.fill();
@@ -1859,90 +1976,99 @@ class PeanutsMonkeyHero {
         ctx.restore();
     }
 
-    // 5-E. 펭귄 머리 (Penguin Head)
+    // 5-E. 동글동글 아기 펭귄 머리 (Ultra-Cute Baby Emperor Penguin Head)
     drawPenguinHead(ctx, swing, cosSwing, isLookingBack) {
         ctx.save();
         ctx.translate(isLookingBack ? 4 : 0, -288);
-        ctx.scale(1.16, 1.16);
+        ctx.scale(1.18, 1.18);
         ctx.rotate(isLookingBack ? (0.06 + Math.sin(this.runCycle * 0.5) * 0.04) : (Math.sin(this.runCycle * 0.5) * 0.045));
 
         ctx.strokeStyle = '#1a1612';
-        ctx.lineWidth = 4.0;
+        ctx.lineWidth = 4.2;
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
 
-        // 1) 펭귄 매끄러운 딥네이비/블랙 헤드 돔 (Smooth Navy Head Dome)
+        // 1) 펭귄 통통하고 동그란 딥네이비/블랙 헤드 돔 (Smooth Round Navy Dome)
         const penGrad = ctx.createRadialGradient(-15, -25, 20, 0, 10, 105);
-        penGrad.addColorStop(0, '#3a5a7a');
+        penGrad.addColorStop(0, '#4a6fa5');
         penGrad.addColorStop(0.65, '#1d3557');
         penGrad.addColorStop(1, '#0d1b2a');
         ctx.fillStyle = penGrad;
 
         ctx.beginPath();
-        ctx.moveTo(-62, -45);
-        ctx.quadraticCurveTo(-65, -82, 0, -85);
-        ctx.quadraticCurveTo(65, -82, 62, -45);
-        ctx.quadraticCurveTo(74, 15, 64, 58);
-        ctx.quadraticCurveTo(45, 86, 0, 88);
-        ctx.quadraticCurveTo(-45, 86, -64, 58);
-        ctx.quadraticCurveTo(-74, 15, -62, -45);
+        ctx.moveTo(-64, -40);
+        ctx.quadraticCurveTo(-68, -86, 0, -88);
+        ctx.quadraticCurveTo(68, -86, 64, -40);
+        ctx.quadraticCurveTo(78, 18, 66, 62);
+        ctx.quadraticCurveTo(45, 92, 0, 94);
+        ctx.quadraticCurveTo(-45, 92, -66, 62);
+        ctx.quadraticCurveTo(-78, 18, -64, -40);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
-        // 머리 위 앙증맞은 펭귄 깃털 한 가닥
+        // 머리 위 앙증맞은 아기 펭귄 깃털 한 가닥
         ctx.beginPath();
-        ctx.moveTo(-6, -84);
-        ctx.quadraticCurveTo(0, -102, 12, -98);
-        ctx.quadraticCurveTo(6, -86, 2, -84);
+        ctx.moveTo(-6, -86);
+        ctx.quadraticCurveTo(0, -106, 14, -102);
+        ctx.quadraticCurveTo(7, -88, 2, -86);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
         if (isLookingBack) {
-            // --- 뒤돌아볼 때: 하얀 하트형 얼굴 마스크 & 황금 부리! ---
+            // --- 뒤돌아볼 때: 하얀 하트형 볼살 마스크 & 초롱초롱 큰 눈 & 작은 황금 부리! ---
             ctx.fillStyle = '#fffcf5';
             ctx.lineWidth = 3.8;
             ctx.beginPath();
-            ctx.moveTo(0, -28);
-            ctx.bezierCurveTo(-26, -62, -58, -48, -54, -6);
-            ctx.bezierCurveTo(-52, 38, -32, 68, 0, 78);
-            ctx.bezierCurveTo(32, 68, 52, 38, 54, -6);
-            ctx.bezierCurveTo(58, -48, 26, -62, 0, -28);
+            ctx.moveTo(0, -26);
+            ctx.bezierCurveTo(-28, -64, -62, -48, -58, -4);
+            ctx.bezierCurveTo(-56, 42, -34, 72, 0, 84);
+            ctx.bezierCurveTo(34, 72, 56, 42, 58, -4);
+            ctx.bezierCurveTo(62, -48, 28, -64, 0, -26);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
 
-            // 핑크빛 볼터치
-            ctx.fillStyle = 'rgba(255, 180, 162, 0.75)';
-            ctx.beginPath();
-            ctx.ellipse(-36, 18, 12, 8, 0, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.ellipse(36, 18, 12, 8, 0, 0, Math.PI * 2);
-            ctx.fill();
-
-            // 맑고 초롱초롱한 펭귄 눈
-            [-28, 28].forEach(ex => {
-                ctx.save();
-                ctx.translate(ex, -8);
-                ctx.fillStyle = '#1a1612';
+            // 💖 발그레한 복숭아빛 볼터치 & 반짝이
+            [-36, 36].forEach(bx => {
+                ctx.fillStyle = 'rgba(255, 180, 162, 0.85)';
                 ctx.beginPath();
-                ctx.arc(0, 0, 13, 0, Math.PI * 2);
+                ctx.ellipse(bx, 20, 14, 9, 0, 0, Math.PI * 2);
                 ctx.fill();
-
-                // 하이라이트
                 ctx.fillStyle = '#ffffff';
                 ctx.beginPath();
-                ctx.arc(ex < 0 ? -3 : -5, -4, 4.5, 0, Math.PI * 2);
+                ctx.arc(bx - 3, 18, 2.2, 0, Math.PI * 2);
+                ctx.arc(bx + 3, 21, 1.6, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // 🌟 맑고 초롱초롱한 큰 별빛 눈망울
+            [-28, 28].forEach(ex => {
+                ctx.save();
+                ctx.translate(ex, -6);
+                ctx.fillStyle = '#1d3557';
+                ctx.beginPath();
+                ctx.arc(0, 0, 15, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#1a1612';
+                ctx.beginPath();
+                ctx.arc(0, 0, 12, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 큰 눈빛 하이라이트
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(ex < 0 ? -3 : -5, -4, 5.5, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.beginPath();
-                ctx.arc(ex < 0 ? 3 : 2, 3, 2, 0, Math.PI * 2);
+                ctx.arc(ex < 0 ? 4 : 2, 4, 2.8, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.restore();
             });
 
-            // 선명한 황금빛 오렌지 펭귄 부리 (Golden Beak)
+            // 앙증맞은 황금빛 오렌지 펭귄 부리 (Cute Tiny Golden Beak)
             const beakGrad = ctx.createLinearGradient(0, 0, 0, 36);
             beakGrad.addColorStop(0, '#ffbe0b');
             beakGrad.addColorStop(1, '#fb8500');
@@ -1950,26 +2076,27 @@ class PeanutsMonkeyHero {
             ctx.lineWidth = 3.6;
 
             ctx.beginPath();
-            ctx.moveTo(-16, 4);
-            ctx.lineTo(16, 4);
-            ctx.lineTo(0, 32);
+            ctx.moveTo(-16, 6);
+            ctx.quadraticCurveTo(0, 2, 16, 6);
+            ctx.quadraticCurveTo(8, 28, 0, 34);
+            ctx.quadraticCurveTo(-8, 28, -16, 6);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
 
-            // 부리 입선
+            // 부리 미소 입선
             ctx.beginPath();
-            ctx.moveTo(-14, 16);
-            ctx.lineTo(14, 16);
+            ctx.moveTo(-12, 18);
+            ctx.quadraticCurveTo(0, 24, 12, 18);
             ctx.stroke();
         } else {
             // --- 뒷모습: 매끄러운 딥네이비 뒤통수 + 하얀 목덜미 라인 ---
             ctx.fillStyle = '#fffcf5';
             ctx.lineWidth = 3.5;
             ctx.beginPath();
-            ctx.moveTo(-38, 72);
-            ctx.quadraticCurveTo(0, 88, 38, 72);
-            ctx.quadraticCurveTo(0, 80, -38, 72);
+            ctx.moveTo(-40, 74);
+            ctx.quadraticCurveTo(0, 92, 40, 74);
+            ctx.quadraticCurveTo(0, 82, -40, 74);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
@@ -1980,11 +2107,11 @@ class PeanutsMonkeyHero {
         ctx.restore();
     }
 
-    // 5-F. 클래식 신사 실크햇 (Gentleman Top Hat)
+    // 5-F. 최고급 클래식 신사 실크햇 (Gentleman Silk Top Hat & Gold Accents)
     drawGentlemanTopHat(ctx, swing, isLookingBack) {
         ctx.save();
         const hatTilt = isLookingBack ? 0.08 : (Math.sin(this.runCycle * 0.5) * 0.04 - 0.05);
-        ctx.translate(isLookingBack ? 6 : 0, -395);
+        ctx.translate(isLookingBack ? 6 : 0, -398);
         ctx.rotate(hatTilt);
 
         ctx.strokeStyle = '#14171a';
@@ -1992,62 +2119,62 @@ class PeanutsMonkeyHero {
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
 
-        // 1) 신사 모자 챙 (Wide Brim)
-        const brimGrad = ctx.createRadialGradient(0, 10, 5, 0, 10, 65);
-        brimGrad.addColorStop(0, '#3a404a');
-        brimGrad.addColorStop(0.7, '#212529');
+        // 1) 신사 모자 챙 (Wide Velvet Brim)
+        const brimGrad = ctx.createRadialGradient(0, 10, 5, 0, 10, 68);
+        brimGrad.addColorStop(0, '#495057');
+        brimGrad.addColorStop(0.55, '#2b303a');
         brimGrad.addColorStop(1, '#14171a');
         ctx.fillStyle = brimGrad;
 
         ctx.beginPath();
-        ctx.ellipse(0, 10, 68, 18, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, 10, 72, 19, 0, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
 
         // 챙 위 실크 광택선
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
-        ctx.lineWidth = 2.2;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.48)';
+        ctx.lineWidth = 2.4;
         ctx.beginPath();
-        ctx.ellipse(0, 6, 54, 11, 0, Math.PI * 0.15, Math.PI * 0.85);
+        ctx.ellipse(0, 6, 58, 11, 0, Math.PI * 0.15, Math.PI * 0.85);
         ctx.stroke();
 
         // 2) 신사 모자 기둥 (Crown)
-        const crownGrad = ctx.createLinearGradient(-36, -70, 36, 10);
-        crownGrad.addColorStop(0, '#2b303a');
-        crownGrad.addColorStop(0.3, '#3a404a');
+        const crownGrad = ctx.createLinearGradient(-38, -72, 38, 10);
+        crownGrad.addColorStop(0, '#343a40');
+        crownGrad.addColorStop(0.35, '#495057');
         crownGrad.addColorStop(0.7, '#212529');
-        crownGrad.addColorStop(1, '#14171a');
+        crownGrad.addColorStop(1, '#111316');
         ctx.fillStyle = crownGrad;
         ctx.strokeStyle = '#14171a';
         ctx.lineWidth = 4;
 
         ctx.beginPath();
-        ctx.moveTo(-42, 6);
-        ctx.lineTo(-46, -65);
-        ctx.quadraticCurveTo(0, -78, 46, -65);
-        ctx.lineTo(42, 6);
-        ctx.quadraticCurveTo(0, 14, -42, 6);
+        ctx.moveTo(-43, 6);
+        ctx.lineTo(-47, -68);
+        ctx.quadraticCurveTo(0, -82, 47, -68);
+        ctx.lineTo(43, 6);
+        ctx.quadraticCurveTo(0, 14, -43, 6);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
         // 모자 평평한 윗면 타원
-        ctx.fillStyle = '#343a40';
+        ctx.fillStyle = '#3a404a';
         ctx.beginPath();
-        ctx.ellipse(0, -66, 46, 12, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, -70, 48, 13, 0, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
 
         // 실크 광택 하이라이트
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.40)';
+        ctx.lineWidth = 2.2;
         ctx.beginPath();
-        ctx.ellipse(0, -68, 38, 8, 0, Math.PI * 0.2, Math.PI * 0.8);
+        ctx.ellipse(0, -72, 40, 8.5, 0, Math.PI * 0.2, Math.PI * 0.8);
         ctx.stroke();
 
         // 3) 버건디 레드 실크 리본 밴드 (Crimson Ribbon Band)
         const ribbonGrad = ctx.createLinearGradient(-44, -12, 44, 4);
-        ribbonGrad.addColorStop(0, '#a51d24');
+        ribbonGrad.addColorStop(0, '#b5179e');
         ribbonGrad.addColorStop(0.5, '#e63946');
         ribbonGrad.addColorStop(1, '#7a141a');
         ctx.fillStyle = ribbonGrad;
@@ -2055,96 +2182,109 @@ class PeanutsMonkeyHero {
         ctx.lineWidth = 3;
 
         ctx.beginPath();
-        ctx.moveTo(-43, 4);
-        ctx.lineTo(-43.5, -12);
-        ctx.quadraticCurveTo(0, -4, 43.5, -12);
-        ctx.lineTo(43, 4);
-        ctx.quadraticCurveTo(0, 12, -43, 4);
+        ctx.moveTo(-44, 4);
+        ctx.lineTo(-44.5, -14);
+        ctx.quadraticCurveTo(0, -6, 44.5, -14);
+        ctx.lineTo(44, 4);
+        ctx.quadraticCurveTo(0, 12, -44, 4);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
-        // 리본 중앙 황금 장식 버클
+        // 리본 황금 버클 & 골드 스타 핀
         ctx.fillStyle = '#ffd166';
         ctx.lineWidth = 2.5;
         ctx.beginPath();
-        ctx.roundRect(-8, -9, 16, 14, 3);
+        ctx.roundRect(-9, -10, 18, 15, 4);
         ctx.fill();
         ctx.stroke();
 
         ctx.fillStyle = '#14171a';
-        ctx.fillRect(-4, -6, 8, 8);
+        ctx.fillRect(-4.5, -7, 9, 9);
+
+        // 황금 별 핀 장식
+        ctx.fillStyle = '#ffbe0b';
+        ctx.beginPath();
+        ctx.arc(22, -8, 4.5, 0, Math.PI * 2);
+        ctx.fill();
 
         ctx.restore();
     }
 
-    // 5-G. 산타 모자 (Santa Hat)
+    // 5-G. 최고급 산타 모자 (Lush Velvet Santa Hat & Fluffy Snow Pom-pom)
     drawSantaHat(ctx, swing, isLookingBack) {
         ctx.save();
         const hatSway = Math.sin(this.runCycle * 0.5) * 0.08;
-        ctx.translate(isLookingBack ? 4 : 0, -382);
+        ctx.translate(isLookingBack ? 4 : 0, -384);
         ctx.rotate(hatSway);
 
         ctx.strokeStyle = '#1a1612';
-        ctx.lineWidth = 4;
+        ctx.lineWidth = 4.2;
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
 
-        // 1) 붉은 산타 원뿔 모자 (오른쪽으로 탐스럽게 휘어짐)
-        const coneGrad = ctx.createLinearGradient(-40, -60, 50, 10);
-        coneGrad.addColorStop(0, '#f03a47');
-        coneGrad.addColorStop(0.5, '#d62828');
-        coneGrad.addColorStop(1, '#9e1823');
+        // 1) 붉은 산타 벨벳 원뿔 모자
+        const coneGrad = ctx.createLinearGradient(-42, -65, 55, 10);
+        coneGrad.addColorStop(0, '#ff4d6d');
+        coneGrad.addColorStop(0.45, '#d62828');
+        coneGrad.addColorStop(1, '#800f2f');
         ctx.fillStyle = coneGrad;
 
         ctx.beginPath();
-        ctx.moveTo(-44, 2);
-        ctx.quadraticCurveTo(-38, -65, -8, -95);
-        ctx.bezierCurveTo(24, -125, 78, -85, 76, -42);
-        ctx.quadraticCurveTo(55, -35, 42, 2);
-        ctx.quadraticCurveTo(0, 12, -44, 2);
+        ctx.moveTo(-46, 2);
+        ctx.quadraticCurveTo(-40, -68, -8, -98);
+        ctx.bezierCurveTo(26, -128, 82, -88, 80, -42);
+        ctx.quadraticCurveTo(58, -35, 44, 2);
+        ctx.quadraticCurveTo(0, 12, -46, 2);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
-        // 모자 접힌 주름선
+        // 모자 접힌 벨벳 주름선
         ctx.strokeStyle = 'rgba(26, 22, 18, 0.45)';
-        ctx.lineWidth = 2.8;
+        ctx.lineWidth = 3;
         ctx.beginPath();
-        ctx.moveTo(12, -72);
-        ctx.quadraticCurveTo(34, -58, 56, -64);
+        ctx.moveTo(12, -74);
+        ctx.quadraticCurveTo(36, -60, 58, -66);
         ctx.stroke();
 
-        // 2) 털 폼폼 방울
+        // 2) 털 폼폼 방울 (Winter Twinkle Pom-pom)
         ctx.save();
-        ctx.translate(76, -38);
+        ctx.translate(80, -38);
         ctx.fillStyle = '#fffcf5';
         ctx.strokeStyle = '#1a1612';
-        ctx.lineWidth = 3.5;
+        ctx.lineWidth = 3.6;
         ctx.beginPath();
-        ctx.arc(0, 0, 19, 0, Math.PI * 2);
+        ctx.arc(0, 0, 21, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
 
-        ctx.fillStyle = '#e5e9f0';
+        // 폼폼 구름 털 질감
+        ctx.fillStyle = '#e9ecef';
         ctx.beginPath();
-        ctx.arc(3, 4, 11, 0, Math.PI * 2);
+        ctx.arc(3, 4, 12, 0, Math.PI * 2);
+        ctx.fill();
+        // 폼폼 반짝이
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(-4, -5, 4, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
 
-        // 3) 모자 아랫단 뽀송뽀송 하얀 양털 림 (Fluffy Fur Rim)
+        // 3) 모자 아랫단 풍성한 하얀 양털 림 (Voluminous Fluffy Sherpa Rim)
         ctx.fillStyle = '#fffcf5';
         ctx.strokeStyle = '#1a1612';
-        ctx.lineWidth = 3.8;
+        ctx.lineWidth = 4.0;
 
         ctx.beginPath();
-        ctx.roundRect(-52, -2, 104, 26, 13);
+        ctx.roundRect(-54, -3, 108, 28, 14);
         ctx.fill();
         ctx.stroke();
 
-        [-32, -11, 11, 32].forEach(fx => {
+        // 구름 털 뭉치 볼륨 6개
+        [-36, -20, -6, 8, 22, 36].forEach(fx => {
             ctx.beginPath();
-            ctx.arc(fx, 11, 11, 0, Math.PI * 2);
+            ctx.arc(fx, 11, 10, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
         });
