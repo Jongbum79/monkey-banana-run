@@ -47,14 +47,12 @@ const finalScoreEl = document.getElementById('final-score');
 const finalMathEl = document.getElementById('final-math');
 const bgmBtn = document.getElementById('btn-bgm');
 
-// 🎰 등수 셔플 룰렛 & 댄스 세리머니 DOM 요소
+// 🎰 등수 셔플 룰렛 & 올라 캣(OIIA CAT) 세리머니 DOM 요소
 const rankRouletteContainer = document.getElementById('rank-roulette-container');
 const rouletteHeader = document.getElementById('roulette-header');
 const rouletteNum = document.getElementById('roulette-num');
 const rouletteDanceBadge = document.getElementById('roulette-dance-badge');
-const danceCanvas = document.getElementById('dance-canvas');
-const danceCtx = danceCanvas ? danceCanvas.getContext('2d') : null;
-const danceBtns = document.querySelectorAll('.dance-btn');
+const ollaCatIframe = document.getElementById('olla-cat-iframe');
 
 // 모듈 인스턴스 생성
 const sound = new SoundManager();
@@ -249,86 +247,10 @@ function renderRankingList(ulElement, rankings) {
     }
 }
 
-// 🕺 등수별 매칭 댄스 타입 반환
-function getDanceForRank(rank) {
-    if (rank >= 1 && rank <= 10) return 'windmill';
-    if (rank >= 11 && rank <= 20) return 'ateez_bad';
-    if (rank >= 21 && rank <= 30) return 'red_red';
-    if (rank >= 31 && rank <= 40) return 'take_the_l';
-    if (rank <= 45) return 'zico_newthing';
-    if (rank <= 50) return 'veggie';
-    if (rank <= 55) return 'side_to_side';
-    return 'cream_cheese_honey';
-}
-
-const DANCE_LABELS = {
-    windmill: '🌀 [1~10등] 홀리원 B-BOY 정통 윈드밀!',
-    ateez_bad: '🔥 [11~20등] 에이티즈 - BAD (마지막 하이라이트 & 엔딩 프리즈)',
-    red_red: '❤️ [21~30등] 코르티스 제임스 RED RED (팔랑귀·눈치·도가니) 챌린지!',
-    take_the_l: '🕺 [31~40등] 로블록스 라이벌즈 - L을 가져가 (권루트 챌린지)!',
-    zico_newthing: '🏍️ [41등+] 지코 - 새삥 (New Thing 오토바이 시동 & 질주 라이딩 댄스)!',
-    veggie: '🥦 [41등+] 로블록스 라이벌즈 - 야채 (Vegetables)!',
-    side_to_side: '↔️ [41등+] 로블록스 라이벌즈 - 측면 대 측면 (Side to Side / Floss)!',
-    cream_cheese_honey: '🍯 [41등+] 크림 치즈 허니 (다리 고정 & 팔 기지개 스트레칭 댄스)!'
-};
-
-let currentDanceType = 'windmill';
-let currentDancerModel = 'roblox'; // 'roblox' (기본 로블록스 마네킹) | 'animal'
-let danceAnimationId = null;
-let danceStartTime = 0;
 let rouletteTimer = null;
 
-// 🕺 세리머니 댄스 모드 전환 함수
-function setDanceMode(danceType, triggerPartyBGM = false) {
-    currentDanceType = danceType;
-    if (rouletteDanceBadge) {
-        rouletteDanceBadge.textContent = DANCE_LABELS[danceType] || '🎵 축하 댄스!';
-    }
-    danceBtns.forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.dance === danceType);
-    });
-    if (danceType === 'zico_newthing') {
-        sound.playMotorcycleRev();
-    }
-    if (triggerPartyBGM) {
-        sound.startDancePartyBGM();
-    }
-}
-
-// 🕺 캔버스 세리머니 댄스 애니메이션 시작
-function startDanceAnimation(danceType = 'windmill') {
-    if (!danceCanvas || !danceCtx) return;
-    setDanceMode(danceType, false);
-    if (danceAnimationId) {
-        cancelAnimationFrame(danceAnimationId);
-        danceAnimationId = null;
-    }
-    danceStartTime = performance.now();
-
-    function danceLoop(now) {
-        const elapsed = (now - danceStartTime) / 1000;
-        danceCtx.clearRect(0, 0, danceCanvas.width, danceCanvas.height);
-        hero.renderCelebrationDance(danceCtx, 150, 140, 0.58, currentDanceType, elapsed, currentDancerModel);
-        danceAnimationId = requestAnimationFrame(danceLoop);
-    }
-    danceAnimationId = requestAnimationFrame(danceLoop);
-}
-
-// 🛑 댄스 애니메이션 정지
-function stopDanceAnimation() {
-    if (danceAnimationId) {
-        cancelAnimationFrame(danceAnimationId);
-        danceAnimationId = null;
-    }
-    if (rouletteTimer) {
-        clearTimeout(rouletteTimer);
-        rouletteTimer = null;
-    }
-    sound.stopDancePartyBGM();
-}
-
 // 🎰 등수 숫자가 엄청 많이 바뀌다가 최종 등수가 나타나는 룰렛 연출!
-function startRankShuffleRoulette(targetRank, finalDance) {
+function startRankShuffleRoulette(targetRank) {
     if (!rouletteNum || !rouletteHeader || !rouletteDanceBadge) return;
 
     if (rouletteTimer) {
@@ -337,7 +259,7 @@ function startRankShuffleRoulette(targetRank, finalDance) {
     }
 
     rouletteHeader.textContent = '🎲 실시간 흥덕초등학교 랭킹 산출 중...';
-    rouletteDanceBadge.textContent = '🎵 댄스 세리머니 준비 중...';
+    rouletteDanceBadge.textContent = '🐱 OIIA OIIA 올라 캣 출격 대기 중...';
     rouletteNum.classList.add('rolling');
 
     let rollCount = 0;
@@ -362,7 +284,7 @@ function startRankShuffleRoulette(targetRank, finalDance) {
             rouletteNum.textContent = `🎉 ${targetRank}위! 🎉`;
             rouletteNum.classList.remove('rolling');
             rouletteHeader.textContent = `🏆 최종 결과 확정! 흥덕초등학교 ${targetRank}위 달성!`;
-            setDanceMode(finalDance, false);
+            rouletteDanceBadge.textContent = `🐱 올라 캣(OIIA OIIA CAT) 360° 무한 회전 세리머니!`;
             sound.playFanfareCheer();
         }
     }
@@ -477,7 +399,13 @@ function startWithPlayerName() {
 }
 
 function startNewGame(skipPrologue = false) {
-    stopDanceAnimation();
+    if (rouletteTimer) {
+        clearTimeout(rouletteTimer);
+        rouletteTimer = null;
+    }
+    if (ollaCatIframe) {
+        ollaCatIframe.src = '';
+    }
     sound.startBGM();
     hero.reset();
     hero.setCharacterType(selectedChar);
@@ -526,12 +454,12 @@ function triggerGameEndModal(titleText, reasonText) {
     renderRankingList(startRankingListEl, rankingResult.list);
 
     const userRank = rankingResult.userRank || 50;
-    const finalDance = getDanceForRank(userRank);
 
-    // 🕺 신나는 엔딩 댄스 파티 BGM & 캐릭터 축하 댄스 & 등수 셔플 룰렛 시작!
-    sound.startDancePartyBGM();
-    startDanceAnimation(finalDance);
-    startRankShuffleRoulette(userRank, finalDance);
+    // 🐱 OIIA OIIA 올라 캣(Spinning Cat) 유튜브 영상 자동 재생 & 등수 셔플 룰렛 시작!
+    if (ollaCatIframe) {
+        ollaCatIframe.src = 'https://www.youtube.com/embed/A2LGuBlDloQ?autoplay=1&mute=0&loop=1&playlist=A2LGuBlDloQ';
+    }
+    startRankShuffleRoulette(userRank);
 
     gameOverModal.classList.add('active');
 }
@@ -677,27 +605,6 @@ costumeBtns.forEach(btn => {
     });
 });
 
-// 🕺 세리머니 댄스 직접 선택 버튼 이벤트 연결
-danceBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-        const danceType = btn.dataset.dance;
-        if (danceType) {
-            setDanceMode(danceType, false);
-            sound.playSpecialItem();
-        }
-    });
-});
-
-// 🤖 댄서 모델 선택기 (로블록스 마네킹 / 동물 러너)
-const dancerModelBtns = document.querySelectorAll('.dancer-model-btn');
-dancerModelBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-        dancerModelBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentDancerModel = btn.dataset.model || 'roblox';
-        sound.playSpecialItem();
-    });
-});
 document.getElementById('btn-left').addEventListener('click', handleLeft);
 document.getElementById('btn-right').addEventListener('click', handleRight);
 document.getElementById('btn-jump').addEventListener('click', handleJump);

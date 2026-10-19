@@ -183,29 +183,25 @@
                 <div class="roulette-badge" id="roulette-dance-badge">🎵 댄스 준비 중...</div>
             </div>
 
-            <!-- 🤖 댄서 모델 선택기 (로블록스 마네킹 / 동물 러너) -->
-            <div class="dancer-model-selector-bar">
-                <button type="button" class="dancer-model-btn active" id="btn-model-roblox" data-model="roblox">🤖 로블록스 마네킹 댄서</button>
-                <button type="button" class="dancer-model-btn" id="btn-model-animal" data-model="animal">🐵 선택한 동물 러너</button>
-            </div>
-
-            <!-- 🕺 실시간 캐릭터 축하 댄스 무대 캔버스 -->
-            <div class="dance-stage-wrapper">
-                <canvas id="dance-canvas" width="300" height="235"></canvas>
-            </div>
-
-            <!-- 🎵 댄스 모드 직접 선택 툴바 -->
-            <div class="dance-toolbar">
-                <div class="dance-toolbar-title">🕺 댄스 모드 직접 선택해서 구경하기 (로블록스 챌린지)</div>
-                <div class="dance-btn-group" id="dance-btn-group">
-                    <button type="button" class="dance-btn" data-dance="windmill">🌀 윈드밀 (1~10등)</button>
-                    <button type="button" class="dance-btn" data-dance="ateez_bad">🔥 에이티즈 BAD (11~20등)</button>
-                    <button type="button" class="dance-btn" data-dance="red_red">❤️ RED RED (21~30등)</button>
-                    <button type="button" class="dance-btn" data-dance="take_the_l">🕺 L을 가져가 (31~40등)</button>
-                    <button type="button" class="dance-btn" data-dance="zico_newthing">🏍️ 지코 새삥 (41등+)</button>
-                    <button type="button" class="dance-btn" data-dance="veggie">🥦 야채 (41등+)</button>
-                    <button type="button" class="dance-btn" data-dance="side_to_side">↔️ 측면 대 측면 (41등+)</button>
-                    <button type="button" class="dance-btn" data-dance="cream_cheese_honey">🍯 크림 치즈 허니 (41등+)</button>
+            <!-- 🐱 OIIA OIIA CAT (올라 캣) 영상 플레이어 -->
+            <div class="olla-cat-container">
+                <div class="olla-cat-header">
+                    <span class="olla-badge">🐱 OIIA OIIA CAT (올라 캣)</span>
+                    <span class="olla-desc">🎵 360° 무한 회전 스피닝 캣 세리머니!</span>
+                </div>
+                <div class="olla-video-box">
+                    <iframe id="olla-cat-iframe"
+                        src=""
+                        title="OIIA OIIA CAT (Spinning Cat)"
+                        frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowfullscreen>
+                    </iframe>
+                </div>
+                <div class="olla-footer">
+                    <a href="https://www.youtube.com/watch?v=A2LGuBlDloQ" target="_blank" rel="noopener" class="olla-link-btn">
+                        ▶️ YouTube에서 올라캣(OIIA CAT) 영상 크게 보기
+                    </a>
                 </div>
             </div>
 
