@@ -20,7 +20,30 @@ class PeanutsMonkeyHero {
     constructor() {
         this.characterType = 'frog'; // 'frog' (개구리) | 'tiger' (호랑이) | 'penguin' (펭귄) | 'monkey' (원숭이)
         this.costumeType = 'gentleman'; // 'gentleman' (신사복) | 'santa' (산타 복장) | 'none' (기본)
+
+        // 🐯 KIA 타이거즈 호걸이 공식 이미지 에셋 로드 (앞모습/뒷모습)
+        this.hogeoriFrontImg = new Image();
+        this.hogeoriFrontImg.src = 'assets/images/hogeori_front.png';
+        this.hogeoriBackImg = new Image();
+        this.hogeoriBackImg.src = 'assets/images/hogeori_back.png';
+
         this.reset();
+    }
+
+    drawCurrentHead(ctx, swing = 0, cosSwing = 0, isLookingBack = true) {
+        if (this.characterType === 'frog') {
+            this.drawFrogHead(ctx, swing, cosSwing, isLookingBack);
+        } else if (this.characterType === 'tiger') {
+            this.drawTigerHead(ctx, swing, cosSwing, isLookingBack);
+        } else if (this.characterType === 'penguin') {
+            this.drawPenguinHead(ctx, swing, cosSwing, isLookingBack);
+        } else {
+            if (isLookingBack) {
+                this.drawLookBackHead(ctx, swing, cosSwing);
+            } else {
+                this.drawBackOfHead(ctx, swing, cosSwing);
+            }
+        }
     }
 
     setCharacterType(type) {
@@ -1893,6 +1916,20 @@ class PeanutsMonkeyHero {
         ctx.scale(1.15, 1.15);
         ctx.rotate(isLookingBack ? (0.05 + Math.sin(this.runCycle * 0.5) * 0.03) : (Math.sin(this.runCycle * 0.5) * 0.04));
 
+        // 🐯 [호걸이 실제 공식 이미지 직접 렌더링]
+        const targetImg = isLookingBack ? this.hogeoriFrontImg : this.hogeoriBackImg;
+        if (targetImg && targetImg.complete && targetImg.naturalWidth > 0) {
+            if (isLookingBack) {
+                // 앞모습: 크고 맑은 만화 눈, 빨간 KIA 야구모자(T로고), 둥근 미소의 호걸이 원본
+                ctx.drawImage(this.hogeoriFrontImg, 0, 0, 1024, 1024, -90, -100, 180, 180);
+            } else {
+                // 뒷모습: 빨간 KIA 야구모자 뒤통수, 호랑이 귀와 복슬복슬한 목덜미
+                ctx.drawImage(this.hogeoriBackImg, 50, 70, 924, 710, -90, -95, 180, 155);
+            }
+            ctx.restore();
+            return;
+        }
+
         ctx.strokeStyle = '#1a1612';
         ctx.lineWidth = 4;
         ctx.lineJoin = 'round';
@@ -3372,7 +3409,7 @@ class PeanutsMonkeyHero {
                 ctx.save();
                 ctx.translate(0, -68);
                 this.drawBackTorsoAndShorts(ctx, 0, true);
-                this.drawFrogHead(ctx, 0, 0, true);
+                this.drawCurrentHead(ctx, 0, 0, true);
                 ctx.restore();
             }
 
@@ -3408,7 +3445,7 @@ class PeanutsMonkeyHero {
                 ctx.save();
                 ctx.translate(0, -68);
                 this.drawBackTorsoAndShorts(ctx, 0, true);
-                this.drawFrogHead(ctx, 0, 0, true);
+                this.drawCurrentHead(ctx, 0, 0, true);
                 ctx.restore();
             }
 
@@ -3502,7 +3539,7 @@ class PeanutsMonkeyHero {
             ctx.save();
             ctx.translate(0, -65);
             this.drawBackTorsoAndShorts(ctx, 0, true);
-            this.drawFrogHead(ctx, 0, 0, true);
+            this.drawCurrentHead(ctx, 0, 0, true);
             ctx.restore();
         }
 
@@ -3553,7 +3590,7 @@ class PeanutsMonkeyHero {
             ctx.save();
             ctx.translate(0, -65);
             this.drawBackTorsoAndShorts(ctx, 0, true);
-            this.drawFrogHead(ctx, 0, 0, true);
+            this.drawCurrentHead(ctx, 0, 0, true);
             ctx.restore();
         }
 
@@ -3602,7 +3639,7 @@ class PeanutsMonkeyHero {
                 ctx.save();
                 ctx.translate(0, -68);
                 this.drawBackTorsoAndShorts(ctx, 0, true);
-                this.drawFrogHead(ctx, 0, 0, true);
+                this.drawCurrentHead(ctx, 0, 0, true);
                 ctx.restore();
             }
 
@@ -3640,7 +3677,7 @@ class PeanutsMonkeyHero {
                 ctx.save();
                 ctx.translate(0, -68);
                 this.drawBackTorsoAndShorts(ctx, 0, true);
-                this.drawFrogHead(ctx, 0, 0, true);
+                this.drawCurrentHead(ctx, 0, 0, true);
                 ctx.restore();
             }
 
@@ -3681,7 +3718,7 @@ class PeanutsMonkeyHero {
             ctx.save();
             ctx.translate(0, -65);
             this.drawBackTorsoAndShorts(ctx, 0, true);
-            this.drawFrogHead(ctx, 0, 0, true);
+            this.drawCurrentHead(ctx, 0, 0, true);
             ctx.restore();
         }
 
@@ -3731,7 +3768,7 @@ class PeanutsMonkeyHero {
             ctx.save();
             ctx.translate(0, -65);
             this.drawBackTorsoAndShorts(ctx, 0, true);
-            this.drawFrogHead(ctx, 0, 0, true);
+            this.drawCurrentHead(ctx, 0, 0, true);
             ctx.restore();
         }
 
@@ -3807,7 +3844,7 @@ class PeanutsMonkeyHero {
 
             ctx.save();
             ctx.translate(0, -65);
-            this.drawFrogHead(ctx, 0, 0, true);
+            this.drawCurrentHead(ctx, 0, 0, true);
             ctx.restore();
         }
 
