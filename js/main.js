@@ -55,9 +55,6 @@ const rouletteDanceBadge = document.getElementById('roulette-dance-badge');
 const oiiaCanvas = document.getElementById('oiia-cat-canvas');
 const oiiaCtx = oiiaCanvas ? oiiaCanvas.getContext('2d') : null;
 const oiiaBubbleText = document.getElementById('oiia-bubble-text');
-const btnOiiaCat = document.getElementById('btn-oiia-cat');
-const btnOiiaTiger = document.getElementById('btn-oiia-tiger');
-const btnOiiaHero = document.getElementById('btn-oiia-hero');
 const btnOiiaSpeed = document.getElementById('btn-oiia-speed');
 
 // 모듈 인스턴스 생성
@@ -662,77 +659,7 @@ function draw3DOiiaCat(ctx, cx, cy, rot, squish, time) {
     ctx.restore();
 }
 
-// 🐯 360° 회전 명품 황금 아기 호랑이 스핀 렌더링
-function draw3DOiiaTiger(ctx, cx, cy, rot, squish, time) {
-    ctx.save();
-    ctx.translate(cx, cy + 20);
-
-    const bounceY = -Math.abs(Math.sin(time * 0.012)) * 16;
-    ctx.translate(0, bounceY);
-    ctx.scale(1 + squish * 0.08, 1 - squish * 0.08);
-
-    const cosRot = Math.cos(rot);
-    const isFront = cosRot >= 0;
-
-    // 회전 스케일
-    ctx.scale(0.85 + Math.abs(cosRot) * 0.25, 1);
-
-    // 꼬리 흔들기
-    ctx.save();
-    ctx.translate(Math.sin(rot) * -20, 60);
-    hero.drawTigerTail(ctx, Math.sin(time * 0.01) * 3, Math.cos(time * 0.01) * 3);
-    ctx.restore();
-
-    // 몸통
-    ctx.save();
-    ctx.translate(0, 60);
-    hero.drawBackTorsoAndShorts(ctx, 0, isFront);
-    ctx.restore();
-
-    // 머리
-    ctx.save();
-    ctx.translate(0, -10);
-    hero.drawTigerHead(ctx, 0, 0, isFront);
-    ctx.restore();
-
-    ctx.restore();
-}
-
-// 🐾 360° 회전 내 캐릭터(러너) 스핀 렌더링
-function draw3DOiiaHero(ctx, cx, cy, rot, squish, time) {
-    ctx.save();
-    ctx.translate(cx, cy + 20);
-
-    const bounceY = -Math.abs(Math.sin(time * 0.012)) * 16;
-    ctx.translate(0, bounceY);
-    ctx.scale(1 + squish * 0.08, 1 - squish * 0.08);
-
-    const cosRot = Math.cos(rot);
-    const isFront = cosRot >= 0;
-
-    ctx.scale(0.85 + Math.abs(cosRot) * 0.25, 1);
-
-    // 몸통 & 머리
-    ctx.save();
-    ctx.translate(0, 60);
-    hero.drawBackTorsoAndShorts(ctx, 0, isFront);
-    ctx.restore();
-
-    ctx.save();
-    ctx.translate(0, -10);
-    if (hero.characterType === 'frog') hero.drawFrogHead(ctx, 0, 0, isFront);
-    else if (hero.characterType === 'tiger') hero.drawTigerHead(ctx, 0, 0, isFront);
-    else if (hero.characterType === 'penguin') hero.drawPenguinHead(ctx, 0, 0, isFront);
-    else {
-        if (isFront) hero.drawLookBackHead(ctx, 0, 0);
-        else hero.drawBackOfHead(ctx, 0, 0);
-    }
-    ctx.restore();
-
-    ctx.restore();
-}
-
-// 🎬 OIIA 360° 스테이지 애니메이션 메인 루프
+// 🎬 OIIA 360° 올라 캣 스테이지 애니메이션 메인 루프 (올라 캣 전용)
 function renderOiiaStage(now) {
     if (!oiiaActive || !oiiaCtx || !oiiaCanvas) return;
 
@@ -748,15 +675,9 @@ function renderOiiaStage(now) {
     // 1. 디스코 썬버스트 배경 및 팡파르 별가루
     drawOiiaDiscoBackground(oiiaCtx, w, h, now);
 
-    // 2. 360° 무한 회전 캐릭터 렌더링
+    // 2. 360° 무한 회전 올라 캣 (OIIA OIIA Cat) 단독 렌더링
     const squishFactor = Math.cos(now * 0.014);
-    if (oiiaDancer === 'cat') {
-        draw3DOiiaCat(oiiaCtx, w * 0.5, h * 0.52, oiiaRotAngle, squishFactor, now);
-    } else if (oiiaDancer === 'tiger') {
-        draw3DOiiaTiger(oiiaCtx, w * 0.5, h * 0.50, oiiaRotAngle, squishFactor, now);
-    } else {
-        draw3DOiiaHero(oiiaCtx, w * 0.5, h * 0.50, oiiaRotAngle, squishFactor, now);
-    }
+    draw3DOiiaCat(oiiaCtx, w * 0.5, h * 0.52, oiiaRotAngle, squishFactor, now);
 
     oiiaAnimId = requestAnimationFrame(renderOiiaStage);
 }
@@ -778,36 +699,12 @@ function stopOiiaStage() {
     }
 }
 
-// 🕺 OIIA 인터랙티브 컨트롤 버튼 이벤트 연결
-if (btnOiiaCat) {
-    btnOiiaCat.addEventListener('click', () => {
-        oiiaDancer = 'cat';
-        [btnOiiaCat, btnOiiaTiger, btnOiiaHero].forEach(b => b && b.classList.remove('active'));
-        btnOiiaCat.classList.add('active');
-        sound.playSpecialItem();
-    });
-}
-if (btnOiiaTiger) {
-    btnOiiaTiger.addEventListener('click', () => {
-        oiiaDancer = 'tiger';
-        [btnOiiaCat, btnOiiaTiger, btnOiiaHero].forEach(b => b && b.classList.remove('active'));
-        btnOiiaTiger.classList.add('active');
-        sound.playSpecialItem();
-    });
-}
-if (btnOiiaHero) {
-    btnOiiaHero.addEventListener('click', () => {
-        oiiaDancer = 'hero';
-        [btnOiiaCat, btnOiiaTiger, btnOiiaHero].forEach(b => b && b.classList.remove('active'));
-        btnOiiaHero.classList.add('active');
-        sound.playSpecialItem();
-    });
-}
+// ⚡ 올라 캣 1000 RPM 초광속 스핀 버튼 이벤트 연결
 if (btnOiiaSpeed) {
     btnOiiaSpeed.addEventListener('click', () => {
         oiiaSpeedMode = (oiiaSpeedMode === 'normal' ? 'hyper' : 'normal');
         btnOiiaSpeed.classList.toggle('hyper', oiiaSpeedMode === 'hyper');
-        btnOiiaSpeed.textContent = (oiiaSpeedMode === 'hyper' ? '🌪️ 1000 RPM 초광속!' : '⚡ 초광속 회전!');
+        btnOiiaSpeed.textContent = (oiiaSpeedMode === 'hyper' ? '🌪️ 1000 RPM 초광속 스핀 ON' : '⚡ 1000 RPM 초광속 스핀 ON/OFF');
         sound.playPowerUp();
     });
 }
