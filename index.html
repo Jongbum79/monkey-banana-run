@@ -107,6 +107,49 @@
             <p style="margin-top:6px; font-size:15px; color:#2a9d8f; font-weight:700;">
                 🌲1단계:숲 ➔ 🏜️2단계:사막 ➔ 🍍3단계:해저 ➔ 🌃4단계:도시 ➔ ⚡5단계:글리치 보이드 ➔ 🏫흥덕초등학교 도착!
             </p>
+
+            <!-- 🐾 캐릭터 선택 (개구리, 호랑이, 펭귄, 원숭이) -->
+            <div class="selection-box">
+                <div class="selection-title">🐾 러너 캐릭터 선택</div>
+                <div class="char-selector" id="char-selector">
+                    <button type="button" class="select-btn active" data-char="frog">
+                        <span class="btn-emoji">🐸</span>
+                        <span class="btn-text">개구리</span>
+                    </button>
+                    <button type="button" class="select-btn" data-char="tiger">
+                        <span class="btn-emoji">🐯</span>
+                        <span class="btn-text">호랑이</span>
+                    </button>
+                    <button type="button" class="select-btn" data-char="penguin">
+                        <span class="btn-emoji">🐧</span>
+                        <span class="btn-text">펭귄</span>
+                    </button>
+                    <button type="button" class="select-btn" data-char="monkey">
+                        <span class="btn-emoji">🐵</span>
+                        <span class="btn-text">원숭이</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 👔 특별 의상 선택 (신사복, 산타 복장) -->
+            <div class="selection-box">
+                <div class="selection-title">👔 특별 의상 선택</div>
+                <div class="costume-selector" id="costume-selector">
+                    <button type="button" class="select-btn active" data-costume="gentleman">
+                        <span class="btn-emoji">🎩</span>
+                        <span class="btn-text">신사복</span>
+                    </button>
+                    <button type="button" class="select-btn" data-costume="santa">
+                        <span class="btn-emoji">🎅</span>
+                        <span class="btn-text">산타 복장</span>
+                    </button>
+                    <button type="button" class="select-btn" data-costume="none">
+                        <span class="btn-emoji">👕</span>
+                        <span class="btn-text">기본 캐주얼</span>
+                    </button>
+                </div>
+            </div>
+
             <div class="name-input-group">
                 <input type="text" id="player-name-input" class="name-input" placeholder="6학년 도전자 이름 입력" maxlength="12" />
                 <button class="start-btn" id="btn-start-game">🚀 출발!</button>

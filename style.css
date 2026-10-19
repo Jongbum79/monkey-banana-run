@@ -444,6 +444,74 @@ body.is-playing .concept-badge {
     margin-bottom: 6px;
 }
 
+/* 캐릭터 및 복장 선택 UI */
+.selection-box {
+    margin: 8px 0;
+    background: #fdf0d5;
+    border: 2.5px solid #1a1612;
+    border-radius: 14px;
+    padding: 8px 12px;
+}
+
+.selection-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1a1612;
+    margin-bottom: 6px;
+    text-align: left;
+}
+
+.char-selector, .costume-selector {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.select-btn {
+    flex: 1;
+    background: #fffcf5;
+    border: 2.5px solid #1a1612;
+    border-radius: 12px;
+    padding: 6px 4px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    font-family: 'Gaegu', cursive;
+    box-shadow: 2px 2px 0px #1a1612;
+    transition: transform 0.1s, background 0.15s, border-color 0.15s;
+}
+
+.select-btn:hover {
+    background: #fff3b0;
+    transform: translateY(-2px);
+}
+
+.select-btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: 0px 0px 0px #1a1612;
+}
+
+.select-btn.active {
+    background: #ffd166;
+    border-color: #d64531;
+    border-width: 3px;
+    box-shadow: 3px 3px 0px #d64531;
+    transform: scale(1.04);
+}
+
+.btn-emoji {
+    font-size: 24px;
+    line-height: 1.1;
+}
+
+.btn-text {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1a1612;
+}
+
 .name-input-group {
     margin: 14px 0;
     display: flex;

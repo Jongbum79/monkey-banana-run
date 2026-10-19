@@ -61,6 +61,10 @@ let dpr = Math.min(window.devicePixelRatio || 1, 2);
 
 let gameState = 'START_MENU'; // 'START_MENU' | 'PROLOGUE' | 'PLAYING' | 'SCHOOL_ENDING' | 'GAMEOVER'
 let playerName = localStorage.getItem('smilegames_last_player') || '';
+let selectedChar = localStorage.getItem('smilegames_character') || 'frog';
+let selectedCostume = localStorage.getItem('smilegames_costume') || 'gentleman';
+hero.setCharacterType(selectedChar);
+hero.setCostumeType(selectedCostume);
 let score = 0;
 let gameSpeed = 1.0;
 let schoolEndingTimer = 0;
@@ -274,9 +278,14 @@ function setStage(newStage) {
 
 function startWithPlayerName() {
     const inputVal = playerNameInput.value.trim();
-    playerName = inputVal || '6학년 원숭이';
+    const speciesNames = { frog: '개구리', tiger: '호랑이', penguin: '펭귄', monkey: '원숭이' };
+    const curSpecies = speciesNames[selectedChar] || '개구리';
+    playerName = inputVal || `6학년 ${curSpecies}`;
     localStorage.setItem('smilegames_last_player', playerName);
     startModal.classList.remove('active');
+
+    hero.setCharacterType(selectedChar);
+    hero.setCostumeType(selectedCostume);
 
     sound.startBGM();
     startNewGame(false);
@@ -284,6 +293,8 @@ function startWithPlayerName() {
 
 function startNewGame(skipPrologue = false) {
     hero.reset();
+    hero.setCharacterType(selectedChar);
+    hero.setCostumeType(selectedCostume);
     track.reset();
     mathGate.reset();
     dragon.reset();
@@ -305,8 +316,12 @@ function startNewGame(skipPrologue = false) {
     } else {
         gameState = 'PROLOGUE';
         document.body.classList.remove('is-playing');
+        const speciesNames = { frog: '개구리', tiger: '호랑이', penguin: '펭귄', monkey: '원숭이' };
+        const curSpecies = speciesNames[selectedChar] || '러너';
+        const costumeNames = { gentleman: '신사복', santa: '산타 복장', none: '' };
+        const curCostume = costumeNames[selectedCostume] ? `${costumeNames[selectedCostume]}을 입은 ` : '';
         bubbleEn.textContent = "SHHH! STEALING THE GOLDEN BANANA FROM HEUNGDEOK ELEMENTARY SCHOOL!";
-        bubbleKo.textContent = `"쉿! ${playerName} 원숭이가 흥덕초등학교에서 드래곤의 황금 바나나를 뺏어 도망간다!"`;
+        bubbleKo.textContent = `"쉿! ${curCostume}${playerName} ${curSpecies}가 흥덕초등학교에서 드래곤의 황금 바나나를 뺏어 도망간다!"`;
     }
 }
 
@@ -426,6 +441,42 @@ window.addEventListener('touchend', (e) => {
 }, { passive: true });
 
 document.getElementById('btn-start-game').addEventListener('click', startWithPlayerName);
+
+// 🐾 캐릭터 선택 버튼 이벤트 연결
+const charBtns = document.querySelectorAll('#char-selector .select-btn');
+charBtns.forEach(btn => {
+    if (btn.dataset.char === selectedChar) {
+        btn.classList.add('active');
+    } else {
+        btn.classList.remove('active');
+    }
+    btn.addEventListener('click', () => {
+        charBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedChar = btn.dataset.char;
+        localStorage.setItem('smilegames_character', selectedChar);
+        hero.setCharacterType(selectedChar);
+        sound.playSpecialItem();
+    });
+});
+
+// 👔 의상 선택 버튼 이벤트 연결
+const costumeBtns = document.querySelectorAll('#costume-selector .select-btn');
+costumeBtns.forEach(btn => {
+    if (btn.dataset.costume === selectedCostume) {
+        btn.classList.add('active');
+    } else {
+        btn.classList.remove('active');
+    }
+    btn.addEventListener('click', () => {
+        costumeBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedCostume = btn.dataset.costume;
+        localStorage.setItem('smilegames_costume', selectedCostume);
+        hero.setCostumeType(selectedCostume);
+        sound.playSpecialItem();
+    });
+});
 document.getElementById('btn-left').addEventListener('click', handleLeft);
 document.getElementById('btn-right').addEventListener('click', handleRight);
 document.getElementById('btn-jump').addEventListener('click', handleJump);
