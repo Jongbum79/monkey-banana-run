@@ -57,6 +57,13 @@ const oiiaCtx = oiiaCanvas ? oiiaCanvas.getContext('2d') : null;
 const oiiaBubbleText = document.getElementById('oiia-bubble-text');
 const btnOiiaSpeed = document.getElementById('btn-oiia-speed');
 
+// 🛣️ 갈림길 선택 및 생존 시간 UI
+const roadChoiceOverlay = document.getElementById('road-choice-overlay');
+const btnRoad1 = document.getElementById('btn-road-1');
+const btnRoad2 = document.getElementById('btn-road-2');
+const hudRoadBadge = document.getElementById('hud-road-badge');
+const hudSurvivalTime = document.getElementById('hud-survival-time');
+
 // 모듈 인스턴스 생성
 const sound = new SoundManager();
 const hero = new PeanutsMonkeyHero();
@@ -78,6 +85,15 @@ hero.setCostumeType(selectedCostume);
 let score = 0;
 let gameSpeed = 1.0;
 let schoolEndingTimer = 0;
+
+// 🛣️ 두 갈림길 도로 및 시간에 따른 점수 시스템 변수
+let selectedRoute = null; // 1 | 2 | null
+let isSelectingRoute = false; // 시작 시 갈림길 선택 중 플래그
+let routeScoreMultiplier = 1.0; // 1번 도로는 1.0, 2번 도로는 2.0 (모든 포인트 2배)
+let routeSpeedMultiplier = 1.0; // 1번 도로는 1.0, 2번 도로는 1.30 (속도 +30% 상승)
+let survivalTime = 0; // 초 단위 누적 생존 시간
+let timeScoreAccumulator = 0; // 시간에 따른 점수 누적 변수
+let nextTimePopupTimer = 0; // 생존 점수 획득 팝업 주기 타이머
 
 if (playerName) {
     playerNameInput.value = playerName;
@@ -762,6 +778,65 @@ function updateHUD() {
     } else {
         dragonLabelEl.textContent = `🐉 드래곤과 거리 ${dist}m`;
     }
+
+    // 🛣️ 도로 뱃지 및 실시간 생존 시간 갱신
+    if (hudRoadBadge) {
+        if (selectedRoute === 1) {
+            hudRoadBadge.innerHTML = '🟢 1번 도로: 안정적인 도로 (점수 1x / 기본 속도)';
+            hudRoadBadge.style.borderColor = 'rgba(42, 157, 143, 0.7)';
+        } else if (selectedRoute === 2) {
+            hudRoadBadge.innerHTML = '🔥 2번 도로: 위험하지만 보상이 강한 도로 (점수 2x / 속도 +30%)';
+            hudRoadBadge.style.borderColor = 'rgba(230, 57, 70, 0.7)';
+        } else {
+            hudRoadBadge.innerHTML = '🛣️ 도로 선택 중... [1] 안정적 / [2] 고위험고보상';
+            hudRoadBadge.style.borderColor = 'rgba(255, 190, 11, 0.7)';
+        }
+    }
+
+    if (hudSurvivalTime) {
+        const m = Math.floor(survivalTime / 60);
+        const s = Math.floor(survivalTime % 60);
+        const formatted = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        const ptsPerSec = Math.round(10 * routeScoreMultiplier);
+        hudSurvivalTime.textContent = `⏱️ 생존 시간: ${formatted} (+${ptsPerSec}점/초)`;
+    }
+}
+
+// 🛣️ 두 갈림길 도로 선택 함수 (1: 안정적인 도로, 2: 위험하지만 보상이 강한 도로)
+function selectRoute(routeNum) {
+    selectedRoute = routeNum;
+    isSelectingRoute = false;
+    track.selectedRoute = routeNum;
+    if (roadChoiceOverlay) {
+        roadChoiceOverlay.classList.remove('active');
+    }
+
+    if (routeNum === 1) {
+        routeScoreMultiplier = 1.0;
+        routeSpeedMultiplier = 1.0;
+        sound.playSpecialItem();
+        track.triggerStageBanner(
+            '🟢 1번 도로 : 안정적인 도로 선택!',
+            '기본 속도 & 안정적인 기물 간격으로 안전한 레이스 시작!',
+            '#2a9d8f'
+        );
+        bubbleKo.textContent = '"[1번 안정적인 도로]를 선택했어! 안전한 속도로 안정적인 완주를 노려봐!"';
+    } else {
+        routeScoreMultiplier = 2.0; // 모든 포인트 2배!
+        routeSpeedMultiplier = 1.30; // 속도 30% 상승!
+        sound.playPowerUp();
+        track.triggerStageBanner(
+            '🔥 2번 도로 : 위험하지만 보상이 강한 도로 선택!',
+            '⚡ 속도 +30% 가속 & 💥 모든 포인트 2배 (x2) 대폭 상승!',
+            '#e63946'
+        );
+        bubbleKo.textContent = '"[2번 위험하지만 보상이 강한 도로] 선택! 속도가 30% 빨라지고 모든 점수가 2배야!"';
+    }
+
+    // 선택 시에는 용이 잡지 않도록 거리 안전하게 100m 유지
+    dragon.distance = 100;
+    dragon.fireTimer = 0;
+    updateHUD();
 }
 
 function setStage(newStage) {
@@ -828,6 +903,17 @@ function startNewGame(skipPrologue = false) {
     gameSpeed = 0.81; // 10% 감속 (0.90 -> 0.81)
     schoolEndingTimer = 0;
     gameOverModal.classList.remove('active');
+
+    // 🛣️ 갈림길 도로 및 생존 시간 변수 초기화
+    selectedRoute = null;
+    isSelectingRoute = true;
+    routeScoreMultiplier = 1.0;
+    routeSpeedMultiplier = 1.0;
+    survivalTime = 0;
+    timeScoreAccumulator = 0;
+    nextTimePopupTimer = 0;
+    track.selectedRoute = null;
+
     updateHUD();
 
     if (skipPrologue) {
@@ -836,11 +922,17 @@ function startNewGame(skipPrologue = false) {
         hero.triggerLookBack(1.2, 'happy');
         const st1 = STAGE_INFO[1];
         track.triggerStageBanner(st1.bannerTitle, st1.bannerSub, st1.color);
-        bubbleEn.textContent = "STAGE 1: FOREST! DODGE BOULDERS, GET SUPER JUMP & WUKONG EVOLUTION!";
-        bubbleKo.textContent = st1.ko;
+        bubbleEn.textContent = "CHOOSE ROAD: [1] STABLE ROAD OR [2] HIGH RISK HIGH REWARD!";
+        bubbleKo.textContent = '"게임 시작! 1번 안정적인 도로 또는 2번 고위험 고보상 도로를 선택하세요!"';
+        if (roadChoiceOverlay) {
+            roadChoiceOverlay.classList.add('active');
+        }
     } else {
         gameState = 'PROLOGUE';
         document.body.classList.remove('is-playing');
+        if (roadChoiceOverlay) {
+            roadChoiceOverlay.classList.remove('active');
+        }
         const speciesNames = { frog: '개구리', tiger: '호랑이', penguin: '펭귄', monkey: '원숭이' };
         const curSpecies = speciesNames[selectedChar] || '러너';
         const costumeNames = { gentleman: '신사복', santa: '산타 복장', none: '' };
@@ -887,10 +979,11 @@ function triggerGameOver(reasonText) {
 }
 
 function triggerGameClear() {
-    score += 500;
+    const bonus = Math.round(500 * routeScoreMultiplier);
+    score += bonus;
     triggerGameEndModal(
         '🏫 흥덕초등학교 도착 클리어! 🎓',
-        '축하합니다! 1단계 숲부터 5단계 글리치 보이드까지 모두 돌파하고 흥덕초등학교에 무사히 등교했어요! (+500점 클리어 보너스)'
+        `축하합니다! 1단계 숲부터 5단계 글리치 보이드까지 모두 돌파하고 흥덕초등학교에 무사히 등교했어요! (+${bonus}점 클리어 보너스)`
     );
 }
 
@@ -950,9 +1043,19 @@ window.addEventListener('keydown', (e) => {
     } else if (e.key.toLowerCase() === 'l') {
         handleLookBack();
     } else if (e.key === '1') {
-        if (gameState === 'PLAYING') { hero.currentLane = -2; sound.playLaneMove(); }
+        if (isSelectingRoute || selectedRoute === null) {
+            selectRoute(1);
+        } else if (gameState === 'PLAYING') {
+            hero.currentLane = -2;
+            sound.playLaneMove();
+        }
     } else if (e.key === '2') {
-        if (gameState === 'PLAYING') { hero.currentLane = -1; sound.playLaneMove(); }
+        if (isSelectingRoute || selectedRoute === null) {
+            selectRoute(2);
+        } else if (gameState === 'PLAYING') {
+            hero.currentLane = -1;
+            sound.playLaneMove();
+        }
     } else if (e.key === '3') {
         if (gameState === 'PLAYING') { hero.currentLane = 0; sound.playLaneMove(); }
     } else if (e.key === '4') {
@@ -961,6 +1064,14 @@ window.addEventListener('keydown', (e) => {
         if (gameState === 'PLAYING') { hero.currentLane = 2; sound.playLaneMove(); }
     }
 });
+
+// 🛣️ 갈림길 도로 선택 카드 클릭 이벤트 연결
+if (btnRoad1) {
+    btnRoad1.addEventListener('click', () => selectRoute(1));
+}
+if (btnRoad2) {
+    btnRoad2.addEventListener('click', () => selectRoute(2));
+}
 
 let touchStartX = 0;
 let touchStartY = 0;
@@ -1103,9 +1214,15 @@ function gameLoop(now) {
 
     // 3. 본 게임 플레이 업데이트
     if (gameState === 'PLAYING') {
+        // 🐉 갈림길 선택 중일 때는 드래곤이 플레이어를 절대 잡지 못하도록 보호! ("그리고 그때는 용이 잡으면 안돼")
+        if (isSelectingRoute) {
+            dragon.distance = 100;
+            dragon.fireTimer = 0;
+        }
+
         const stInfo = STAGE_INFO[track.stage] || STAGE_INFO[1];
-        // 최고 속도를 30% 낮추어 후반 스테이지에서도 쾌적한 조작 보장!
-        gameSpeed = stInfo.speedBase + Math.min(0.14, score / 7000);
+        // 2번 도로(위험하지만 보상이 강한 도로) 선택 시 전체 속도 +30% 적용 (routeSpeedMultiplier = 1.30)
+        gameSpeed = (stInfo.speedBase + Math.min(0.14, score / 7000)) * routeSpeedMultiplier;
         // 요청 반영: 점프 길이를 대폭 확장하여 도약 시 시원하게 전방을 돌파 (jumpBoost 1.35x)
         const jumpBoost = hero.isJumping ? 1.35 : 1.0;
         const effectiveSpeed = ((hero.boostTimer > 0 || hero.invincibleTimer > 0) ? gameSpeed * 1.15 : gameSpeed) * jumpBoost;
@@ -1113,23 +1230,43 @@ function gameLoop(now) {
         hero.update(dt, effectiveSpeed);
         dragon.update(dt);
 
+        // ⏱️ 시간에 따른 점수 부여 시스템 (1초당 기본 10점, 2번 도로 선택 시 모든 포인트 2배로 1초당 20점)
+        if (!isSelectingRoute) {
+            survivalTime += dt;
+            const timePointsRate = 10 * routeScoreMultiplier;
+            timeScoreAccumulator += dt * timePointsRate;
+            if (timeScoreAccumulator >= 1.0) {
+                const addPts = Math.floor(timeScoreAccumulator);
+                score += addPts;
+                timeScoreAccumulator -= addPts;
+            }
+            nextTimePopupTimer += dt;
+            if (nextTimePopupTimer >= 5.0) {
+                nextTimePopupTimer = 0;
+                const p = track.project(0.95, 0, width, height);
+                track.addPopup(p.x, p.y - 110, `⏱️ 생존 시간 보너스 +${Math.round(5 * timePointsRate)}점!`, '#00f5d4');
+            }
+        }
+
         // 트랙 및 장애물/아이템 업데이트
         track.update(dt, effectiveSpeed, hero, mathGate.isGateApproaching(), {
             onCoin: (item) => {
                 sound.playCoin();
-                score += 10;
+                const earned = Math.round(10 * routeScoreMultiplier);
+                score += earned;
                 const p = track.project(item.z, item.lane, width, height);
-                track.addPopup(p.x, p.y - 45, '+10 🪙', '#d64531');
+                track.addPopup(p.x, p.y - 45, `+${earned} 🪙`, '#d64531');
                 track.addBurstParticles(p.x, p.y - 30, '#f6d54a', 8);
                 updateHUD();
             },
             onBananaBundle: (item) => {
                 sound.playSpecialItem();
-                score += 35;
+                const earned = Math.round(35 * routeScoreMultiplier);
+                score += earned;
                 hero.triggerBoost(1.5);
                 dragon.onPlayerSuccess(15);
                 const p = track.project(item.z, item.lane, width, height);
-                track.addPopup(p.x, p.y - 55, '황금 바나나 부스트 (1.5초)! +35 🍌', '#2a9d8f');
+                track.addPopup(p.x, p.y - 55, `황금 바나나 부스트 (1.5초)! +${earned} 🍌`, '#2a9d8f');
                 track.addBurstParticles(p.x, p.y - 30, '#ffea79', 16);
                 bubbleKo.textContent = '"우와! 특별 황금 바나나 파워로 1.5초 초고속 질주~!"';
                 updateHUD();
@@ -1137,10 +1274,11 @@ function gameLoop(now) {
             onShield: (item) => {
                 // 🛡️ 무적 방패: 지속시간을 1.8초로 대폭 단축하고 스폰율을 낮춰 긴장감 극대화!
                 sound.playSpecialItem();
-                score += 25;
+                const earned = Math.round(25 * routeScoreMultiplier);
+                score += earned;
                 hero.triggerInvincibleShield(1.8);
                 const p = track.project(item.z, item.lane, width, height);
-                track.addPopup(p.x, p.y - 60, '🛡️ 방패 무적 (1.8초)!', '#00b4d8');
+                track.addPopup(p.x, p.y - 60, `🛡️ 방패 무적 (1.8초)! +${earned}`, '#00b4d8');
                 track.addBurstParticles(p.x, p.y - 35, '#90e0ef', 20);
                 bubbleEn.textContent = "SHIELD POWER-UP! INVINCIBLE FOR 1.8 SECONDS!";
                 bubbleKo.textContent = '"방패 아이템 획득! 1.8초 동안 기물에 무적이야!"';
@@ -1149,10 +1287,11 @@ function gameLoop(now) {
             onSuperJump: (item) => {
                 // 🚀 슈퍼점프: 지속시간 2.5초로 단축!
                 sound.playSpecialItem();
-                score += 30;
+                const earned = Math.round(30 * routeScoreMultiplier);
+                score += earned;
                 hero.triggerSuperJump(2.5);
                 const p = track.project(item.z, item.lane, width, height);
-                track.addPopup(p.x, p.y - 65, '🚀 슈퍼점프 (2.5초)! +30', '#06d6a0');
+                track.addPopup(p.x, p.y - 65, `🚀 슈퍼점프 (2.5초)! +${earned}`, '#06d6a0');
                 track.addBurstParticles(p.x, p.y - 35, '#00f5d4', 22);
                 bubbleEn.textContent = "SUPER JUMP ACTIVATED FOR 2.5 SECONDS!";
                 bubbleKo.textContent = '"🚀 슈퍼점프 2.5초 발동! 지금 점프하면 높이 날아올라!"';
@@ -1161,11 +1300,12 @@ function gameLoop(now) {
             onWukong: (item) => {
                 // 👑 손오공 진화 (체력 대폭 올리기 + 근두운/여의봉/긴고아 장착)!
                 sound.playWukongEvolution();
-                score += 50;
+                const earned = Math.round(50 * routeScoreMultiplier);
+                score += earned;
                 hero.triggerWukongEvolution();
                 dragon.onPlayerSuccess(18);
                 const p = track.project(item.z, item.lane, width, height);
-                track.addPopup(p.x, p.y - 75, `👑 손오공 진화! 최대체력 UP (${hero.hp}/${hero.maxHp})`, '#ffbe0b');
+                track.addPopup(p.x, p.y - 75, `👑 손오공 진화! +${earned} (${hero.hp}/${hero.maxHp})`, '#ffbe0b');
                 track.addBurstParticles(p.x, p.y - 40, '#ffbe0b', 28);
                 bubbleEn.textContent = "SUN WUKONG EVOLUTION!! MAX HP INCREASED & NIMBUS CLOUD SUMMONED!";
                 bubbleKo.textContent = `"👑 제천대성 손오공 진화! 최대 체력이 ${hero.maxHp}으로 오르고 체력이 대폭 회복됐어!"`;
@@ -1174,10 +1314,11 @@ function gameLoop(now) {
             onLaserGun: (item) => {
                 // 🔫 신규 특별 아이템: 레이저총 (4초 동안 유저가 있는 레인의 기물을 모두 자동 파괴!)
                 sound.playLaserGun();
-                score += 40;
+                const earned = Math.round(40 * routeScoreMultiplier);
+                score += earned;
                 hero.triggerLaserGun(4.0);
                 const p = track.project(item.z, item.lane, width, height);
-                track.addPopup(p.x, p.y - 75, '🔫 플라즈마 레이저총 발동(4초)! +40', '#ff006e');
+                track.addPopup(p.x, p.y - 75, `🔫 플라즈마 레이저총 발동(4초)! +${earned}`, '#ff006e');
                 track.addBurstParticles(p.x, p.y - 40, '#ff006e', 24);
                 bubbleEn.textContent = "PLASMA LASER GUN!! VAPORIZING ALL OBSTACLES IN YOUR LANE FOR 4 SECONDS!";
                 bubbleKo.textContent = '"🔫 레이저총 장착! 4초 동안 내가 달리는 레인의 기물을 레이저로 싹 없애버려!"';
@@ -1186,18 +1327,20 @@ function gameLoop(now) {
             onLaserDestroy: (obs) => {
                 // ⚡ 레이저 빔이 현재 레인의 기물을 명중시켜 증발시켰을 때!
                 sound.playLaserZap();
-                score += 25;
+                const earned = Math.round(25 * routeScoreMultiplier);
+                score += earned;
                 const p = track.project(obs.z, obs.lane, width, height);
-                track.addPopup(p.x, p.y - 70, '⚡ 레이저 기물 증발! +25', '#00f5d4');
+                track.addPopup(p.x, p.y - 70, `⚡ 레이저 기물 증발! +${earned}`, '#00f5d4');
                 track.addBurstParticles(p.x, p.y - 40, '#ff006e', 16);
                 track.addBurstParticles(p.x, p.y - 40, '#00f5d4', 12);
                 updateHUD();
             },
             onRampClimb: (obs) => {
                 sound.playJump(false);
-                score += 18;
+                const earned = Math.round(18 * routeScoreMultiplier);
+                score += earned;
                 const p = track.project(obs.z, obs.lane, width, height);
-                const label = obs.type === 'climb_truck' ? '🚛 트럭 지붕 위 질주! +18' : '⏫ 경사로 위 질주! +18';
+                const label = obs.type === 'climb_truck' ? `🚛 트럭 지붕 위 질주! +${earned}` : `⏫ 경사로 위 질주! +${earned}`;
                 track.addPopup(p.x, p.y - 95, label, '#2a9d8f');
                 track.addBurstParticles(p.x, p.y - 50, '#a8dadc', 12);
                 updateHUD();
@@ -1211,9 +1354,10 @@ function gameLoop(now) {
                 else if (chaserType === 'glitch_hazard') sound.playGlitchStatic(0.16, 0.08);
             },
             onObstacleAvoided: (obs) => {
-                score += 5;
+                const earned = Math.round(5 * routeScoreMultiplier);
+                score += earned;
                 const p = track.project(obs.z, obs.lane, width, height);
-                track.addPopup(p.x, p.y - 60, '나이스 회피! +5 ✨', '#2a9d8f');
+                track.addPopup(p.x, p.y - 60, `나이스 회피! +${earned} ✨`, '#2a9d8f');
                 updateHUD();
             },
             onObstacleHit: (obs) => {
@@ -1221,8 +1365,9 @@ function gameLoop(now) {
 
                 if (hero.invincibleTimer > 0) {
                     sound.playSpecialItem();
-                    score += 20;
-                    track.addPopup(p.x, p.y - 65, '🛡️ 무적 방패 돌파! +20 💥', '#00b4d8');
+                    const earned = Math.round(20 * routeScoreMultiplier);
+                    score += earned;
+                    track.addPopup(p.x, p.y - 65, `🛡️ 무적 방패 돌파! +${earned} 💥`, '#00b4d8');
                     track.addBurstParticles(p.x, p.y - 40, '#00f5d4', 18);
                     updateHUD();
                     return;
@@ -1259,7 +1404,8 @@ function gameLoop(now) {
             },
             onCorrectAnswer: (gate, door) => {
                 sound.playCorrect();
-                score += 100;
+                const earned = Math.round(100 * routeScoreMultiplier);
+                score += earned;
                 hero.triggerBoost(2.2);
                 dragon.onPlayerSuccess(22);
 
@@ -1270,10 +1416,10 @@ function gameLoop(now) {
 
                 const p = track.project(gate.z, door.lane, width, height);
                 const healText = healed > 0 ? ` +HP ${healed} 회복💚` : '';
-                track.addPopup(p.x, p.y - 95, `정답! +100점${healText} 🎉`, '#2a9d8f');
+                track.addPopup(p.x, p.y - 95, `정답! +${earned}점${healText} 🎉`, '#2a9d8f');
                 track.addBurstParticles(p.x, p.y - 70, '#52b788', 18);
                 bubbleEn.textContent = `BINGO! ${gate.questionText.replace('?', gate.answer)} IS CORRECT!`;
-                bubbleKo.textContent = `"정답이야! 문이 즉시 사라지며 +100점 & HP가 ${hero.hp}/${hero.maxHp}로 복구됐어!"`;
+                bubbleKo.textContent = `"정답이야! 문이 즉시 사라지며 +${earned}점 & HP가 ${hero.hp}/${hero.maxHp}로 복구됐어!"`;
 
                 const nextStage = Math.min(6, Math.floor(mathGate.solvedCount / 2) + 1);
                 if (nextStage > track.stage) {

@@ -44,6 +44,10 @@
                     <span>🏃 도전자: <strong id="hud-player-name" style="color:#d64531;">플레이어</strong></span>
                     <span>🧮 사칙연산: <span id="math-solved-val">0</span>/10</span>
                 </div>
+                <div class="hud-row" style="background:#e0f2fe; padding:4px 8px; border-radius:10px; border:2px solid #1a1612; margin-bottom:4px; font-weight:700;">
+                    <span id="hud-road-badge" style="color:#0369a1; font-size:15px;">🛣️ 1번: 안정적인 도로 (1.0x)</span>
+                    <span id="hud-survival-time" style="color:#0f766e; font-size:15px;">⏱️ 00:00 (+0점)</span>
+                </div>
                 <div class="hud-row">
                     <span style="color:#b53421;">🪙 점수: <span id="score-val">0</span></span>
                     <span style="font-size:15px; color:#5c4938;">🏆 1위: <span id="best-score-val">0</span></span>
@@ -93,6 +97,50 @@
             </div>
 
             <div class="peanuts-signature">- PEANUTS × SMILE GAMES -</div>
+        </div>
+    </div>
+
+    <!-- 🛣️ 게임 시작 갈림길 도로 선택 오버레이 (키 1 또는 2) -->
+    <div class="modal-backdrop" id="road-choice-overlay">
+        <div class="modal-card road-choice-modal">
+            <div class="road-modal-tag">🛣️ 흥덕초등학교 등굣길 갈림길 도로 선택 🛣️</div>
+            <h2 style="font-size:29px; color:#d64531; margin:8px 0 4px;">어느 도로로 달릴까요?</h2>
+            <p style="font-size:16px; color:#5c4938; margin-bottom:12px;">
+                키보드 <strong>[ 1 ]</strong> 또는 <strong>[ 2 ]</strong> 키를 누르거나, 원하는 도로 카드를 직접 클릭하세요!<br>
+                <strong style="color:#0f766e; background:#e6f4ea; padding:3px 10px; border-radius:12px; display:inline-block; margin-top:4px;">
+                    🐉 도로 선택 중에는 드래곤이 공격하지 않고 안전 거리를 유지합니다! 🛡️
+                </strong>
+            </p>
+
+            <div class="road-cards-container">
+                <!-- 1번 도로 -->
+                <button type="button" class="road-card road-card-1" id="btn-road-1">
+                    <div class="road-key-badge">키: [ 1 ]</div>
+                    <div class="road-card-emoji">🛡️</div>
+                    <div class="road-card-name">1번 도로: 안정적인 도로</div>
+                    <div class="road-card-badge-safe">초보자 추천 · 안정적 주행</div>
+                    <ul class="road-card-perks">
+                        <li>✔️ 기본 주행 속도 (1.0x 표준)</li>
+                        <li>✔️ 안정적인 장애물 & 여유로운 주행</li>
+                        <li>✔️ 표준 점수 & 시간 점수 (초당 +10점)</li>
+                    </ul>
+                    <div class="road-card-action">1번 도로 선택 (1 누르기) ▶</div>
+                </button>
+
+                <!-- 2번 도로 -->
+                <button type="button" class="road-card road-card-2" id="btn-road-2">
+                    <div class="road-key-badge danger">키: [ 2 ]</div>
+                    <div class="road-card-emoji">⚡</div>
+                    <div class="road-card-name">2번 도로: 위험하지만 보상이 강한 도로</div>
+                    <div class="road-card-badge-highrisk">고득점 랭커 도전 · 익스트림 질주</div>
+                    <ul class="road-card-perks">
+                        <li>🔥 주행 속도 +30% 초고속 부스트 (1.30x)</li>
+                        <li>🏆 <strong>모든 획득 포인트 2배 (x2) 대박!!</strong></li>
+                        <li>⏱️ 시간 점수도 2배 (초당 +20점)!!</li>
+                    </ul>
+                    <div class="road-card-action danger">2번 도로 선택 (2 누르기) ▶</div>
+                </button>
+            </div>
         </div>
     </div>
 

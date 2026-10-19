@@ -29,6 +29,8 @@ class TrackManager {
         this.stagePauseTimer = 0; // 스테이지 전환 시 3초 쉬고 시작하는 휴식 타이머
         this.spawnTimer = 0.65;
         this.coinSpawnTimer = 0.4;
+        this.selectedRoute = null; // null: 선택 대기 | 1: 안정적인 도로 | 2: 위험하지만 보상이 강한 도로
+        this.roadSignsZ = 0.58;    // 시작 갈림길 간판 Z 위치 (트랙 정면에 입체 렌더링)
         // 동물 개체 수를 40% 이상 줄이고 간격을 넓혀 쾌적하게 배치!
         this.sideProps = [
             { z: 0.14, variant: 0 },
@@ -183,6 +185,16 @@ class TrackManager {
             }
         }
 
+        // 시작 갈림길 3D 간판 접근/통과 로직
+        if (this.roadSignsZ > 0) {
+            if (this.selectedRoute) {
+                this.roadSignsZ += dt * gameSpeed * 0.45;
+                if (this.roadSignsZ > 1.35) this.roadSignsZ = -1;
+            } else {
+                this.roadSignsZ = Math.min(0.70, this.roadSignsZ + dt * 0.16);
+            }
+        }
+
         if (this.stage === 6) return;
 
         // 레벨 전환 시 3초 동안 기물 생성을 멈추고 안전하게 숨을 고르는 휴식 시간!
@@ -201,12 +213,13 @@ class TrackManager {
             if (p.z > 1.15) p.z -= 1.15;
         });
 
-        // 요청 반영: 장애물 출현 빈도를 대폭 늘려 더 박진감 넘치게!
+        // 장애물 출현 빈도: 1번 도로(안정적인 도로)는 여유롭고 안전하게, 2번 도로(위험)는 기존의 고난도 유지!
         if (!mathGateActive && this.stagePauseTimer <= 0) {
             this.spawnTimer -= dt * gameSpeed * stageSpeedMult;
             if (this.spawnTimer <= 0) {
                 this.spawnObstaclePattern(callbacks);
-                const baseInterval = Math.max(0.68, 1.02 - (this.stage - 1) * 0.08);
+                const isSafeRoute = this.selectedRoute === 1;
+                const baseInterval = isSafeRoute ? Math.max(1.15, 1.55 - (this.stage - 1) * 0.1) : Math.max(0.68, 1.02 - (this.stage - 1) * 0.08);
                 this.spawnTimer = baseInterval + Math.random() * 0.24;
             }
         }
@@ -4022,6 +4035,124 @@ class TrackManager {
                 this.drawObstacle(ctx, obs, p, time);
             }
         });
+
+        // 🛣️ 게임 시작 갈림길 3D 입체 간판 렌더링 (Z 깊이 소팅)
+        if (this.roadSignsZ >= minZ && this.roadSignsZ < maxZ) {
+            this.renderRoadForkSignboards(ctx, width, height, time);
+        }
+    }
+
+    renderRoadForkSignboards(ctx, width, height, time) {
+        if (!this.roadSignsZ || this.roadSignsZ <= 0.05 || this.roadSignsZ > 1.35) return;
+        const z = this.roadSignsZ;
+        const pCenter = this.project(z, 0, width, height);
+        const pLeft = this.project(z, -1.3, width, height);
+        const pRight = this.project(z, 1.3, width, height);
+        const pPillarL = this.project(z, -2.75, width, height);
+        const pPillarR = this.project(z, 2.75, width, height);
+
+        ctx.save();
+        // 1) 양쪽 고속도로 대형 기둥
+        const pillarH = 195 * pCenter.scale;
+        const pillarW = 20 * pCenter.scale;
+        ctx.fillStyle = '#334155';
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 3.5 * pCenter.scale;
+        ctx.lineJoin = 'round';
+
+        // 좌/우 지지 기둥
+        [pPillarL, pPillarR].forEach(pp => {
+            ctx.beginPath();
+            if (ctx.roundRect) ctx.roundRect(pp.x - pillarW * 0.5, pp.y - pillarH, pillarW, pillarH, 4 * pCenter.scale);
+            else ctx.rect(pp.x - pillarW * 0.5, pp.y - pillarH, pillarW, pillarH);
+            ctx.fill(); ctx.stroke();
+        });
+
+        // 상단 가로 크로스 트러스
+        const crossY = pPillarL.y - pillarH + 12 * pCenter.scale;
+        const crossW = pPillarR.x - pPillarL.x;
+        ctx.fillStyle = '#1e293b';
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(pPillarL.x, crossY, crossW, 18 * pCenter.scale, 4 * pCenter.scale);
+        else ctx.rect(pPillarL.x, crossY, crossW, 18 * pCenter.scale);
+        ctx.fill(); ctx.stroke();
+
+        const signW = 205 * pCenter.scale;
+        const signH = 94 * pCenter.scale;
+        const signY = crossY + 22 * pCenter.scale;
+
+        // 2) 🛡️ [1번 도로 간판]: 안정적인 도로
+        ctx.save();
+        ctx.translate(pLeft.x, signY);
+        const sign1Grad = ctx.createLinearGradient(0, 0, 0, signH);
+        sign1Grad.addColorStop(0, '#065f46');
+        sign1Grad.addColorStop(1, '#047857');
+        ctx.fillStyle = sign1Grad;
+        ctx.strokeStyle = this.selectedRoute === 1 ? '#ffbe0b' : '#ffffff';
+        ctx.lineWidth = (this.selectedRoute === 1 ? 5 : 3.5) * pCenter.scale;
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(-signW * 0.5, 0, signW, signH, 12 * pCenter.scale);
+        else ctx.rect(-signW * 0.5, 0, signW, signH);
+        ctx.fill(); ctx.stroke();
+
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#ffbe0b';
+        ctx.font = `900 ${Math.max(10, Math.round(15 * pCenter.scale))}px sans-serif`;
+        ctx.fillText('[ 1번 도로 (키: 1) ]', 0, 20 * pCenter.scale);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = `900 ${Math.max(12, Math.round(18 * pCenter.scale))}px "Gaegu", sans-serif`;
+        ctx.fillText('🛡️ 안정적인 도로', 0, 46 * pCenter.scale);
+
+        ctx.fillStyle = '#a7f3d0';
+        ctx.font = `700 ${Math.max(9, Math.round(12 * pCenter.scale))}px sans-serif`;
+        ctx.fillText('기본 속도 | 안전 주행', 0, 72 * pCenter.scale);
+        ctx.restore();
+
+        // 3) ⚡ [2번 도로 간판]: 위험하지만 보상이 강한 도로
+        ctx.save();
+        ctx.translate(pRight.x, signY);
+        const sign2Grad = ctx.createLinearGradient(0, 0, 0, signH);
+        sign2Grad.addColorStop(0, '#9f1239');
+        sign2Grad.addColorStop(1, '#e11d48');
+        ctx.fillStyle = sign2Grad;
+        ctx.strokeStyle = this.selectedRoute === 2 ? '#ffbe0b' : '#ffffff';
+        ctx.lineWidth = (this.selectedRoute === 2 ? 5 : 3.5) * pCenter.scale;
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(-signW * 0.5, 0, signW, signH, 12 * pCenter.scale);
+        else ctx.rect(-signW * 0.5, 0, signW, signH);
+        ctx.fill(); ctx.stroke();
+
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#ffea79';
+        ctx.font = `900 ${Math.max(10, Math.round(14 * pCenter.scale))}px sans-serif`;
+        ctx.fillText('[ 2번 도로 (키: 2) ]', 0, 20 * pCenter.scale);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = `900 ${Math.max(11, Math.round(16 * pCenter.scale))}px "Gaegu", sans-serif`;
+        ctx.fillText('⚡ 위험하지만 보상이 강한 도로', 0, 46 * pCenter.scale);
+
+        ctx.fillStyle = '#fecdd3';
+        ctx.font = `700 ${Math.max(9, Math.round(12 * pCenter.scale))}px sans-serif`;
+        ctx.fillText('속도+30% | 🔥 모든 점수 2배!!', 0, 72 * pCenter.scale);
+        ctx.restore();
+
+        // 중앙 분기 화살표
+        ctx.save();
+        ctx.translate(pCenter.x, signY + signH * 0.5);
+        ctx.fillStyle = '#ffbe0b';
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 3 * pCenter.scale;
+        ctx.font = `900 ${Math.max(11, Math.round(17 * pCenter.scale))}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.strokeText('◀ [1]   [2] ▶', 0, 0);
+        ctx.fillText('◀ [1]   [2] ▶', 0, 0);
+        ctx.restore();
+
+        ctx.restore();
     }
 
     drawItem(ctx, item, p, time) {
