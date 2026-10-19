@@ -81,11 +81,58 @@ class TrackManager {
 
         const zPow = Math.pow(Math.max(0.001, z), 1.85);
         const y = horizonY + (groundY - horizonY) * zPow;
-        const roadW = topRoadW + (botRoadW - topRoadW) * zPow;
-        const x = centerX + lane * (roadW * 0.285);
+        // 바닥 트랙 타일(renderBackgroundAndRoad)의 Y 위치별 실제 도로 폭과 100% 일치시킴!
+        const roadFrac = Math.max(0.001, (y - horizonY) / (height - horizonY));
+        const roadW = topRoadW + (botRoadW - topRoadW) * roadFrac;
+        const x = centerX + lane * (roadW / 3);
         const scale = 0.18 + 0.82 * zPow;
 
-        return { x, y, roadW, scale, zPow, horizonY, groundY, centerX, topRoadW, botRoadW };
+        return { x, y, roadW, scale, zPow, horizonY, groundY, centerX, topRoadW, botRoadW, roadFrac };
+    }
+
+    // 정사각형 바닥 트랙의 한 칸(타일)과 100% 동일한 원근 4꼭짓점 계산
+    getTrackCellCorners(z, lane, width, height) {
+        const p = this.project(z, lane, width, height);
+        const progCenter = Math.pow(p.roadFrac, 1 / 1.85);
+        // renderBackgroundAndRoad의 타일 1칸 세로 길이(0.82 / 9 = 0.0911)와 정확히 동일!
+        const halfTileProg = (0.82 / 9) * 0.5;
+        const prog1 = Math.max(0.001, progCenter - halfTileProg);
+        const prog2 = Math.min(1.06, progCenter + halfTileProg);
+
+        const rf1 = Math.pow(prog1, 1.85);
+        const rf2 = Math.pow(prog2, 1.85);
+
+        const y1 = p.horizonY + (height - p.horizonY) * rf1;
+        const y2 = p.horizonY + (height - p.horizonY) * rf2;
+        const w1 = p.topRoadW + (p.botRoadW - p.topRoadW) * rf1;
+        const w2 = p.topRoadW + (p.botRoadW - p.topRoadW) * rf2;
+
+        // renderBackgroundAndRoad의 타일 1칸 가로 폭((col - 0.44) ~ (col + 0.44))과 정확히 동일!
+        const x1L = p.centerX + (lane - 0.44) * (w1 / 3);
+        const x1R = p.centerX + (lane + 0.44) * (w1 / 3);
+        const x2R = p.centerX + (lane + 0.44) * (w2 / 3);
+        const x2L = p.centerX + (lane - 0.44) * (w2 / 3);
+
+        return { x1L, y1, x1R, x2R, y2, x2L };
+    }
+
+    // 정사각형 바닥 트랙의 칸과 동일한 히트박스 렌더링
+    drawTrackCellHitbox(ctx, z, lane, width, height, fillColor, strokeColor, lineW = 3.5) {
+        const c = this.getTrackCellCorners(z, lane, width, height);
+        ctx.save();
+        ctx.fillStyle = fillColor;
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = lineW;
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        ctx.moveTo(c.x1L, c.y1);
+        ctx.lineTo(c.x1R, c.y1);
+        ctx.lineTo(c.x2R, c.y2);
+        ctx.lineTo(c.x2L, c.y2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
     }
 
     addPopup(x, y, text, color = '#d64531') {
@@ -2857,7 +2904,7 @@ class TrackManager {
         ctx.fillStyle = '#1a1612';
         ctx.font = 'bold 26px "Gaegu", sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('🏫 스마일 초등학교 (6학년 교실)', 0, -142);
+        ctx.fillText('🏫 흥덕초등학교 (6학년 교실)', 0, -142);
 
         ctx.fillStyle = '#90e0ef';
         [-190, -120, 120, 190].forEach(wx => {
@@ -2896,7 +2943,24 @@ class TrackManager {
             if (entry.kind === 'item') {
                 this.drawItem(ctx, entry.obj, p, time);
             } else {
-                this.drawObstacle(ctx, entry.obj, p, time);
+                const obs = entry.obj;
+                // 🎯 정사각형 바닥 트랙의 한 칸(타일)과 100% 동일한 바닥 히트박스 표시!
+                if (obs.type === 'ramp') {
+                    this.drawTrackCellHitbox(ctx, obs.z, obs.lane, width, height, 'rgba(6, 214, 160, 0.34)', '#06d6a0', 3.6);
+                } else {
+                    const isNearHitZone = obs.z > 0.78 && obs.z < 1.04;
+                    this.drawTrackCellHitbox(
+                        ctx,
+                        obs.z,
+                        obs.lane,
+                        width,
+                        height,
+                        isNearHitZone ? 'rgba(255, 0, 85, 0.42)' : 'rgba(230, 57, 70, 0.26)',
+                        isNearHitZone ? '#ff0055' : '#e63946',
+                        isNearHitZone ? 4.5 : 3.2
+                    );
+                }
+                this.drawObstacle(ctx, obs, p, time);
             }
         });
     }
@@ -3106,39 +3170,6 @@ class TrackManager {
         // 레인 위치에 따른 3D 소실점 방향 입체 두께 오프셋
         const dx = -obs.lane * 18 + 14;
         const dy = -20;
-
-        // 🎯 대폭 확대된 장애물 히트박스 가이드 프레임 표시 (바닥 판정 영역 + 입체 바운딩 히트박스 시각화!)
-        if (obs.type === 'ramp' || obs.type === 'climb_truck') {
-            ctx.fillStyle = 'rgba(6, 214, 160, 0.28)';
-            ctx.strokeStyle = '#06d6a0';
-            ctx.lineWidth = 3.8;
-            ctx.beginPath();
-            ctx.roundRect(-84, -24, 168, 44, 8);
-            ctx.fill();
-            ctx.stroke();
-        } else {
-            const isNearHitZone = obs.z > 0.70 && obs.z < 0.96;
-            const boxH = (obs.type === 'arch' || obs.type === 'pillar') ? 195 : 108;
-            // 1) 넓어진 바닥 충돌 히트박스 패드 (164 x 46)
-            ctx.fillStyle = isNearHitZone ? 'rgba(255, 0, 85, 0.38)' : 'rgba(230, 57, 70, 0.22)';
-            ctx.strokeStyle = isNearHitZone ? '#ff0055' : '#e63946';
-            ctx.lineWidth = isNearHitZone ? 4.8 : 3.4;
-            ctx.beginPath();
-            ctx.roundRect(-82, -24, 164, 46, 8);
-            ctx.fill();
-            ctx.stroke();
-
-            // 2) 장애물 상단 입체 충돌 히트박스 외곽 점선 프레임
-            ctx.save();
-            ctx.setLineDash([8, 6]);
-            ctx.strokeStyle = isNearHitZone ? 'rgba(255, 0, 85, 0.85)' : 'rgba(230, 57, 70, 0.50)';
-            ctx.lineWidth = isNearHitZone ? 3.2 : 2.2;
-            ctx.strokeRect(-78, -boxH, 156, boxH + 14);
-            ctx.restore();
-        }
-
-        ctx.strokeStyle = '#1a1612';
-        ctx.lineWidth = 4.0;
 
         if (obs.type === 'climb_truck') {
             // 🚛 [톰 골드런 스타일 신규 등반 기물]: 멈춰있는 3D 대형 컨테이너 트럭/투어버스 (보닛을 밟고 지붕 위로 올라가 달릴 수 있음!)

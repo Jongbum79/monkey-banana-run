@@ -110,12 +110,12 @@ class MathGateManager {
             this.activeGate = null;
             return;
         }
-        // 스테이지 전환 후 3초 휴식 카운트다운 중에는 연산 게이트 타이머도 함께 대기!
-        if (trackManager.stagePauseTimer > 0) {
-            return;
-        }
 
         if (!this.activeGate) {
+            // 스테이지 전환 후 3초 휴식 카운트다운 중에는 새 연산 게이트 스폰 타이머만 대기!
+            if (trackManager.stagePauseTimer > 0) {
+                return;
+            }
             this.cooldownTimer -= dt;
             if (this.cooldownTimer <= 0) {
                 trackManager.obstacles = trackManager.obstacles.filter(o => o.z > 0.62);
@@ -126,22 +126,26 @@ class MathGateManager {
         }
 
         const gate = this.activeGate;
-        // 요청 반영: 문제를 통과(resolved)한 직후에는 게이트가 시야를 가리지 않도록 초고속으로 사라짐!
-        const approachSpeed = gate.resolved ? 1.85 : (gate.z < 0.75 ? 0.175 : 0.28);
+        const approachSpeed = gate.z < 0.70 ? 0.185 : 0.32;
         gate.z += dt * gameSpeed * approachSpeed;
 
-        if (!gate.resolved && gate.z > 0.72) {
+        if (!gate.resolved && gate.z > 0.68) {
             const chosenDoor = gate.doors.find(d => d.lane === hero.currentLane);
             if (chosenDoor && chosenDoor.isCorrect) {
-                chosenDoor.openAmount = Math.min(1, chosenDoor.openAmount + dt * 6.5);
+                chosenDoor.openAmount = Math.min(1, chosenDoor.openAmount + dt * 7.5);
             }
         }
 
-        if (!gate.resolved && gate.z >= 0.85) {
+        // 문을 통과하는 즉시(z >= 0.78) 정답/오답 판정과 동시에 게이트를 0초 만에 즉시 제거하여 화면에 전혀 남지 않도록 처리!
+        if (!gate.resolved && gate.z >= 0.78) {
             gate.resolved = true;
             // 문 바로 뒤에 숨어있던 기물이 시야 때문에 피하지 못하는 일이 없도록 정리
             trackManager.obstacles = trackManager.obstacles.filter(o => o.z < 0.55 || o.z > 0.98);
             const chosenDoor = gate.doors.find(d => d.lane === hero.currentLane) || gate.doors[1];
+
+            // 스테이지 전환(stagePauseTimer) 등이 발생해도 문이 화면에 남아있지 않도록 먼저 즉시 제거!
+            this.activeGate = null;
+            this.cooldownTimer = 8.43;
 
             if (chosenDoor.isCorrect) {
                 gate.result = 'correct';
@@ -154,32 +158,13 @@ class MathGateManager {
                 chosenDoor.shudder = 1.0;
                 callbacks.onWrongAnswer(gate, chosenDoor);
             }
-        }
-
-        if (gate.resolved) {
-            gate.fadeAlpha = Math.max(0, (gate.fadeAlpha ?? 1.0) - dt * 8.5);
-        }
-
-        gate.doors.forEach(d => {
-            if (gate.resolved && d.isCorrect && gate.result === 'correct') {
-                d.openAmount = Math.min(1, d.openAmount + dt * 12);
-            }
-            if (d.shudder > 0) {
-                d.shudder = Math.max(0, d.shudder - dt * 5);
-            }
-        });
-
-        // 문제를 통과하자마자 빠르게 투명해지며 즉시 제거되어 플레이 방해 제로!
-        if ((gate.resolved && gate.fadeAlpha <= 0.04) || gate.z > 0.95) {
-            this.activeGate = null;
-            this.cooldownTimer = 8.43;
+            return;
         }
     }
 
     render(ctx, width, height, trackManager) {
         if (!this.activeGate) return;
         const gate = this.activeGate;
-        if (gate.resolved && gate.fadeAlpha <= 0.04) return;
 
         const pCenter = trackManager.project(gate.z, 0, width, height);
         const scale = pCenter.scale;

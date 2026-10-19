@@ -75,7 +75,7 @@ const STAGE_INFO = {
         bannerTitle: '🌲 STAGE 1 : 동물들의 숲',
         bannerSub: '🪨 굴러오는 진짜 바위를 피하고 손오공으로 진화하세요!',
         color: '#52b788',
-        speedBase: 0.90,
+        speedBase: 0.81, // 10% 감속 (0.90 -> 0.81)
         ko: '"1단계 숲속! 굴러오는 진짜 바위를 피하고 손오공 진화 & 슈퍼점프를 먹어봐!"'
     },
     2: {
@@ -83,7 +83,7 @@ const STAGE_INFO = {
         bannerTitle: '🏜️ STAGE 2 : 황금 사막',
         bannerSub: '🦂 집게발을 세우고 달려오는 사막 독침 전갈을 조심하세요!',
         color: '#ffbe0b',
-        speedBase: 1.00,
+        speedBase: 0.90, // 10% 감속 (1.00 -> 0.90)
         ko: '"2단계 사막 진입! 달려오는 독침 전갈을 조심해!"'
     },
     3: {
@@ -91,7 +91,7 @@ const STAGE_INFO = {
         bannerTitle: '🍍 STAGE 3 : 스폰지밥 해저 시티',
         bannerSub: '🌺 꽃구름과 파인애플 하우스 바다! 돌진하는 백상아리를 피하세요!',
         color: '#00b4d8',
-        speedBase: 1.10,
+        speedBase: 0.99, // 10% 감속 (1.10 -> 0.99)
         ko: '"3단계 스폰지밥 비키니 해저 시티! 파인애플 집과 모아이 석상 사이로 백상아리를 피해!"'
     },
     4: {
@@ -99,24 +99,24 @@ const STAGE_INFO = {
         bannerTitle: '🌃 STAGE 4 : 타임스퀘어 밤',
         bannerSub: '🚕 헤드라이트를 켜고 빵빵~ 달려오는 택시 자동차를 피하세요!',
         color: '#ff007f',
-        speedBase: 1.22,
+        speedBase: 1.10, // 10% 감속 (1.22 -> 1.10)
         ko: '"4단계 타임스퀘어 밤! 빵빵~ 헤드라이트를 켜고 달려오는 자동차를 피해!"'
     },
     5: {
         badge: '⚡ 5단계: 글리치 보이드 (FINAL)',
         bannerTitle: '⚡ STAGE 5 : 글리치 보이드',
-        bannerSub: '👾 치지직... 마지막 관문! 여길 돌파하면 학교에 도착합니다!',
+        bannerSub: '👾 치지직... 마지막 관문! 여길 돌파하면 흥덕초등학교에 도착합니다!',
         color: '#00f5d4',
-        speedBase: 1.35,
-        ko: '"치지직... 마지막 5단계 글리치 보이드! 여길 넘으면 학교에 도착해!"'
+        speedBase: 1.21, // 10% 감속 (1.35 -> 1.21)
+        ko: '"치지직... 마지막 5단계 글리치 보이드! 여길 넘으면 흥덕초등학교에 도착해!"'
     },
     6: {
-        badge: '🏫 엔딩: 스마일 초등학교 도착!',
-        bannerTitle: '🏫 스마일 초등학교 도착!',
+        badge: '🏫 엔딩: 흥덕초등학교 도착!',
+        bannerTitle: '🏫 흥덕초등학교 도착!',
         bannerSub: '🎓 축하합니다! 5단계를 모두 통과하고 6학년 교실에 도착했어요!',
         color: '#ffd166',
-        speedBase: 0.90,
-        ko: '"딩동댕동~ 드디어 6학년 교실이 있는 학교에 무사히 도착했어! 축하해!"'
+        speedBase: 0.81, // 10% 감속 (0.90 -> 0.81)
+        ko: '"딩동댕동~ 드디어 6학년 교실이 있는 흥덕초등학교에 무사히 도착했어! 축하해!"'
     }
 };
 
@@ -259,7 +259,7 @@ function setStage(newStage) {
             dragon.distance = 100;
             sound.playSchoolBellAndFanfare();
             hero.triggerLookBack(4.5, 'happy');
-            bubbleEn.textContent = "DING-DONG-DANG-DONG! ARRIVED AT SMILE ELEMENTARY SCHOOL!";
+            bubbleEn.textContent = "DING-DONG-DANG-DONG! ARRIVED AT HEUNGDEOK ELEMENTARY SCHOOL!";
         } else {
             sound.playSpecialItem();
             bubbleEn.textContent = `STAGE ${clamped} UNLOCKED! 3 SECONDS REST THEN GO!`;
@@ -289,13 +289,14 @@ function startNewGame(skipPrologue = false) {
     dragon.reset();
     sound.currentStage = 1;
     score = 0;
-    gameSpeed = 0.90;
+    gameSpeed = 0.81; // 10% 감속 (0.90 -> 0.81)
     schoolEndingTimer = 0;
     gameOverModal.classList.remove('active');
     updateHUD();
 
     if (skipPrologue) {
         gameState = 'PLAYING';
+        document.body.classList.add('is-playing');
         hero.triggerLookBack(1.2, 'happy');
         const st1 = STAGE_INFO[1];
         track.triggerStageBanner(st1.bannerTitle, st1.bannerSub, st1.color);
@@ -303,13 +304,15 @@ function startNewGame(skipPrologue = false) {
         bubbleKo.textContent = st1.ko;
     } else {
         gameState = 'PROLOGUE';
-        bubbleEn.textContent = "SHHH! STEALING THE GOLDEN BANANA FROM SMILE ELEMENTARY SCHOOL!";
-        bubbleKo.textContent = `"쉿! ${playerName} 원숭이가 스마일 초등학교에서 드래곤의 황금 바나나를 뺏어 도망간다!"`;
+        document.body.classList.remove('is-playing');
+        bubbleEn.textContent = "SHHH! STEALING THE GOLDEN BANANA FROM HEUNGDEOK ELEMENTARY SCHOOL!";
+        bubbleKo.textContent = `"쉿! ${playerName} 원숭이가 흥덕초등학교에서 드래곤의 황금 바나나를 뺏어 도망간다!"`;
     }
 }
 
 function triggerGameEndModal(titleText, reasonText) {
     gameState = 'GAMEOVER';
+    document.body.classList.remove('is-playing');
     gameOverTitleEl.textContent = titleText;
     finalPlayerNameEl.textContent = playerName;
     finalScoreEl.textContent = score;
@@ -331,8 +334,8 @@ function triggerGameOver(reasonText) {
 function triggerGameClear() {
     score += 500;
     triggerGameEndModal(
-        '🏫 스마일 초등학교 도착 클리어! 🎓',
-        '축하합니다! 1단계 숲부터 5단계 글리치 보이드까지 모두 돌파하고 학교에 무사히 등교했어요! (+500점 클리어 보너스)'
+        '🏫 흥덕초등학교 도착 클리어! 🎓',
+        '축하합니다! 1단계 숲부터 5단계 글리치 보이드까지 모두 돌파하고 흥덕초등학교에 무사히 등교했어요! (+500점 클리어 보너스)'
     );
 }
 
@@ -433,6 +436,7 @@ document.getElementById('btn-restart').addEventListener('click', () => startNewG
 document.getElementById('btn-change-name').addEventListener('click', () => {
     gameOverModal.classList.remove('active');
     gameState = 'START_MENU';
+    document.body.classList.remove('is-playing');
     renderRankingList(startRankingListEl, getRankings());
     startModal.classList.add('active');
     playerNameInput.focus();
@@ -440,6 +444,7 @@ document.getElementById('btn-change-name').addEventListener('click', () => {
 
 document.getElementById('btn-open-rank').addEventListener('click', () => {
     gameState = 'START_MENU';
+    document.body.classList.remove('is-playing');
     renderRankingList(startRankingListEl, getRankings());
     startModal.classList.add('active');
     playerNameInput.focus();
@@ -722,10 +727,21 @@ function gameLoop(now) {
     }
 
     if (hero.hp > 0) {
-        // 원숭이를 조금 더 작게 축소(0.36)하여 시야와 히트박스가 훨씬 명확하게 보이도록 조정!
+        // 🎯 정사각형 바닥 트랙의 한 칸(타일)과 100% 동일한 원숭이 바닥 히트박스 렌더링!
+        const isSafe = hero.isJumping || hero.isSliding || hero.shieldActive;
+        const boxColor = hero.stumbleTimer > 0
+            ? '#ff0055'
+            : (hero.shieldActive ? '#ffbe0b' : (isSafe ? '#06d6a0' : '#00f5d4'));
+        const fillColor = hero.stumbleTimer > 0
+            ? 'rgba(255, 0, 85, 0.38)'
+            : (hero.shieldActive ? 'rgba(255, 190, 11, 0.32)' : (isSafe ? 'rgba(6, 214, 160, 0.28)' : 'rgba(0, 245, 212, 0.28)'));
+
+        track.drawTrackCellHitbox(ctx, 1.0, hero.laneX, width, height, fillColor, boxColor, 4.0);
+
+        // 원숭이를 적절한 스케일(0.36)로 렌더링하며 레인 간격을 바닥 트랙 타일과 1:1 일치
         const charScale = (Math.min(width, height) / 940) * 0.36;
-        const roadBottomW = Math.min(width * 0.86, 860);
-        const lanePixelSpread = (roadBottomW * 0.285) / charScale;
+        const pHero = track.project(1.0, 0, width, height);
+        const lanePixelSpread = (pHero.roadW / 3) / charScale;
         hero.render(ctx, width * 0.5, height * 0.84, charScale, lanePixelSpread);
     }
 

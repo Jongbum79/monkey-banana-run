@@ -88,6 +88,22 @@ body, html {
     right: 126px;
 }
 
+/* 게임 플레이 중(is-playing) 상단 말풍선 설명창 및 하단 키 조작/아이템 설명창 완전 숨김 */
+body.is-playing .peanuts-speech-bubble {
+    display: none !important;
+}
+
+body.is-playing .controls-card h3,
+body.is-playing .controls-card .key-guide {
+    display: none !important;
+}
+
+body.is-playing .controls-card {
+    padding: 6px 12px;
+    background: rgba(255, 252, 245, 0.85);
+    border-radius: 12px;
+}
+
 /* UI 오버레이 */
 .ui-overlay {
     position: absolute;

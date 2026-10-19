@@ -89,7 +89,7 @@ class DragonChaser {
     }
 
     /**
-     * [프롤로그 컷신] 스마일 초등학교에서 드래곤이 지키던 황금 바나나를 뺏어 달아나는 원숭이!
+     * [프롤로그 컷신] 흥덕초등학교에서 드래곤이 지키던 황금 바나나를 뺏어 달아나는 원숭이!
      */
     renderPrologue(ctx, width, height, hero) {
         const t = this.prologueTime;
@@ -97,7 +97,7 @@ class DragonChaser {
         const cy = height * 0.56;
         const isAwake = t > 1.5;
 
-        // 1. 스마일 초등학교 운동장 & 하늘 배경 (드래곤이 깨어나면 붉은 노을빛으로 변함)
+        // 1. 흥덕초등학교 운동장 & 하늘 배경 (드래곤이 깨어나면 붉은 노을빛으로 변함)
         const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
         if (isAwake) {
             bgGrad.addColorStop(0, '#ff9f1c');
@@ -125,7 +125,7 @@ class DragonChaser {
         ctx.lineTo(width, cy + 40);
         ctx.stroke();
 
-        // 2. 배경에 입체(3D) 스마일 초등학교 본관 건물 렌더링!
+        // 2. 배경에 입체(3D) 흥덕초등학교 본관 건물 렌더링!
         ctx.save();
         ctx.translate(cx + 40, cy + 40);
         // 3D 건물 옆면 (입체 두께)
@@ -164,7 +164,7 @@ class DragonChaser {
         ctx.fillStyle = '#1a1612';
         ctx.font = 'bold 24px "Gaegu", sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('🏫 스마일 초등학교 (급식실 황금 바나나 보관소)', 0, -155);
+        ctx.fillText('🏫 흥덕초등학교 (급식실 황금 바나나 보관소)', 0, -155);
 
         // 교실 창문들
         ctx.fillStyle = '#90e0ef';
@@ -201,10 +201,10 @@ class DragonChaser {
         if (!isAwake) {
             ctx.fillStyle = '#1a1612';
             ctx.font = 'bold 27px "Gaegu", sans-serif';
-            ctx.fillText('🏫 학교에서 드래곤이 지키던 황금 바나나를 뺏었다!', cx, height * 0.12 + 38);
+            ctx.fillText('🏫 흥덕초등학교에서 드래곤이 지키던 황금 바나나를 뺏었다!', cx, height * 0.12 + 38);
             ctx.fillStyle = '#5c4938';
             ctx.font = 'bold 21px "Gaegu", sans-serif';
-            ctx.fillText('"헤헤! 스마일 초등학교에서 바나나를 뺏어 도망치자!"', cx, height * 0.12 + 72);
+            ctx.fillText('"헤헤! 흥덕초등학교에서 바나나를 뺏어 도망치자!"', cx, height * 0.12 + 72);
         } else {
             ctx.fillStyle = '#c1121f';
             ctx.font = 'bold 28px "Gaegu", sans-serif';

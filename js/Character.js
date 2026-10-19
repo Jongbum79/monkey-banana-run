@@ -79,9 +79,9 @@ class PeanutsMonkeyHero {
         // 착지 직전(y < 48)에도 선입력 점프가 즉시 먹히도록 반응성 대폭 개선!
         if (!this.isJumping || this.y < 48) {
             this.isJumping = true;
-            // 점프 키를 누른 즉시 첫 프레임부터 높이를 44로 띄워 즉각적인 회피 & 초고속 반응 보장!
-            this.y = Math.max(this.y, 44);
-            this.vy = this.superJumpTimer > 0 ? 33.0 : 24.5;
+            // 점프 키를 누른 즉시 높이를 띄우고 강력한 점프력(31.0 / 슈퍼점프 40.0) 부여!
+            this.y = Math.max(this.y, 48);
+            this.vy = this.superJumpTimer > 0 ? 40.0 : 31.0;
             return true;
         }
         return false;
@@ -154,7 +154,7 @@ class PeanutsMonkeyHero {
         // 초고속 반응 점프 물리
         if (this.isJumping) {
             this.y += this.vy * (dt * 60);
-            this.vy -= 1.38 * (dt * 60);
+            this.vy -= 1.25 * (dt * 60);
             if (this.y <= 0) {
                 this.y = 0;
                 this.vy = 0;
@@ -317,9 +317,6 @@ class PeanutsMonkeyHero {
 
         // 캐릭터 머리 위 실시간 HP 바 표시
         this.drawFloatingHpBar(ctx);
-
-        // 🎯 캐릭터 몸통 실제 충돌 히트박스 코너 브래킷 표시 (명확한 히트박스 시각화!)
-        this.drawClearHitboxFrame(ctx);
 
         ctx.restore();
     }
