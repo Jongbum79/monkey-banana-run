@@ -998,6 +998,69 @@ class TrackManager {
             }
         }
 
+        // 🌟 전체 그래픽 퀄리티 극대화: 스테이지별 특수 노면 조명 & 환경 연출
+        if (this.stage === 4) {
+            // 4단계 타임스퀘어: 실제 기업 전광판의 화려한 네온이 젖은 아스팔트에 반사되는 초호화 리플렉션!
+            const reflections = [
+                { x: centerX - botRoadW * 0.36, w: botRoadW * 0.16, col: 'rgba(230, 29, 43, 0.28)' },  // 코카콜라 레드
+                { x: centerX - botRoadW * 0.18, w: botRoadW * 0.15, col: 'rgba(0, 180, 216, 0.26)' }, // 삼성 사이버 블루
+                { x: centerX - botRoadW * 0.03, w: botRoadW * 0.14, col: 'rgba(255, 255, 255, 0.22)' }, // 애플 퓨어 화이트
+                { x: centerX + botRoadW * 0.12, w: botRoadW * 0.15, col: 'rgba(255, 199, 44, 0.26)' }, // 맥도날드 골든 옐로우
+                { x: centerX + botRoadW * 0.28, w: botRoadW * 0.16, col: 'rgba(0, 55, 145, 0.28)' },  // 소니 플레이스테이션 블루
+                { x: centerX + botRoadW * 0.42, w: botRoadW * 0.14, col: 'rgba(212, 255, 0, 0.24)' }   // 나이키 네온 볼트
+            ];
+            reflections.forEach(rf => {
+                const refGrad = ctx.createLinearGradient(0, horizonY, 0, height);
+                refGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+                refGrad.addColorStop(0.35, rf.col);
+                refGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                ctx.fillStyle = refGrad;
+                ctx.fillRect(rf.x - rf.w * 0.5, horizonY, rf.w, height - horizonY);
+            });
+
+        } else if (this.stage === 1) {
+            // 1단계 숲속: 산들바람에 흩날리는 나뭇잎 파티클 & 햇살 그림자
+            for (let l = 0; l < 8; l++) {
+                const lx = (centerX - botRoadW * 0.46 + ((l * 123 + time * 65) % (botRoadW * 0.92)));
+                const ly = horizonY + 30 + ((l * 87 + time * 85) % (height - horizonY - 45));
+                const lRot = time * 2.8 + l;
+                ctx.save();
+                ctx.translate(lx, ly);
+                ctx.rotate(lRot);
+                ctx.fillStyle = l % 2 === 0 ? 'rgba(82, 183, 136, 0.65)' : 'rgba(233, 196, 106, 0.7)';
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 8, 4, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+
+        } else if (this.stage === 3) {
+            // 3단계 비키니 해저 시티: 트랙 바닥에 일렁이는 햇살 물결(Caustics) 굴절 연출
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
+            ctx.lineWidth = 3.5;
+            for (let c = 0; c < 5; c++) {
+                const cy = horizonY + 45 + c * ((height - horizonY) / 5.5);
+                const cW = topRoadW + (botRoadW - topRoadW) * ((cy - horizonY) / (height - horizonY));
+                ctx.beginPath();
+                ctx.moveTo(centerX - cW * 0.44, cy);
+                for (let cx = centerX - cW * 0.44; cx <= centerX + cW * 0.44; cx += 35) {
+                    ctx.quadraticCurveTo(cx + 17, cy + Math.sin(time * 3 + cx * 0.02 + c) * 6, cx + 35, cy);
+                }
+                ctx.stroke();
+            }
+
+        } else if (this.stage === 2) {
+            // 2단계 사막: 지평선 아지랑이 & 날리는 모래 알갱이
+            ctx.fillStyle = 'rgba(255, 243, 176, 0.35)';
+            for (let d = 0; d < 12; d++) {
+                const dx = centerX - botRoadW * 0.48 + ((d * 91 + time * 135) % (botRoadW * 0.96));
+                const dy = horizonY + 15 + ((d * 49 + time * 38) % (height - horizonY - 25));
+                ctx.beginPath();
+                ctx.arc(dx, dy, 2 + (d % 3), 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
         // 5. 양옆 스테이지별 동물 & 배경 오브젝트 렌더링
         if (this.stage === 6) {
             this.drawSchoolEndingBuilding(ctx, centerX, horizonY + 45);
@@ -1028,61 +1091,86 @@ class TrackManager {
         ctx.lineWidth = 2.5;
 
         if (this.stage === 1) {
-            // 🌲 1단계 숲: 햇살 빛줄기, 겹겹이 쌓인 원경 산맥, 2단 에메랄드 폭포, 고대 나무 오두막
-            ctx.fillStyle = 'rgba(255, 252, 210, 0.24)';
-            for (let i = -2; i <= 2; i++) {
+            // 🌲 1단계 숲: 성스러운 햇살 빛줄기(God Rays), 겹겹이 우거진 원경 산맥과 수림 실루엣, 2단 에메랄드 폭포, 트리하우스
+            const rayGrad = ctx.createLinearGradient(0, 0, 0, horizonY);
+            rayGrad.addColorStop(0, 'rgba(255, 252, 210, 0.42)');
+            rayGrad.addColorStop(0.7, 'rgba(255, 252, 210, 0.14)');
+            rayGrad.addColorStop(1, 'rgba(255, 252, 210, 0)');
+            ctx.fillStyle = rayGrad;
+            for (let i = -3; i <= 3; i++) {
                 ctx.beginPath();
-                ctx.moveTo(centerX + i * 140, 0);
-                ctx.lineTo(centerX + i * 240 - 65, horizonY);
-                ctx.lineTo(centerX + i * 240 + 65, horizonY);
+                ctx.moveTo(centerX + i * 130, 0);
+                ctx.lineTo(centerX + i * 220 - 75, horizonY);
+                ctx.lineTo(centerX + i * 220 + 75, horizonY);
                 ctx.closePath();
                 ctx.fill();
             }
 
-            // 원경 겹산맥
+            // 원경 겹산맥 (산등성이를 따라 빼곡한 침엽수/활엽수 실루엣!)
+            ctx.fillStyle = '#1b4332';
+            ctx.beginPath();
+            ctx.arc(centerX - 390, horizonY, 230, Math.PI, 0);
+            ctx.arc(centerX - 110, horizonY, 205, Math.PI, 0);
+            ctx.arc(centerX + 160, horizonY, 220, Math.PI, 0);
+            ctx.arc(centerX + 420, horizonY, 240, Math.PI, 0);
+            ctx.fill();
+            ctx.stroke();
+
+            // 산등성이 위 빽빽한 소나무 숲 실루엣
+            ctx.fillStyle = '#143626';
+            for (let tx = centerX - 480; tx <= centerX + 480; tx += 28) {
+                const ty = horizonY - 145 - Math.sin((tx - centerX) * 0.008) * 45;
+                ctx.beginPath();
+                ctx.moveTo(tx, ty);
+                ctx.lineTo(tx - 9, ty + 24);
+                ctx.lineTo(tx + 9, ty + 24);
+                ctx.closePath();
+                ctx.fill();
+            }
+
             ctx.fillStyle = '#2d6a4f';
             ctx.beginPath();
-            ctx.arc(centerX - 380, horizonY, 220, Math.PI, 0);
-            ctx.arc(centerX - 110, horizonY, 195, Math.PI, 0);
-            ctx.arc(centerX + 160, horizonY, 210, Math.PI, 0);
-            ctx.arc(centerX + 410, horizonY, 230, Math.PI, 0);
+            ctx.arc(centerX - 260, horizonY, 185, Math.PI, 0);
+            ctx.arc(centerX, horizonY, 170, Math.PI, 0);
+            ctx.arc(centerX + 280, horizonY, 190, Math.PI, 0);
             ctx.fill();
             ctx.stroke();
 
-            ctx.fillStyle = '#40916c';
-            ctx.beginPath();
-            ctx.arc(centerX - 260, horizonY, 175, Math.PI, 0);
-            ctx.arc(centerX, horizonY, 160, Math.PI, 0);
-            ctx.arc(centerX + 270, horizonY, 180, Math.PI, 0);
-            ctx.fill();
-            ctx.stroke();
+            // 전경 산등성이 위 나무 실루엣
+            ctx.fillStyle = '#1b4332';
+            for (let tx = centerX - 360; tx <= centerX + 360; tx += 34) {
+                const ty = horizonY - 120 - Math.sin((tx - centerX) * 0.012) * 35;
+                ctx.beginPath();
+                ctx.arc(tx, ty + 12, 14, 0, Math.PI * 2);
+                ctx.fill();
+            }
 
-            // 에메랄드 2단 폭포와 물보라
+            // 에메랄드 2단 폭포와 반짝이는 물보라
             ctx.fillStyle = '#90e0ef';
-            ctx.fillRect(centerX - 32, horizonY - 140, 64, 140);
-            ctx.strokeRect(centerX - 32, horizonY - 140, 64, 140);
+            ctx.fillRect(centerX - 34, horizonY - 150, 68, 150);
+            ctx.strokeRect(centerX - 34, horizonY - 150, 68, 150);
             ctx.fillStyle = '#caf0f8';
             for (let m = -2; m <= 2; m++) {
                 ctx.beginPath();
-                ctx.arc(centerX + m * 16, horizonY - 6 + Math.sin(time * 8 + m) * 4, 14, 0, Math.PI * 2);
+                ctx.arc(centerX + m * 17, horizonY - 6 + Math.sin(time * 8 + m) * 4, 15, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.stroke();
             }
 
             // 숲속 통나무 트리하우스 전망대 (좌측 산 중턱)
             ctx.fillStyle = '#8d5b3c';
-            ctx.fillRect(centerX - 275, horizonY - 155, 54, 42);
-            ctx.strokeRect(centerX - 275, horizonY - 155, 54, 42);
+            ctx.fillRect(centerX - 275, horizonY - 160, 56, 44);
+            ctx.strokeRect(centerX - 275, horizonY - 160, 56, 44);
             ctx.fillStyle = '#d64531';
             ctx.beginPath();
-            ctx.moveTo(centerX - 285, horizonY - 155);
-            ctx.lineTo(centerX - 248, horizonY - 185);
-            ctx.lineTo(centerX - 211, horizonY - 155);
+            ctx.moveTo(centerX - 288, horizonY - 160);
+            ctx.lineTo(centerX - 247, horizonY - 192);
+            ctx.lineTo(centerX - 206, horizonY - 160);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
 
-            // 우측 원경 언덕 위 포인트 꽃사슴 1마리 (트랙에서 멀리 떨어진 언덕)
+            // 우측 원경 언덕 위 포인트 꽃사슴 1마리
             ctx.save();
             ctx.translate(centerX + 280, horizonY - 6);
             ctx.scale(0.62, 0.62);
@@ -1092,9 +1180,9 @@ class TrackManager {
             // 하늘을 나는 새 떼
             ctx.strokeStyle = '#1a1612';
             ctx.lineWidth = 2.8;
-            for (let b = 0; b < 4; b++) {
-                const bx = centerX - 160 + b * 55 + Math.sin(time * 1.2 + b) * 30;
-                const by = horizonY - 185 - (b % 2) * 18;
+            for (let b = 0; b < 5; b++) {
+                const bx = centerX - 180 + b * 55 + Math.sin(time * 1.2 + b) * 30;
+                const by = horizonY - 195 - (b % 2) * 18;
                 const wingY = Math.sin(time * 9 + b) * 7;
                 ctx.beginPath();
                 ctx.moveTo(bx - 12, by + wingY);
@@ -1104,25 +1192,39 @@ class TrackManager {
             }
 
         } else if (this.stage === 2) {
-            // 🏜️ 2단계 사막: 이글거리는 태양, 3D 대피라미드 군락, 거대 스핑크스 석상, 오아시스 호수!
-            ctx.fillStyle = '#fff3b0';
+            // 🏜️ 2단계 사막: 이글거리는 태양, 3D 대피라미드 군락, 고대 대스핑크스 거대 석상, 오아시스 호수!
+            // 타오르는 태양 & 눈부신 광채(Lens Flare)
+            const sunX = centerX + 290;
+            const sunY = horizonY - 150;
+            const sunGlow = ctx.createRadialGradient(sunX, sunY, 10, sunX, sunY, 110);
+            sunGlow.addColorStop(0, 'rgba(255, 255, 220, 0.9)');
+            sunGlow.addColorStop(0.3, 'rgba(255, 214, 10, 0.6)');
+            sunGlow.addColorStop(0.7, 'rgba(247, 127, 0, 0.25)');
+            sunGlow.addColorStop(1, 'rgba(247, 127, 0, 0)');
+            ctx.fillStyle = sunGlow;
             ctx.beginPath();
-            ctx.arc(centerX + 290, horizonY - 145, 56, 0, Math.PI * 2);
+            ctx.arc(sunX, sunY, 110, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#fffdf0';
+            ctx.beginPath();
+            ctx.arc(sunX, sunY, 44, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
 
+            // 기자 3대 대피라미드 군락 (The Great Pyramids of Giza)
             const pyramids = [
-                { x: -380, h: 140 },
-                { x: -230, h: 175 },
-                { x: 140,  h: 135 },
-                { x: 310,  h: 165 }
+                { x: -390, h: 145 },
+                { x: -220, h: 185 },
+                { x: 155,  h: 140 },
+                { x: 330,  h: 170 }
             ];
             pyramids.forEach(py => {
                 ctx.fillStyle = '#e09f3e';
                 ctx.beginPath();
                 ctx.moveTo(centerX + py.x - py.h, horizonY);
                 ctx.lineTo(centerX + py.x, horizonY - py.h);
-                ctx.lineTo(centerX + py.x + py.h * 0.22, horizonY);
+                ctx.lineTo(centerX + py.x + py.h * 0.25, horizonY);
                 ctx.closePath();
                 ctx.fill();
                 ctx.stroke();
@@ -1130,40 +1232,124 @@ class TrackManager {
                 ctx.fillStyle = '#b5651d';
                 ctx.beginPath();
                 ctx.moveTo(centerX + py.x, horizonY - py.h);
-                ctx.lineTo(centerX + py.x + py.h * 0.22, horizonY);
+                ctx.lineTo(centerX + py.x + py.h * 0.25, horizonY);
                 ctx.lineTo(centerX + py.x + py.h, horizonY);
                 ctx.closePath();
                 ctx.fill();
                 ctx.stroke();
             });
 
-            // 고대 이집트 대스핑크스 석상
-            const spX = centerX - 115;
-            ctx.fillStyle = '#d4a373';
-            ctx.fillRect(spX - 45, horizonY - 48, 90, 48);
-            ctx.strokeRect(spX - 45, horizonY - 48, 90, 48);
-            ctx.fillStyle = '#e9c46a';
+            // 👑 지평선 위 위엄 넘치는 고대 대스핑크스 거대 석상 (Horizon Monumental Great Sphinx)
+            const spX = centerX - 85;
+            const spY = horizonY;
+
+            // 스핑크스 사암 기단 & 모래 언덕
+            ctx.fillStyle = '#bc6c25';
+            ctx.fillRect(spX - 58, spY - 38, 116, 38);
+            ctx.strokeRect(spX - 58, spY - 38, 116, 38);
+
+            // 스핑크스 사자 몸체 & 엉덩이 볼륨
+            ctx.fillStyle = '#dda15e';
             ctx.beginPath();
-            ctx.moveTo(spX - 28, horizonY - 48);
-            ctx.lineTo(spX - 36, horizonY - 82);
-            ctx.lineTo(spX, horizonY - 102);
-            ctx.lineTo(spX + 36, horizonY - 82);
-            ctx.lineTo(spX + 28, horizonY - 48);
+            ctx.moveTo(spX + 46, spY - 38);
+            ctx.bezierCurveTo(spX + 62, spY - 72, spX + 32, spY - 95, spX - 5, spY - 85);
+            ctx.lineTo(spX - 42, spY - 85);
+            ctx.lineTo(spX - 52, spY - 38);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
+
+            // 앞발
             ctx.fillStyle = '#dda15e';
+            ctx.fillRect(spX - 68, spY - 26, 34, 18);
+            ctx.strokeRect(spX - 68, spY - 26, 34, 18);
+
+            // 스핑크스 머리 & 네메스 두건 (청금석 & 황금 스트라이프)
+            ctx.fillStyle = '#ffbe0b';
             ctx.beginPath();
-            ctx.arc(spX, horizonY - 72, 18, 0, Math.PI * 2);
+            ctx.moveTo(spX - 48, spY - 72);
+            ctx.lineTo(spX - 52, spY - 118);
+            ctx.lineTo(spX - 18, spY - 138);
+            ctx.lineTo(spX + 8, spY - 118);
+            ctx.lineTo(spX + 4, spY - 72);
+            ctx.closePath();
             ctx.fill();
             ctx.stroke();
 
-            // 사막 오아시스 호수
-            ctx.fillStyle = '#48cae4';
+            // 네메스 로열 블루 스트라이프 3줄
+            ctx.fillStyle = '#1d3557';
+            [-112, -98, -84].forEach(ny => {
+                ctx.fillRect(spX - 48, spY + ny, 52, 6);
+            });
+
+            // 파라오 얼굴 (사암 조각 & 이집트 아몬드 눈)
+            ctx.fillStyle = '#fceade';
             ctx.beginPath();
-            ctx.ellipse(centerX + 85, horizonY - 4, 52, 12, 0, 0, Math.PI * 2);
+            ctx.roundRect(spX - 38, spY - 116, 34, 38, 10);
             ctx.fill();
             ctx.stroke();
+
+            // 파라오 눈 & 우라에우스
+            ctx.fillStyle = '#1a1612';
+            ctx.fillRect(spX - 32, spY - 104, 8, 4);
+            ctx.fillRect(spX - 16, spY - 104, 8, 4);
+            ctx.fillStyle = '#d62828';
+            ctx.beginPath();
+            ctx.arc(spX - 22, spY - 120, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 파라오 황금 턱수염
+            ctx.fillStyle = '#ffbe0b';
+            ctx.fillRect(spX - 25, spY - 78, 8, 14);
+            ctx.strokeRect(spX - 25, spY - 78, 8, 14);
+
+            // 고대 이집트 오벨리스크 2기 (상형문자 & 황금 피라미디온 꼭대기)
+            [-185, 95].forEach((obX) => {
+                const ox = centerX + obX;
+                ctx.fillStyle = '#d4a373';
+                ctx.beginPath();
+                ctx.moveTo(ox - 10, horizonY);
+                ctx.lineTo(ox - 6, horizonY - 110);
+                ctx.lineTo(ox, horizonY - 125);
+                ctx.lineTo(ox + 6, horizonY - 110);
+                ctx.lineTo(ox + 10, horizonY);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+                // 황금 꼭대기 (Pyramidion)
+                ctx.fillStyle = '#ffbe0b';
+                ctx.beginPath();
+                ctx.moveTo(ox - 6, horizonY - 110);
+                ctx.lineTo(ox, horizonY - 125);
+                ctx.lineTo(ox + 6, horizonY - 110);
+                ctx.closePath();
+                ctx.fill();
+            });
+
+            // 사막 오아시스 호수 & 야자수
+            ctx.fillStyle = '#48cae4';
+            ctx.beginPath();
+            ctx.ellipse(centerX + 65, horizonY - 3, 56, 12, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // 야자수 기둥 & 잎
+            const palmX = centerX + 45;
+            ctx.strokeStyle = '#582f0e';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(palmX, horizonY);
+            ctx.quadraticCurveTo(palmX - 8, horizonY - 35, palmX - 4, horizonY - 55);
+            ctx.stroke();
+            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = '#1a1612';
+            ctx.fillStyle = '#2d6a4f';
+            [[-18, -65], [16, -65], [-24, -48], [22, -48]].forEach(([lx, ly]) => {
+                ctx.beginPath();
+                ctx.ellipse(palmX + lx * 0.5, horizonY - 55 + ly * 0.2, 16, 6, lx > 0 ? 0.4 : -0.4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+            });
 
             // 우측 원경 모래언덕 위 단봉낙타 1마리
             ctx.save();
@@ -1272,17 +1458,17 @@ class TrackManager {
             });
 
             const frontBuildings = [
-                { x: -495, w: 88, h: 215, neon: '#ff0055', text: 'BROADWAY', sub: 'MUSICAL' },
-                { x: -400, w: 88, h: 235, neon: '#ff007f', text: 'SMILE', sub: 'GAMES 3D' },
-                { x: -305, w: 86, h: 195, neon: '#00f5d4', text: 'TIMES SQ', sub: 'LIVE TV' },
-                { x: -210, w: 82, h: 250, neon: '#ffbe0b', text: 'NASDAQ', sub: 'MARKET' },
-                { x: -120, w: 76, h: 185, neon: '#3a86ff', text: 'NYC 24H', sub: 'TAXI CAB' },
-                { x: -38,  w: 76, h: 265, neon: '#ff006e', text: '2026 NYC', sub: 'ONE TIMES', isCenterTower: true },
-                { x: 46,   w: 76, h: 190, neon: '#06d6a0', text: 'BANANA', sub: 'EXPRESS' },
-                { x: 130,  w: 82, h: 235, neon: '#8338ec', text: 'ARCADE', sub: 'STAGE 4' },
-                { x: 220,  w: 88, h: 205, neon: '#fb5607', text: 'MONKEY', sub: 'HERO RUN' },
-                { x: 316,  w: 92, h: 245, neon: '#00bbf9', text: 'THEATER', sub: 'TONIGHT' },
-                { x: 416,  w: 90, h: 220, neon: '#ffbe0b', text: '7TH AVE', sub: 'MANHATTAN' }
+                { x: -505, w: 90, h: 220, neon: '#ff0055', text: 'Coca-Cola', sub: 'Taste the Feeling' },
+                { x: -410, w: 90, h: 240, neon: '#00b4d8', text: 'SAMSUNG', sub: 'Galaxy AI is Here' },
+                { x: -315, w: 86, h: 200, neon: '#ffffff', text: ' Apple', sub: 'iPhone 16 Pro' },
+                { x: -220, w: 86, h: 255, neon: '#06d6a0', text: 'NASDAQ', sub: '▲ 18,245.80' },
+                { x: -125, w: 80, h: 195, neon: '#4285f4', text: 'Google', sub: 'Gemini AI' },
+                { x: -38,  w: 78, h: 275, neon: '#ff007f', text: 'TIMES SQ', sub: '2026 BALL DROP', isCenterTower: true },
+                { x: 48,   w: 80, h: 195, neon: '#ffc72c', text: "McDonald's", sub: "i'm lovin' it" },
+                { x: 135,  w: 86, h: 245, neon: '#003791', text: 'SONY PS5', sub: 'Play Has No Limits' },
+                { x: 228,  w: 88, h: 210, neon: '#ffd166', text: 'DISNEY', sub: 'THE LION KING' },
+                { x: 322,  w: 92, h: 250, neon: '#00a8e8', text: 'HYUNDAI', sub: 'IONIQ Electric' },
+                { x: 422,  w: 90, h: 225, neon: '#d4ff00', text: 'NIKE ✔', sub: 'JUST DO IT.' }
             ];
             frontBuildings.forEach(b => {
                 const bx = centerX + b.x;
@@ -2740,6 +2926,835 @@ class TrackManager {
         ctx.restore();
     }
 
+    // 🌲 1단계 숲: 겹겹이 우거진 고품격 숲속 나무 군락 (거대 고대 참나무, 전나무, 자작나무, 꽃나무, 버섯 & 풀숲)
+    drawLushForestTreeCluster(ctx, side, variant, time) {
+        ctx.save();
+        const treeBaseX = side * 105;
+        const wind = Math.sin(time * 2.2 + variant) * 4;
+
+        // 1) 원경 보조 배경 나무 (깊이감 형성)
+        const bgTreeX = side * 155;
+        ctx.fillStyle = '#1b4332';
+        ctx.strokeStyle = '#143626';
+        ctx.lineWidth = 3;
+        ctx.fillRect(bgTreeX - 14, -210, 28, 210);
+        ctx.beginPath();
+        ctx.arc(bgTreeX - 22, -210, 48, 0, Math.PI * 2);
+        ctx.arc(bgTreeX + 22, -210, 48, 0, Math.PI * 2);
+        ctx.arc(bgTreeX, -250, 58, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 2) 중경 보조 나무 (전나무 or 자작나무)
+        const midTreeX = side * 62;
+        ctx.fillStyle = '#2d6a4f';
+        ctx.beginPath();
+        ctx.moveTo(midTreeX, -170);
+        ctx.lineTo(midTreeX - 35, -95);
+        ctx.lineTo(midTreeX + 35, -95);
+        ctx.closePath();
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(midTreeX, -135);
+        ctx.lineTo(midTreeX - 44, -55);
+        ctx.lineTo(midTreeX + 44, -55);
+        ctx.closePath();
+        ctx.fill();
+
+        // 3) 주 메인 나무 (variant에 따른 4가지 고유 수종)
+        const treeType = variant % 4;
+
+        if (treeType === 0) {
+            // [A] 거대 고대 참나무 (Ancient Grand Oak) - 뒤틀린 나무 밑동, 3D 나무껍질 주름, 4단 입체 수관, 덩굴
+            const trunkGrad = ctx.createLinearGradient(treeBaseX - 26, -195, treeBaseX + 26, 0);
+            trunkGrad.addColorStop(0, '#7f4f24');
+            trunkGrad.addColorStop(0.5, '#582f0e');
+            trunkGrad.addColorStop(1, '#331800');
+            ctx.fillStyle = trunkGrad;
+            ctx.strokeStyle = '#1a1612';
+            ctx.lineWidth = 3.5;
+
+            // 곡선형 밑동 (뿌리 확장)
+            ctx.beginPath();
+            ctx.moveTo(treeBaseX - 22, -195);
+            ctx.lineTo(treeBaseX + 22, -195);
+            ctx.quadraticCurveTo(treeBaseX + 26, -60, treeBaseX + 44, 0);
+            ctx.lineTo(treeBaseX - 44, 0);
+            ctx.quadraticCurveTo(treeBaseX - 26, -60, treeBaseX - 22, -195);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // 나무껍질 질감 빗금
+            this.drawHatching(ctx, treeBaseX - 12, -165, treeBaseX - 12, -25, 7, 12, 0.4);
+            this.drawHatching(ctx, treeBaseX + 12, -165, treeBaseX + 12, -25, 7, 12, -0.4);
+
+            // 주 잎사귀 돔 4개 (입체 음영)
+            const folGrad = ctx.createRadialGradient(treeBaseX - 15, -240, 20, treeBaseX, -220, 95);
+            folGrad.addColorStop(0, '#52b788');
+            folGrad.addColorStop(0.5, '#2d6a4f');
+            folGrad.addColorStop(1, '#1b4332');
+            ctx.fillStyle = folGrad;
+
+            // 하단 좌우 볼륨
+            ctx.beginPath();
+            ctx.arc(treeBaseX - 38 + wind * 0.5, -195, 62, 0, Math.PI * 2);
+            ctx.arc(treeBaseX + 38 + wind * 0.5, -195, 62, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // 상단 메인 돔
+            ctx.beginPath();
+            ctx.arc(treeBaseX + wind, -242, 75, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // 햇살 하이라이트 잎사귀 층
+            ctx.fillStyle = 'rgba(149, 213, 178, 0.55)';
+            ctx.beginPath();
+            ctx.arc(treeBaseX - 22 + wind, -260, 34, 0, Math.PI * 2);
+            ctx.arc(treeBaseX + 20 + wind, -250, 28, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 덩굴 줄기 & 열매
+            ctx.strokeStyle = '#40916c';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(treeBaseX - 28, -160);
+            ctx.quadraticCurveTo(treeBaseX - 36, -110, treeBaseX - 24, -65);
+            ctx.stroke();
+            ctx.fillStyle = '#ffb703';
+            ctx.beginPath();
+            ctx.arc(treeBaseX - 24, -65, 4.5, 0, Math.PI * 2);
+            ctx.fill();
+
+        } else if (treeType === 1) {
+            // [B] 고산 침엽수 전나무 (Alpine Evergreen Fir) - 5층 원뿔 가지 & 솔방울
+            ctx.fillStyle = '#4a2810';
+            ctx.fillRect(treeBaseX - 10, -80, 20, 80);
+            ctx.strokeRect(treeBaseX - 10, -80, 20, 80);
+
+            const pineTiers = [
+                { y: -260, w: 56, h: 65, col: '#52b788' },
+                { y: -220, w: 76, h: 72, col: '#40916c' },
+                { y: -175, w: 96, h: 80, col: '#2d6a4f' },
+                { y: -125, w: 118, h: 88, col: '#1b4332' }
+            ];
+
+            pineTiers.forEach(tier => {
+                ctx.fillStyle = tier.col;
+                ctx.beginPath();
+                ctx.moveTo(treeBaseX + wind * 0.4, tier.y);
+                ctx.lineTo(treeBaseX - tier.w * 0.5, tier.y + tier.h);
+                ctx.lineTo(treeBaseX - tier.w * 0.2, tier.y + tier.h - 10);
+                ctx.lineTo(treeBaseX, tier.y + tier.h);
+                ctx.lineTo(treeBaseX + tier.w * 0.2, tier.y + tier.h - 10);
+                ctx.lineTo(treeBaseX + tier.w * 0.5, tier.y + tier.h);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            });
+
+        } else if (treeType === 2) {
+            // [C] 황금빛 자작나무 (Golden Birch) - 하얀 은빛 줄기, 검은 수피 홈, 흩날리는 황금 잎
+            ctx.fillStyle = '#f8f9fa';
+            ctx.strokeStyle = '#1a1612';
+            ctx.lineWidth = 3.2;
+            ctx.fillRect(treeBaseX - 12, -220, 24, 220);
+            ctx.strokeRect(treeBaseX - 12, -220, 24, 220);
+
+            // 자작나무 검은 가로 줄무늬 홈
+            ctx.fillStyle = '#212529';
+            [-190, -155, -120, -85, -50, -20].forEach((ly, i) => {
+                ctx.fillRect(treeBaseX - 12 + (i % 2 === 0 ? 0 : 7), ly, 15, 4);
+            });
+
+            // 황금 단풍 잎사귀 돔
+            const goldGrad = ctx.createRadialGradient(treeBaseX - 10, -250, 15, treeBaseX, -230, 80);
+            goldGrad.addColorStop(0, '#ffea79');
+            goldGrad.addColorStop(0.5, '#e9c46a');
+            goldGrad.addColorStop(1, '#d4a373');
+            ctx.fillStyle = goldGrad;
+            ctx.beginPath();
+            ctx.arc(treeBaseX - 30 + wind, -210, 52, 0, Math.PI * 2);
+            ctx.arc(treeBaseX + 30 + wind, -210, 52, 0, Math.PI * 2);
+            ctx.arc(treeBaseX + wind, -255, 66, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+        } else {
+            // [D] 숲속 꽃사과/단풍나무 (Blossom Forest Tree) - 붉은 과일 & 산뜻한 단풍
+            const trunkGrad = ctx.createLinearGradient(treeBaseX - 16, -180, treeBaseX + 16, 0);
+            trunkGrad.addColorStop(0, '#6f4e37');
+            trunkGrad.addColorStop(1, '#3c2415');
+            ctx.fillStyle = trunkGrad;
+            ctx.fillRect(treeBaseX - 16, -180, 32, 180);
+            ctx.strokeRect(treeBaseX - 16, -180, 32, 180);
+
+            ctx.fillStyle = '#e76f51';
+            ctx.beginPath();
+            ctx.arc(treeBaseX - 32 + wind, -180, 56, 0, Math.PI * 2);
+            ctx.arc(treeBaseX + 32 + wind, -180, 56, 0, Math.PI * 2);
+            ctx.arc(treeBaseX + wind, -225, 70, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // 빨간 사과 열매 5개
+            ctx.fillStyle = '#e63946';
+            [[-25, -235], [20, -240], [-10, -200], [35, -190], [-35, -170]].forEach(([fx, fy]) => {
+                ctx.beginPath();
+                ctx.arc(treeBaseX + fx + wind, fy, 6, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+            });
+        }
+
+        // 4) 나무 밑동 풀숲 & 예쁜 빨간 버섯
+        ctx.fillStyle = '#38b000';
+        ctx.beginPath();
+        ctx.ellipse(treeBaseX, 0, 48, 14, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 숲 버섯 (빨간 갓 + 흰 점)
+        ctx.fillStyle = '#f8f9fa';
+        ctx.fillRect(treeBaseX + 26, -16, 8, 16);
+        ctx.fillStyle = '#d90429';
+        ctx.beginPath();
+        ctx.arc(treeBaseX + 30, -16, 13, Math.PI, 0);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(treeBaseX + 26, -21, 2.5, 0, Math.PI * 2);
+        ctx.arc(treeBaseX + 34, -20, 2.2, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+    }
+
+    // 🏜️ 2단계 사막: 고대 이집트 대스핑크스 석상 (The Great Sphinx of Giza Monument)
+    drawSphinxMonument(ctx, side, variant, time) {
+        ctx.save();
+        const spBaseX = side * 108;
+        const faceDir = side < 0 ? 1 : -1;
+        ctx.translate(spBaseX, 0);
+        ctx.scale(faceDir, 1);
+
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 3.5;
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+
+        // 1) 고대 사암 기단 (Sandstone Hieroglyphic Plinth)
+        const baseGrad = ctx.createLinearGradient(-110, -42, 110, 0);
+        baseGrad.addColorStop(0, '#e9c46a');
+        baseGrad.addColorStop(0.5, '#dda15e');
+        baseGrad.addColorStop(1, '#bc6c25');
+        ctx.fillStyle = baseGrad;
+        ctx.fillRect(-110, -40, 220, 40);
+        ctx.strokeRect(-110, -40, 220, 40);
+
+        // 기단 상단 몰딩 계단
+        ctx.fillStyle = '#f4a261';
+        ctx.fillRect(-102, -50, 204, 12);
+        ctx.strokeRect(-102, -50, 204, 12);
+
+        // 상형문자 조각 장식선 (Hieroglyphic inscript)
+        ctx.fillStyle = 'rgba(74, 44, 16, 0.45)';
+        ctx.font = 'bold 13px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('𓂀 𓃠 𓆣 𓏏 𓀀', 0, -18);
+
+        // 2) 웅크린 거대 사자 몸체 (Recumbent Lion Body)
+        const lionGrad = ctx.createLinearGradient(-85, -165, 85, -45);
+        lionGrad.addColorStop(0, '#f4e285');
+        lionGrad.addColorStop(0.4, '#e09f3e');
+        lionGrad.addColorStop(1, '#b5651d');
+        ctx.fillStyle = lionGrad;
+
+        // 등허리와 엉덩이 볼륨
+        ctx.beginPath();
+        ctx.moveTo(35, -145);
+        ctx.bezierCurveTo(75, -155, 105, -115, 95, -50); // 엉덩이
+        ctx.lineTo(-65, -50);                           // 배
+        ctx.bezierCurveTo(-65, -95, -35, -135, 10, -145); // 등
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // 긴 사자 꼬리 (엉덩이에서 말려 올라옴)
+        ctx.strokeStyle = '#99582a';
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.moveTo(92, -62);
+        ctx.quadraticCurveTo(112, -75, 102, -105);
+        ctx.stroke();
+        ctx.lineWidth = 3.5;
+        ctx.strokeStyle = '#1a1612';
+
+        // 3) 앞으로 쭉 뻗은 거대한 두 앞발 (Extended Lion Paws)
+        ctx.fillStyle = '#dda15e';
+        // 뒷쪽 앞발
+        ctx.beginPath();
+        ctx.roundRect(-98, -62, 54, 20, 8);
+        ctx.fill();
+        ctx.stroke();
+        // 앞쪽 앞발
+        ctx.beginPath();
+        ctx.roundRect(-108, -52, 62, 22, 9);
+        ctx.fill();
+        ctx.stroke();
+        // 발가락 홈 3개
+        ctx.strokeStyle = '#6f4e37';
+        ctx.lineWidth = 3;
+        [-100, -90, -80].forEach(px => {
+            ctx.beginPath();
+            ctx.moveTo(px, -50);
+            ctx.lineTo(px, -32);
+            ctx.stroke();
+        });
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 3.5;
+
+        // 4) 스핑크스 파라오 두상 (Head of the Pharaoh)
+        ctx.save();
+        ctx.translate(-26, -172);
+
+        // 네메스 두건 뒤편 날개 (Nemes Headdress Flaps) - 청금석과 순금 스트라이프!
+        ctx.beginPath();
+        ctx.moveTo(-42, 45);
+        ctx.lineTo(-46, -18);
+        ctx.lineTo(-12, -56);
+        ctx.lineTo(36, -56);
+        ctx.lineTo(46, -18);
+        ctx.lineTo(42, 45);
+        ctx.lineTo(24, 45);
+        ctx.lineTo(26, -10);
+        ctx.lineTo(-26, -10);
+        ctx.lineTo(-24, 45);
+        ctx.closePath();
+        ctx.fillStyle = '#ffbe0b';
+        ctx.fill();
+        ctx.stroke();
+
+        // 네메스 로열 블루 스트라이프
+        ctx.fillStyle = '#1d3557';
+        [-40, -25, -10, 5, 20, 35].forEach(sy => {
+            ctx.fillRect(-44, sy, 88, 7);
+        });
+
+        // 파라오 얼굴 (사암 조각 피부)
+        const faceGrad = ctx.createLinearGradient(-24, -40, 24, 20);
+        faceGrad.addColorStop(0, '#fceade');
+        faceGrad.addColorStop(0.6, '#dda15e');
+        faceGrad.addColorStop(1, '#bc6c25');
+        ctx.fillStyle = faceGrad;
+        ctx.beginPath();
+        ctx.roundRect(-24, -42, 48, 56, 16);
+        ctx.fill();
+        ctx.stroke();
+
+        // 이마의 우라에우스 황금 코브라 휘장 (Uraeus Cobra)
+        ctx.fillStyle = '#ffbe0b';
+        ctx.beginPath();
+        ctx.arc(0, -42, 6.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#d62828';
+        ctx.beginPath();
+        ctx.arc(0, -42, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 고대 이집트 아몬드형 눈과 짙은 아이라인(Kohl)
+        ctx.fillStyle = '#1a1612';
+        // 좌측 눈
+        ctx.beginPath();
+        ctx.ellipse(-11, -22, 6, 3.5, 0.1, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(-18, -22); ctx.lineTo(-4, -22);
+        ctx.stroke();
+        // 우측 눈
+        ctx.beginPath();
+        ctx.ellipse(11, -22, 6, 3.5, -0.1, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(4, -22); ctx.lineTo(18, -22);
+        ctx.stroke();
+
+        // 조각된 코와 입술
+        ctx.fillStyle = '#bc6c25';
+        ctx.beginPath();
+        ctx.moveTo(0, -20);
+        ctx.lineTo(-4, -8);
+        ctx.lineTo(4, -8);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.strokeStyle = '#5c4938';
+        ctx.lineWidth = 2.8;
+        ctx.beginPath();
+        ctx.moveTo(-8, 3);
+        ctx.quadraticCurveTo(0, 7, 8, 3);
+        ctx.stroke();
+
+        // 파라오 수염 조각 (Ceremonial Braided Beard)
+        ctx.fillStyle = '#1d3557';
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(-6, 14);
+        ctx.lineTo(6, 14);
+        ctx.lineTo(4, 38);
+        ctx.lineTo(-4, 38);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#ffbe0b';
+        ctx.fillRect(-5, 20, 10, 4);
+        ctx.fillRect(-5, 29, 10, 4);
+
+        ctx.restore();
+        ctx.restore();
+    }
+
+    // 🏢 타임스퀘어 실제 기업 브랜드 전광판 렌더링 (삼성, 코카콜라, 애플, 구글, 맥도날드, 소니, 디즈니, 현대, LG, 나이키)
+    drawRealCorporateBillboard(ctx, x, y, w, h, brandIdx, time) {
+        ctx.save();
+        ctx.textAlign = 'center';
+
+        const cx = x + w * 0.5;
+        const cy = y + h * 0.5;
+
+        if (brandIdx === 0) {
+            // [0] SAMSUNG - 삼성전자 (시그니처 사이버 블루, Galaxy AI is Here, 타원 엠블럼)
+            const samGrad = ctx.createLinearGradient(x, y, x, y + h);
+            samGrad.addColorStop(0, '#023e8a');
+            samGrad.addColorStop(1, '#001233');
+            ctx.fillStyle = samGrad;
+            ctx.fillRect(x, y, w, h);
+            ctx.strokeStyle = '#00b4d8';
+            ctx.lineWidth = 2.5;
+            ctx.strokeRect(x, y, w, h);
+
+            // 빛나는 네온 타원 프레임
+            ctx.strokeStyle = 'rgba(0, 180, 216, 0.7)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.ellipse(cx, y + 32, w * 0.42, 17, -0.15, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 16px "Arial", sans-serif';
+            ctx.fillText('SAMSUNG', cx, y + 37);
+
+            ctx.fillStyle = '#caf0f8';
+            ctx.font = 'bold 11px sans-serif';
+            const pulseAI = Math.sin(time * 5) > 0 ? '✨ Galaxy AI is Here ✨' : '📱 Neo QLED 8K';
+            ctx.fillText(pulseAI, cx, y + 68);
+
+        } else if (brandIdx === 1) {
+            // [1] Coca-Cola - 코카콜라 (클래식 크림슨 레드, 다이내믹 화이트 웨이브 리본, 탄산 버블)
+            const cokeGrad = ctx.createLinearGradient(x, y, x, y + h);
+            cokeGrad.addColorStop(0, '#e61d2b');
+            cokeGrad.addColorStop(1, '#9b000b');
+            ctx.fillStyle = cokeGrad;
+            ctx.fillRect(x, y, w, h);
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2.5;
+            ctx.strokeRect(x, y, w, h);
+
+            // 코카콜라 시그니처 화이트 웨이브 곡선 리본
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 3.5;
+            ctx.beginPath();
+            ctx.moveTo(x + 4, y + 60);
+            ctx.bezierCurveTo(cx - 15, y + 78, cx + 15, y + 42, x + w - 4, y + 54);
+            ctx.stroke();
+
+            // 탄산 버블 방울
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            for (let b = 0; b < 6; b++) {
+                const bx = x + 12 + ((b * 17) % (w - 24));
+                const by = y + h - ((time * 24 + b * 15) % (h - 10));
+                ctx.beginPath();
+                ctx.arc(bx, by, 2 + (b % 3), 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'italic bold 17px "Times New Roman", serif';
+            ctx.fillText('Coca-Cola', cx, y + 38);
+
+        } else if (brandIdx === 2) {
+            // [2] Apple - 애플 (옵시디언 블랙 글래스, 티타늄 프레임, 발광 사과 로고, iPhone 16 Pro)
+            ctx.fillStyle = '#08080c';
+            ctx.fillRect(x, y, w, h);
+            ctx.strokeStyle = '#e5e5ea';
+            ctx.lineWidth = 2.5;
+            ctx.strokeRect(x, y, w, h);
+
+            // 빛나는 화이트 애플 로고 실루엣
+            ctx.save();
+            ctx.translate(cx, y + 30);
+            ctx.fillStyle = '#ffffff';
+            // 사과 몸체
+            ctx.beginPath();
+            ctx.arc(-5, 0, 10, 0, Math.PI * 2);
+            ctx.arc(5, 0, 10, 0, Math.PI * 2);
+            ctx.fill();
+            // 사과 한입 베어문 부분
+            ctx.fillStyle = '#08080c';
+            ctx.beginPath();
+            ctx.arc(10, -2, 5.5, 0, Math.PI * 2);
+            ctx.fill();
+            // 잎사귀
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.ellipse(3, -12, 4.5, 2.5, 0.6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 12px -apple-system, sans-serif';
+            ctx.fillText('iPhone 16 Pro', cx, y + 58);
+            ctx.fillStyle = '#8e8e93';
+            ctx.font = '10px sans-serif';
+            ctx.fillText('Hello, Apple Intelligence', cx, y + 74);
+
+        } else if (brandIdx === 3) {
+            // [3] Google - 구글 (클린 다크 차콜 패널, 구글 4색 G 로고, Google Gemini)
+            ctx.fillStyle = '#202124';
+            ctx.fillRect(x, y, w, h);
+            ctx.strokeStyle = '#4285f4';
+            ctx.lineWidth = 2.5;
+            ctx.strokeRect(x, y, w, h);
+
+            // 4색 구글 심볼 링
+            ctx.save();
+            ctx.translate(cx - 24, y + 28);
+            const r = 11;
+            ctx.lineWidth = 4;
+            // 파랑
+            ctx.strokeStyle = '#4285f4';
+            ctx.beginPath();
+            ctx.arc(0, 0, r, -Math.PI * 0.25, Math.PI * 0.25);
+            ctx.stroke();
+            // 초록
+            ctx.strokeStyle = '#34a853';
+            ctx.beginPath();
+            ctx.arc(0, 0, r, Math.PI * 0.25, Math.PI * 0.75);
+            ctx.stroke();
+            // 노랑
+            ctx.strokeStyle = '#fbbc05';
+            ctx.beginPath();
+            ctx.arc(0, 0, r, Math.PI * 0.75, Math.PI * 1.25);
+            ctx.stroke();
+            // 빨강
+            ctx.strokeStyle = '#ea4335';
+            ctx.beginPath();
+            ctx.arc(0, 0, r, Math.PI * 1.25, Math.PI * 1.75);
+            ctx.stroke();
+            ctx.restore();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 15px "Product Sans", sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('Google', cx - 8, y + 33);
+
+            // 검색창 & 제미나이 텍스트
+            ctx.fillStyle = '#303134';
+            ctx.fillRect(x + 10, y + 52, w - 20, 22);
+            ctx.strokeStyle = '#5f6368';
+            ctx.lineWidth = 1.2;
+            ctx.strokeRect(x + 10, y + 52, w - 20, 22);
+
+            ctx.fillStyle = '#8ab4f8';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('✨ Gemini AI Search', cx, y + 67);
+
+        } else if (brandIdx === 4) {
+            // [4] McDonald's - 맥도날드 (버건디 레드 배경, 황금 골든 아치 M, i'm lovin' it)
+            ctx.fillStyle = '#8d021f';
+            ctx.fillRect(x, y, w, h);
+            ctx.strokeStyle = '#ffc72c';
+            ctx.lineWidth = 2.5;
+            ctx.strokeRect(x, y, w, h);
+
+            // 골든 아치 M 로고
+            ctx.strokeStyle = '#ffc72c';
+            ctx.lineWidth = 6;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(cx - 20, y + 42);
+            ctx.quadraticCurveTo(cx - 10, y + 10, cx - 1, y + 40);
+            ctx.quadraticCurveTo(cx + 8, y + 10, cx + 19, y + 42);
+            ctx.stroke();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'italic bold 12px sans-serif';
+            ctx.fillText("i'm lovin' it", cx, y + 62);
+            ctx.fillStyle = '#ffc72c';
+            ctx.font = 'bold 10px sans-serif';
+            ctx.fillText('🍟 Big Mac & Fries 🍔', cx, y + 76);
+
+        } else if (brandIdx === 5) {
+            // [5] SONY PlayStation - 소니 (코발트 블루, SONY 볼드 로고, 네온 △ ◯ ✕ ▢)
+            const sonyGrad = ctx.createLinearGradient(x, y, x, y + h);
+            sonyGrad.addColorStop(0, '#003791');
+            sonyGrad.addColorStop(1, '#001947');
+            ctx.fillStyle = sonyGrad;
+            ctx.fillRect(x, y, w, h);
+            ctx.strokeStyle = '#00f5d4';
+            ctx.lineWidth = 2.5;
+            ctx.strokeRect(x, y, w, h);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 16px "Arial Black", sans-serif';
+            ctx.fillText('SONY', cx, y + 30);
+
+            // 플레이스테이션 4대 네온 심볼: 녹색 세모, 붉은 동그라미, 하늘 엑스, 분홍 네모
+            const symbols = [
+                { s: '▲', c: '#00f5d4' },
+                { s: '●', c: '#ff0055' },
+                { s: '✖', c: '#3a86ff' },
+                { s: '■', c: '#ff007f' }
+            ];
+            symbols.forEach((sym, idx) => {
+                ctx.fillStyle = sym.c;
+                ctx.font = 'bold 13px sans-serif';
+                ctx.fillText(sym.s, cx - 27 + idx * 18, y + 54);
+            });
+
+            ctx.fillStyle = '#ffea79';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.fillText('PlayStation 5 Pro', cx, y + 74);
+
+        } else if (brandIdx === 6) {
+            // [6] Disney - 디즈니 (로열 인디고, 디즈니 성 골든 스타라이트, THE LION KING BROADWAY)
+            const disGrad = ctx.createLinearGradient(x, y, x, y + h);
+            disGrad.addColorStop(0, '#10183b');
+            disGrad.addColorStop(1, '#050714');
+            ctx.fillStyle = disGrad;
+            ctx.fillRect(x, y, w, h);
+            ctx.strokeStyle = '#ffd166';
+            ctx.lineWidth = 2.5;
+            ctx.strokeRect(x, y, w, h);
+
+            // 전구 테두리 불빛
+            for (let bx = x + 5; bx < x + w - 4; bx += 10) {
+                ctx.fillStyle = ((bx + Math.floor(time * 6)) % 2 === 0) ? '#ffea79' : '#fff';
+                ctx.fillRect(bx, y + 2, 4, 3);
+                ctx.fillRect(bx, y + h - 5, 4, 3);
+            }
+
+            ctx.fillStyle = '#ffd166';
+            ctx.font = 'bold 16px "Comic Neue", cursive';
+            ctx.fillText('DISNEY+', cx, y + 32);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 12px sans-serif';
+            ctx.fillText('THE LION KING', cx, y + 54);
+
+            ctx.fillStyle = '#ffb703';
+            ctx.font = 'bold 10px sans-serif';
+            ctx.fillText('★ ON BROADWAY ★', cx, y + 72);
+
+        } else if (brandIdx === 7) {
+            // [7] HYUNDAI - 현대자동차 (모던 딥 메탈릭 블루, 기울어진 타원 H, 아이오닉 전기차)
+            const hyunGrad = ctx.createLinearGradient(x, y, x, y + h);
+            hyunGrad.addColorStop(0, '#0a2240');
+            hyunGrad.addColorStop(1, '#001026');
+            ctx.fillStyle = hyunGrad;
+            ctx.fillRect(x, y, w, h);
+            ctx.strokeStyle = '#00a8e8';
+            ctx.lineWidth = 2.5;
+            ctx.strokeRect(x, y, w, h);
+
+            // 현대 타원 H 로고
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.ellipse(cx, y + 26, 17, 10, -0.15, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 14px "Arial", sans-serif';
+            ctx.fillText('HYUNDAI', cx, y + 52);
+
+            // 아이오닉 파라메트릭 픽셀 라이트 연출
+            for (let px = 0; px < 7; px++) {
+                ctx.fillStyle = (px + Math.floor(time * 5)) % 2 === 0 ? '#00f5d4' : '#0077b6';
+                ctx.fillRect(cx - 28 + px * 8, y + 62, 6, 6);
+            }
+            ctx.fillStyle = '#90e0ef';
+            ctx.font = 'bold 9px sans-serif';
+            ctx.fillText('IONIQ 6 EV', cx, y + 80);
+
+        } else if (brandIdx === 8) {
+            // [8] LG - LG전자 (딥 와인 레드, 윙크하는 스마일 로고, Life's Good, OLED evo)
+            ctx.fillStyle = '#a50034';
+            ctx.fillRect(x, y, w, h);
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2.5;
+            ctx.strokeRect(x, y, w, h);
+
+            // LG 원형 심볼
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.arc(cx - 24, y + 32, 11, 0, Math.PI * 2);
+            ctx.stroke();
+            // L자 코
+            ctx.beginPath();
+            ctx.moveTo(cx - 25, y + 26);
+            ctx.lineTo(cx - 25, y + 35);
+            ctx.lineTo(cx - 20, y + 35);
+            ctx.stroke();
+            // 윙크 눈
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(cx - 28, y + 30, 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 16px "Arial", sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('LG', cx - 6, y + 38);
+
+            ctx.fillStyle = '#ffccd5';
+            ctx.font = 'italic bold 11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText("Life's Good", cx, y + 58);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.fillText('OLED evo 4K', cx, y + 74);
+
+        } else {
+            // [9] NIKE - 나이키 (하이 콘트라스트 매트 블랙, 일렉트릭 볼트 네온 스우시, JUST DO IT.)
+            ctx.fillStyle = '#0f0f12';
+            ctx.fillRect(x, y, w, h);
+            ctx.strokeStyle = '#d4ff00';
+            ctx.lineWidth = 2.5;
+            ctx.strokeRect(x, y, w, h);
+
+            // 나이키 스우시(Swoosh) 체크 로고
+            ctx.fillStyle = '#d4ff00';
+            ctx.beginPath();
+            ctx.moveTo(cx - 28, y + 30);
+            ctx.bezierCurveTo(cx - 10, y + 42, cx + 8, y + 40, cx + 28, y + 16);
+            ctx.bezierCurveTo(cx + 8, y + 34, cx - 12, y + 32, cx - 28, y + 30);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 14px "Impact", sans-serif';
+            ctx.fillText('NIKE', cx, y + 55);
+
+            ctx.fillStyle = '#d4ff00';
+            ctx.font = 'bold 11px "Impact", sans-serif';
+            ctx.fillText('JUST DO IT.', cx, y + 73);
+        }
+
+        ctx.restore();
+    }
+
+    // 🌆 4단계 도시 (타임스퀘어 밤): 실제 글로벌 유명 기업들의 초호화 3D 네온 전광판 빌딩
+    drawTimesSquareBuilding(ctx, side, variant, time) {
+        ctx.save();
+        const cityX = side * 75;
+        const bW = 106;
+        const bH = 240;
+        const depth = -side * 22;
+
+        // 1) 3D 빌딩 본체
+        this.draw3DBox(ctx, cityX, 0, bW, bH, depth, -20, '#1a1c2e', '#2e3440', '#0b0c14');
+
+        // 빌딩 유리창 격자
+        ctx.fillStyle = 'rgba(255, 235, 150, 0.16)';
+        for (let wy = -bH + 115; wy < -15; wy += 16) {
+            for (let wx = cityX - bW * 0.44; wx < cityX + bW * 0.40; wx += 14) {
+                if ((wx + wy) % 5 !== 0) {
+                    ctx.fillRect(wx, wy, 8, 9);
+                }
+            }
+        }
+
+        // 옥상 통신 안테나 & 점멸하는 붉은 항공 경고등
+        ctx.strokeStyle = '#d8dee9';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(cityX, -bH);
+        ctx.lineTo(cityX, -bH - 35);
+        ctx.stroke();
+        ctx.fillStyle = Math.sin(time * 6) > 0 ? '#ff0055' : '#880022';
+        ctx.beginPath();
+        ctx.arc(cityX, -bH - 35, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 2) 실제 기업 초대형 LED 스크린 전광판 (Real Corporate Mega Display)
+        const brandIdx = (variant + (side < 0 ? 0 : 5)) % 10;
+        const screenY = -bH + 14;
+        const screenW = bW - 14;
+        const screenH = 86;
+        const screenX = cityX - screenW * 0.5;
+
+        this.drawRealCorporateBillboard(ctx, screenX, screenY, screenW, screenH, brandIdx, time);
+
+        // 3) 스크린 하단 실시간 증권/뉴스 티커 테이프 (Scrolling Stock Ticker)
+        const tickerY = screenY + screenH + 6;
+        const tickerH = 16;
+        ctx.fillStyle = '#05070e';
+        ctx.fillRect(screenX, tickerY, screenW, tickerH);
+        ctx.strokeStyle = '#ff007f';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(screenX, tickerY, screenW, tickerH);
+
+        const tickers = [
+            '▲ SAMSUNG 78,500 ▲',
+            '★ COCA-COLA NYC ★',
+            '▲ APPLE $232.50 ▲',
+            '◆ GOOGLE GEMINI ◆',
+            '▲ NASDAQ +1.8% ▲',
+            '★ HYUNDAI IONIQ ★',
+            '▲ SONY PS5 PRO ▲',
+            '★ DISNEY BROADWAY ★'
+        ];
+        const tickerText = tickers[brandIdx % tickers.length];
+        const tickerOffset = (time * 30) % 60;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(screenX + 2, tickerY, screenW - 4, tickerH);
+        ctx.clip();
+        ctx.fillStyle = '#00f5d4';
+        ctx.font = 'bold 10px monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(tickerText, screenX + 8 - tickerOffset, tickerY + 12);
+        ctx.fillText(tickerText, screenX + 8 - tickerOffset + 140, tickerY + 12);
+        ctx.restore();
+
+        // 4) 1층 상가 앞 환한 뉴욕 가로등 (NYC Street Lamp)
+        const lampX = cityX - side * (bW * 0.5 + 16);
+        ctx.strokeStyle = '#4c566a';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(lampX, 0);
+        ctx.lineTo(lampX, -95);
+        ctx.quadraticCurveTo(lampX, -112, lampX + side * 14, -112);
+        ctx.stroke();
+        // 가로등 불빛 갓 & 눈부신 황금빛 램프
+        ctx.fillStyle = '#ffea79';
+        ctx.beginPath();
+        ctx.arc(lampX + side * 14, -108, 9, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(255, 234, 121, 0.28)';
+        ctx.beginPath();
+        ctx.arc(lampX + side * 14, -108, 22, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+    }
+
     // 양옆 스테이지별 동물 & 오브젝트 디테일 (트랙에서 멀리 떨어뜨리고 동물 개체수 40% 이상 절감 + 비키니 시티 해저 디테일!)
     drawStageSideProp(ctx, x, y, scale, side, variant, time, showAnimal = true) {
         ctx.save();
@@ -2756,34 +3771,8 @@ class TrackManager {
         const animalX = side * 38;
 
         if (this.stage === 1) {
-            // 🌲 1단계 숲: 다층 입체 수관 나무(바깥쪽) + 선택적 숲속 동물(트랙과 거리를 둔 바깥쪽)
-            const treeX = side * 92;
-            const trunkGrad = ctx.createLinearGradient(treeX - 18, -175, treeX + 18, 0);
-            trunkGrad.addColorStop(0, '#9c6644');
-            trunkGrad.addColorStop(1, '#582f0e');
-            ctx.fillStyle = trunkGrad;
-            ctx.fillRect(treeX - 18, -175, 36, 175);
-            ctx.strokeRect(treeX - 18, -175, 36, 175);
-            this.drawHatching(ctx, treeX - 8, -150, treeX - 8, -20, 8, 10, 0.4);
-
-            ctx.fillStyle = '#2d6a4f';
-            ctx.beginPath();
-            ctx.arc(treeX - 28, -175, 54, 0, Math.PI * 2);
-            ctx.arc(treeX + 28, -175, 54, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
-
-            ctx.fillStyle = '#40916c';
-            ctx.beginPath();
-            ctx.arc(treeX, -212, 66, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
-
-            // 수관 하이라이트
-            ctx.fillStyle = 'rgba(149, 213, 178, 0.45)';
-            ctx.beginPath();
-            ctx.arc(treeX - 16, -226, 28, 0, Math.PI * 2);
-            ctx.fill();
+            // 🌲 1단계 숲: 겹겹이 우거진 고품격 나무 군락(외곽) + 선택적 숲속 동물(트랙과 거리를 둔 외곽)
+            this.drawLushForestTreeCluster(ctx, side, variant, time);
 
             if (showAnimal) {
                 const animalNames = ['🐿️ 다람쥐', '🐇 산토끼', '🦌 꽃사슴', '🦊 붉은여우', '🦉 숲부엉이'];
@@ -2798,20 +3787,24 @@ class TrackManager {
             }
 
         } else if (this.stage === 2) {
-            // 🌵 2단계 사막: 거대 사구아로 선인장(바깥쪽) + 선택적 사막 동물
-            const cactX = side * 94;
-            const cactGrad = ctx.createLinearGradient(cactX - 20, -155, cactX + 20, 0);
-            cactGrad.addColorStop(0, '#74a862');
-            cactGrad.addColorStop(1, '#3a5a40');
-            ctx.fillStyle = cactGrad;
-            ctx.beginPath();
-            ctx.roundRect(cactX - 16, -155, 32, 155, 14);
-            ctx.roundRect(cactX - 48, -115, 32, 22, 10);
-            ctx.roundRect(cactX - 48, -148, 20, 48, 10);
-            ctx.roundRect(cactX + 16, -100, 32, 22, 10);
-            ctx.roundRect(cactX + 28, -138, 20, 52, 10);
-            ctx.fill();
-            ctx.stroke();
+            // 🌵 2단계 사막: 고대 대스핑크스 석상 & 거대 선인장 교대 배치!
+            if (variant % 2 === 0) {
+                this.drawSphinxMonument(ctx, side, variant, time);
+            } else {
+                const cactX = side * 94;
+                const cactGrad = ctx.createLinearGradient(cactX - 20, -155, cactX + 20, 0);
+                cactGrad.addColorStop(0, '#74a862');
+                cactGrad.addColorStop(1, '#3a5a40');
+                ctx.fillStyle = cactGrad;
+                ctx.beginPath();
+                ctx.roundRect(cactX - 16, -155, 32, 155, 14);
+                ctx.roundRect(cactX - 48, -115, 32, 22, 10);
+                ctx.roundRect(cactX - 48, -148, 20, 48, 10);
+                ctx.roundRect(cactX + 16, -100, 32, 22, 10);
+                ctx.roundRect(cactX + 28, -138, 20, 52, 10);
+                ctx.fill();
+                ctx.stroke();
+            }
 
             if (showAnimal) {
                 const desertLabels = ['🦂 황제전갈', '🦊 사막여우', '🐪 단봉낙타', '🐫 쌍봉낙타', '🦎 목도리도마뱀'];
@@ -2885,28 +3878,8 @@ class TrackManager {
             }
 
         } else if (this.stage === 4) {
-            // 🌆 4단계 도시 (타임스퀘어 밤): 3D 네온 광고판 타워 & 가로등
-            const cityX = side * 46;
-            this.draw3DBox(ctx, cityX, 0, 86, 210, -side * 16, -16, '#2b2d42', '#495057', '#151624');
-
-            ctx.fillStyle = variant % 2 === 0 ? '#ff007f' : '#00f5d4';
-            ctx.fillRect(cityX - 34, -185, 68, 56);
-            ctx.strokeRect(cityX - 34, -185, 68, 56);
-            ctx.fillStyle = '#fff';
-            ctx.font = 'bold 18px "Comic Neue", sans-serif';
-            ctx.fillText(variant % 2 === 0 ? 'TIMES SQ' : 'BROADWAY', cityX, -152);
-
-            ctx.strokeStyle = '#adb5bd';
-            ctx.lineWidth = 5;
-            ctx.beginPath();
-            ctx.moveTo(cityX - side * 55, 0);
-            ctx.lineTo(cityX - side * 55, -110);
-            ctx.lineTo(cityX - side * 35, -110);
-            ctx.stroke();
-            ctx.fillStyle = '#ffea79';
-            ctx.beginPath();
-            ctx.arc(cityX - side * 35, -106, 10, 0, Math.PI * 2);
-            ctx.fill();
+            // 🌆 4단계 도시 (타임스퀘어 밤): 실제 유명 글로벌 기업들의 화려한 3D 전광판 빌딩
+            this.drawTimesSquareBuilding(ctx, side, variant, time);
 
         } else if (this.stage === 5) {
             // ⚡ 5단계 글리치 보이드: 깨진 3D 디지털 기둥 & 에러 홀로그램
