@@ -1464,57 +1464,59 @@ function gameLoop(now) {
 
     // 4. 화면 렌더링
     ctx.save();
-    const shake = dragon.getScreenShakeOffset();
-    ctx.translate(shake.x, shake.y);
+    try {
+        const shake = dragon.getScreenShakeOffset();
+        ctx.translate(shake.x, shake.y);
 
-    // 🎯 실감나는 3D 카메라 뱅킹 틸트 (원숭이 좌우 이동 시 트랙 전체가 역동적으로 기울어짐)
-    ctx.translate(width * 0.5, height * 0.55);
-    ctx.rotate(-hero.laneX * 0.016);
-    ctx.translate(-width * 0.5, -height * 0.55);
+        // 🎯 실감나는 3D 카메라 뱅킹 틸트 (원숭이 좌우 이동 시 트랙 전체가 역동적으로 기울어짐)
+        ctx.translate(width * 0.5, height * 0.55);
+        ctx.rotate(-hero.laneX * 0.016);
+        ctx.translate(-width * 0.5, -height * 0.55);
 
-    track.renderBackgroundAndRoad(ctx, width, height, hero.time);
+        track.renderBackgroundAndRoad(ctx, width, height, hero.time);
 
-    track.renderEntities(ctx, width, height, hero.time, 0, 0.88);
-    if (mathGate.activeGate && mathGate.activeGate.z <= 0.88) {
-        mathGate.render(ctx, width, height, track);
+        track.renderEntities(ctx, width, height, hero.time, 0, 0.88);
+        if (mathGate.activeGate && mathGate.activeGate.z <= 0.88) {
+            mathGate.render(ctx, width, height, track);
+        }
+
+        if (hero.hp > 0) {
+            // 🎯 정사각형 바닥 트랙의 한 칸(타일)과 100% 동일한 원숭이 바닥 히트박스 렌더링!
+            const isSafe = hero.isJumping || hero.isSliding || hero.shieldActive;
+            const boxColor = hero.stumbleTimer > 0
+                ? '#ff0055'
+                : (hero.shieldActive ? '#ffbe0b' : (isSafe ? '#06d6a0' : '#00f5d4'));
+            const fillColor = hero.stumbleTimer > 0
+                ? 'rgba(255, 0, 85, 0.38)'
+                : (hero.shieldActive ? 'rgba(255, 190, 11, 0.32)' : (isSafe ? 'rgba(6, 214, 160, 0.28)' : 'rgba(0, 245, 212, 0.28)'));
+
+            track.drawTrackCellHitbox(ctx, 1.0, hero.laneX, width, height, fillColor, boxColor, 4.0);
+
+            // 원숭이를 적절한 스케일(0.36)로 렌더링하며 레인 간격을 바닥 트랙 타일과 1:1 일치
+            const charScale = (Math.min(width, height) / 940) * 0.36;
+            const pHero = track.project(1.0, 0, width, height);
+            const lanePixelSpread = (pHero.roadW / 5) / charScale;
+            hero.render(ctx, width * 0.5, height * 0.84, charScale, lanePixelSpread);
+        }
+
+        track.renderEntities(ctx, width, height, hero.time, 0.88, 1.2);
+        if (mathGate.activeGate && mathGate.activeGate.z > 0.88) {
+            mathGate.render(ctx, width, height, track);
+        }
+
+        track.renderEffects(ctx, width, height);
+
+        if (track.stage < 6) {
+            dragon.renderInGameChase(ctx, width, height);
+        }
+
+        // 🎯 왼쪽 상단/왼쪽 아래 DOM 박스가 사라진 자리에 캔버스 자체 아케이드 HUD 렌더링
+        if (gameState === 'PLAYING') {
+            track.renderCanvasHUD(ctx, width, height, score, track.stage, STAGE_INFO[track.stage], mathGate.solvedCount);
+        }
+    } finally {
+        ctx.restore();
     }
-
-    if (hero.hp > 0) {
-        // 🎯 정사각형 바닥 트랙의 한 칸(타일)과 100% 동일한 원숭이 바닥 히트박스 렌더링!
-        const isSafe = hero.isJumping || hero.isSliding || hero.shieldActive;
-        const boxColor = hero.stumbleTimer > 0
-            ? '#ff0055'
-            : (hero.shieldActive ? '#ffbe0b' : (isSafe ? '#06d6a0' : '#00f5d4'));
-        const fillColor = hero.stumbleTimer > 0
-            ? 'rgba(255, 0, 85, 0.38)'
-            : (hero.shieldActive ? 'rgba(255, 190, 11, 0.32)' : (isSafe ? 'rgba(6, 214, 160, 0.28)' : 'rgba(0, 245, 212, 0.28)'));
-
-        track.drawTrackCellHitbox(ctx, 1.0, hero.laneX, width, height, fillColor, boxColor, 4.0);
-
-        // 원숭이를 적절한 스케일(0.36)로 렌더링하며 레인 간격을 바닥 트랙 타일과 1:1 일치
-        const charScale = (Math.min(width, height) / 940) * 0.36;
-        const pHero = track.project(1.0, 0, width, height);
-        const lanePixelSpread = (pHero.roadW / 5) / charScale;
-        hero.render(ctx, width * 0.5, height * 0.84, charScale, lanePixelSpread);
-    }
-
-    track.renderEntities(ctx, width, height, hero.time, 0.88, 1.2);
-    if (mathGate.activeGate && mathGate.activeGate.z > 0.88) {
-        mathGate.render(ctx, width, height, track);
-    }
-
-    track.renderEffects(ctx, width, height);
-
-    if (track.stage < 6) {
-        dragon.renderInGameChase(ctx, width, height);
-    }
-
-    // 🎯 왼쪽 상단/왼쪽 아래 DOM 박스가 사라진 자리에 캔버스 자체 아케이드 HUD 렌더링
-    if (gameState === 'PLAYING') {
-        track.renderCanvasHUD(ctx, width, height, score, track.stage, STAGE_INFO[track.stage], mathGate.solvedCount);
-    }
-
-    ctx.restore();
 }
 
 updateHUD();

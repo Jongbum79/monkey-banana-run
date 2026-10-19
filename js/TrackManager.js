@@ -213,8 +213,8 @@ class TrackManager {
             if (p.z > 1.15) p.z -= 1.15;
         });
 
-        // 장애물 출현 빈도: 1번 도로(안정적인 도로)는 여유롭고 안전하게, 2번 도로(위험)는 기존의 고난도 유지!
-        if (!mathGateActive && this.stagePauseTimer <= 0) {
+        // 장애물 출현 빈도: 도로 선택 완료 전에는 대기, 1번 도로는 안전하게, 2번 도로는 고난도 유지
+        if (!mathGateActive && this.stagePauseTimer <= 0 && this.selectedRoute) {
             this.spawnTimer -= dt * gameSpeed * stageSpeedMult;
             if (this.spawnTimer <= 0) {
                 this.spawnObstaclePattern(callbacks);
@@ -225,7 +225,7 @@ class TrackManager {
         }
 
         this.coinSpawnTimer -= dt * gameSpeed;
-        if (this.coinSpawnTimer <= 0 && !mathGateActive && this.stagePauseTimer <= 0) {
+        if (this.coinSpawnTimer <= 0 && !mathGateActive && this.stagePauseTimer <= 0 && this.selectedRoute) {
             this.spawnCoinLine();
             // 아이템이 너무 많이 나오지 않도록 생성 주기를 대폭 늘림 (3.2초 ~ 4.5초)
             this.coinSpawnTimer = 3.2 + Math.random() * 1.3;
@@ -4037,7 +4037,7 @@ class TrackManager {
         });
 
         // 🛣️ 게임 시작 갈림길 3D 입체 간판 렌더링 (Z 깊이 소팅)
-        if (this.roadSignsZ >= minZ && this.roadSignsZ < maxZ) {
+        if (this.roadSignsZ >= zMin && this.roadSignsZ < zMax) {
             this.renderRoadForkSignboards(ctx, width, height, time);
         }
     }
