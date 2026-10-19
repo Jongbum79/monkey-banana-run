@@ -2706,12 +2706,12 @@ class PeanutsMonkeyHero {
     }
 
     // =========================================================================
-    // 🕺 엔딩 댄스 파티 세리머니 렌더링 시스템 (로블록스 마네킹 / R15 아바타 정통 구현)
-    // 1~10등: 윈드밀 (Holy1 B-boy Windmill)
-    // 11~20등: 에이티즈 bad 하이라이트 (ATEEZ BAD Highlight Brazilian Funk)
-    // 21~30등: red red (Cortis James RED RED Challenge)
-    // 31~40등: L을 가져가 (Roblox Rivals Take the L)
-    // 41등 이상: 야채 (Vegetables), 측면 대 측면 (Side to Side / Floss), 크림 치즈 허니 (Cream Cheese Honey)
+    // 🕺 엔딩 댄스 파티 세리머니 렌더링 시스템 (로블록스 정통 그레이 마네킹 & 디테일 안무)
+    // 1~10등: 윈드밀 (Holy1 B-boy Windmill 8Iv8alrNj-g)
+    // 11~20등: 에이티즈 bad 마지막 하이라이트 (ATEEZ BAD Ending Highlight & Freeze 3ZO5F5wUmBg)
+    // 21~30등: red red (Cortis James RED RED 챌린지 1skzg2VEq9I)
+    // 31~40등: L을 가져가 (Roblox Rivals Take the L 권루트 챌린지)
+    // 41등+: 지코 새삥 (New Thing 오토바이 댄스), 야채, 측면 대 측면, 크림 치즈 허니 (기지개)
     // =========================================================================
     renderCelebrationDance(ctx, cx, cy, scale, danceType = 'windmill', danceTime = 0, dancerModel = 'roblox') {
         ctx.save();
@@ -2735,6 +2735,9 @@ class PeanutsMonkeyHero {
             case 'take_the_l':
                 this.drawTakeTheLDance(ctx, danceTime, dancerModel);
                 break;
+            case 'zico_newthing':
+                this.drawZicoNewThingDance(ctx, danceTime, dancerModel);
+                break;
             case 'veggie':
                 this.drawVeggieDance(ctx, danceTime, dancerModel);
                 break;
@@ -2747,7 +2750,7 @@ class PeanutsMonkeyHero {
                 break;
         }
 
-        // 3. 댄스 파티 특수 이펙트 (음표, 하트, 폭죽, 채소, 치즈 등)
+        // 3. 댄스 파티 특수 이펙트
         this.drawDancePartyEffects(ctx, danceType, danceTime);
 
         ctx.restore();
@@ -2757,7 +2760,6 @@ class PeanutsMonkeyHero {
     drawDanceStageAndSpotlight(ctx, danceType, danceTime) {
         ctx.save();
 
-        // 상단 스포트라이트 광원 (무대 위로 쏟아지는 조명)
         const spotGrad = ctx.createRadialGradient(0, -180, 20, 0, 80, 160);
         spotGrad.addColorStop(0, 'rgba(255, 235, 120, 0.45)');
         spotGrad.addColorStop(0.65, 'rgba(0, 245, 212, 0.18)');
@@ -2770,7 +2772,6 @@ class PeanutsMonkeyHero {
         ctx.closePath();
         ctx.fill();
 
-        // 댄스 플로어 원형 발판
         const floorGrad = ctx.createLinearGradient(-130, 90, 130, 90);
         floorGrad.addColorStop(0, '#2b2d42');
         floorGrad.addColorStop(0.5, '#4a4e69');
@@ -2783,14 +2784,12 @@ class PeanutsMonkeyHero {
         ctx.fill();
         ctx.stroke();
 
-        // 무대 네온 링 테두리
         ctx.strokeStyle = Math.sin(danceTime * 8) > 0 ? '#00f5d4' : '#ff007f';
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.ellipse(0, 88, 128, 32, 0, 0, Math.PI * 2);
         ctx.stroke();
 
-        // 배경 비트 이퀄라이저 바 7개
         for (let eq = -3; eq <= 3; eq++) {
             const eqH = 15 + Math.abs(Math.sin(danceTime * 9 + eq * 0.8)) * 32;
             const eqX = eq * 32;
@@ -2802,7 +2801,8 @@ class PeanutsMonkeyHero {
     }
 
     // =========================================================================
-    // 🤖 로블록스 클래식 마네킹 (Roblox Dummy / R15 Blocky Character) 전용 프리미티브
+    // 🤖 로블록스 정통 그레이 마네킹 (Classic Grey Studio Mannequin Dummy) 렌더러
+    // 매트 그레이 바디(#a1a8b0) + 차콜 조인트 라인(#4b5563) + 스터드 + 클린 베벨
     // =========================================================================
     drawRobloxBlockyHead(ctx, x, y, angle = 0, expression = 'smile') {
         ctx.save();
@@ -2810,39 +2810,38 @@ class PeanutsMonkeyHero {
         ctx.rotate(angle);
 
         // 1. 머리 꼭대기 실린더 스터드 (Roblox Stud)
-        ctx.fillStyle = '#ffd60a';
-        ctx.strokeStyle = '#111827';
+        ctx.fillStyle = '#a1a8b0';
+        ctx.strokeStyle = '#27272a';
         ctx.lineWidth = 3.2;
         ctx.beginPath();
         ctx.roundRect(-9, -29, 18, 9, 2);
         ctx.fill();
         ctx.stroke();
 
-        ctx.strokeStyle = 'rgba(0, 0, 0, 0.35)';
+        ctx.strokeStyle = '#52525b';
         ctx.lineWidth = 1.8;
         ctx.beginPath();
         ctx.ellipse(0, -25, 5, 2, 0, 0, Math.PI * 2);
         ctx.stroke();
 
-        // 2. 큐브형 블록 머리
-        ctx.fillStyle = '#ffd60a';
-        ctx.strokeStyle = '#111827';
+        // 2. 큐브형 그레이 블록 머리
+        ctx.fillStyle = '#a1a8b0';
+        ctx.strokeStyle = '#27272a';
         ctx.lineWidth = 3.6;
         ctx.beginPath();
         ctx.roundRect(-24, -20, 48, 42, 4);
         ctx.fill();
         ctx.stroke();
 
-        // 플라스틱 광택 하이라이트
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+        // 플라스틱 광택 베벨
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.38)';
         ctx.fillRect(-21, -17, 42, 4);
 
-        // 3. 로블록스 정통 표정 렌더링
-        ctx.fillStyle = '#111827';
-        ctx.strokeStyle = '#111827';
+        // 3. 로블록스 마네킹 표정 (다크 차콜 디테일)
+        ctx.fillStyle = '#27272a';
+        ctx.strokeStyle = '#27272a';
 
         if (expression === 'smile') {
-            // 클래식 기본 스마일 (Classic :-) Face)
             ctx.fillRect(-12, -7, 5, 8);
             ctx.fillRect(7, -7, 5, 8);
             ctx.beginPath();
@@ -2850,7 +2849,6 @@ class PeanutsMonkeyHero {
             ctx.lineWidth = 3;
             ctx.stroke();
         } else if (expression === 'smug' || expression === 'bad') {
-            // 카리스마 힙합 스머크 (Smug / Bad-Boy Face)
             ctx.lineWidth = 2.8;
             ctx.beginPath();
             ctx.moveTo(-15, -12); ctx.lineTo(-6, -7);
@@ -2866,7 +2864,6 @@ class PeanutsMonkeyHero {
             ctx.lineWidth = 3.2;
             ctx.stroke();
         } else if (expression === 'wink') {
-            // 윙크 (^__^)
             ctx.lineWidth = 3;
             ctx.beginPath();
             ctx.moveTo(-14, -3); ctx.lineTo(-9, -8); ctx.lineTo(-4, -3);
@@ -2878,7 +2875,6 @@ class PeanutsMonkeyHero {
             ctx.arc(0, 4, 10, 0.2, Math.PI - 0.2);
             ctx.stroke();
         } else if (expression === 'eyes_side') {
-            // 코르티스 눈치 살피기 (Eyes scanning side-to-side)
             const look = Math.sin(angle * 14) > 0 ? 3.5 : -3.5;
             ctx.fillRect(-12 + look, -7, 5, 8);
             ctx.fillRect(7 + look, -7, 5, 8);
@@ -2886,30 +2882,42 @@ class PeanutsMonkeyHero {
             ctx.arc(0, 4, 9, 0.2, Math.PI - 0.2);
             ctx.lineWidth = 3;
             ctx.stroke();
+        } else if (expression === 'relaxed') {
+            // 기지개 켤 때 편안하게 감은 눈 (^_^)
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(-15, -3); ctx.lineTo(-10, -8); ctx.lineTo(-5, -3);
+            ctx.moveTo(5, -3); ctx.lineTo(10, -8); ctx.lineTo(15, -3);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(0, 5, 8, 0.2, Math.PI - 0.2);
+            ctx.stroke();
         }
 
         ctx.restore();
     }
 
-    drawRobloxBlockyTorso(ctx, x, y, angle = 0, color = '#0284c7') {
+    drawRobloxBlockyTorso(ctx, x, y, angle = 0, color = '#949ba4') {
         ctx.save();
         ctx.translate(x, y);
         ctx.rotate(angle);
 
+        // 그레이 마네킹 토르소
         ctx.fillStyle = color;
-        ctx.strokeStyle = '#111827';
+        ctx.strokeStyle = '#27272a';
         ctx.lineWidth = 3.8;
         ctx.beginPath();
         ctx.roundRect(-27, -32, 54, 64, 4);
         ctx.fill();
         ctx.stroke();
 
-        // 플라스틱 광택
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.32)';
+        // 플라스틱 하이라이트 베벨
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
         ctx.fillRect(-24, -29, 48, 5);
 
-        // 허리 R15 조인트 라인
-        ctx.strokeStyle = 'rgba(0, 0, 0, 0.25)';
+        // 허리 R15 관절 분할 라인
+        ctx.strokeStyle = '#52525b';
         ctx.lineWidth = 2.5;
         ctx.beginPath();
         ctx.moveTo(-25, 14);
@@ -2919,13 +2927,13 @@ class PeanutsMonkeyHero {
         ctx.restore();
     }
 
-    drawRobloxBlockyArm(ctx, shoulderX, shoulderY, upperAngle = 0, lowerAngle = 0, color = '#ffd60a', isLeft = false) {
+    drawRobloxBlockyArm(ctx, shoulderX, shoulderY, upperAngle = 0, lowerAngle = 0, color = '#a1a8b0', isLeft = false) {
         ctx.save();
         ctx.translate(shoulderX, shoulderY);
         ctx.rotate(upperAngle);
 
         ctx.fillStyle = color;
-        ctx.strokeStyle = '#111827';
+        ctx.strokeStyle = '#27272a';
         ctx.lineWidth = 3.5;
 
         // 상완 (Upper Arm)
@@ -2934,11 +2942,16 @@ class PeanutsMonkeyHero {
         ctx.fill();
         ctx.stroke();
 
+        // 관절 링
+        ctx.fillStyle = '#4b5563';
+        ctx.fillRect(-7, 24, 14, 3);
+
         // 팔꿈치 관절
         ctx.translate(0, 26);
         ctx.rotate(lowerAngle);
 
         // 하완 (Lower Arm)
+        ctx.fillStyle = color;
         ctx.beginPath();
         ctx.roundRect(-8, 0, 16, 24, 3);
         ctx.fill();
@@ -2946,12 +2959,13 @@ class PeanutsMonkeyHero {
 
         // 로블록스 정통 C자형 컵 손
         ctx.translate(0, 24);
+        ctx.fillStyle = '#8e959f';
         ctx.beginPath();
         ctx.roundRect(-8, 0, 16, 14, 3);
         ctx.fill();
         ctx.stroke();
 
-        ctx.fillStyle = '#111827';
+        ctx.fillStyle = '#27272a';
         ctx.beginPath();
         ctx.arc(0, 7, 3.8, 0, Math.PI * 2);
         ctx.fill();
@@ -2959,13 +2973,13 @@ class PeanutsMonkeyHero {
         ctx.restore();
     }
 
-    drawRobloxBlockyLeg(ctx, hipX, hipY, upperAngle = 0, lowerAngle = 0, color = '#16a34a', isLeft = false) {
+    drawRobloxBlockyLeg(ctx, hipX, hipY, upperAngle = 0, lowerAngle = 0, color = '#8e959f', isLeft = false) {
         ctx.save();
         ctx.translate(hipX, hipY);
         ctx.rotate(upperAngle);
 
         ctx.fillStyle = color;
-        ctx.strokeStyle = '#111827';
+        ctx.strokeStyle = '#27272a';
         ctx.lineWidth = 3.6;
 
         // 허벅지 (Upper Leg)
@@ -2974,18 +2988,23 @@ class PeanutsMonkeyHero {
         ctx.fill();
         ctx.stroke();
 
+        // 무릎 관절 링
+        ctx.fillStyle = '#4b5563';
+        ctx.fillRect(-8, 28, 16, 3);
+
         // 무릎 관절
         ctx.translate(0, 30);
         ctx.rotate(lowerAngle);
 
         // 종아리 (Lower Leg)
+        ctx.fillStyle = color;
         ctx.beginPath();
         ctx.roundRect(-9, 0, 18, 28, 3);
         ctx.fill();
         ctx.stroke();
 
         // 발 (Foot / Shoe)
-        ctx.fillStyle = '#15803d';
+        ctx.fillStyle = '#6b7280';
         ctx.beginPath();
         ctx.roundRect(-9, 28, 20, 14, 2);
         ctx.fill();
@@ -2995,7 +3014,7 @@ class PeanutsMonkeyHero {
     }
 
     // =========================================================================
-    // 🌀 [1~10등] 홀리원 B-boy 정통 윈드밀 (Windmill Tutorial 8Iv8alrNj-g 완벽 구현)
+    // 🌀 [1~10등] 홀리원 B-boy 정통 윈드밀 (8Iv8alrNj-g)
     // =========================================================================
     drawWindmillBreakdance(ctx, danceTime, dancerModel = 'roblox') {
         ctx.save();
@@ -3003,9 +3022,8 @@ class PeanutsMonkeyHero {
 
         const spin = danceTime * 12.0;
 
-        // 바닥 마찰 궤적 & 회전 원형 바람
         ctx.save();
-        ctx.strokeStyle = 'rgba(255, 234, 120, 0.8)';
+        ctx.strokeStyle = 'rgba(255, 234, 120, 0.85)';
         ctx.lineWidth = 4;
         for (let a = 0; a < 3; a++) {
             const arcAng = spin + (a * Math.PI * 2) / 3;
@@ -3014,7 +3032,6 @@ class PeanutsMonkeyHero {
             ctx.stroke();
         }
 
-        // 바닥 접촉 마찰 스파크 파티클
         ctx.fillStyle = '#ffbe0b';
         for (let sp = 0; sp < 8; sp++) {
             const sx = Math.cos(spin * 2 + sp) * (60 + sp * 8);
@@ -3026,41 +3043,32 @@ class PeanutsMonkeyHero {
         ctx.restore();
 
         if (dancerModel === 'roblox') {
-            // 🤖 [로블록스 마네킹 윈드밀]
-            // 바닥 수평 360° 고속 백스핀 + 130° 와이드 V자 스플릿 다리 프로펠러 회전!
             ctx.save();
             ctx.rotate(spin);
 
-            // V자 스플릿 다리 (윈드밀 프로펠러 회전)
-            // 왼다리 (왼쪽 위 방향)
+            // 130도 와이드 V자 스플릿 다리 회전
             ctx.save();
             ctx.rotate(-1.15);
-            this.drawRobloxBlockyLeg(ctx, 0, 0, 0, 0, '#16a34a', true);
+            this.drawRobloxBlockyLeg(ctx, 0, 0, 0, 0, '#8e959f', true);
             ctx.restore();
 
-            // 오른다리 (오른쪽 위 방향)
             ctx.save();
             ctx.rotate(1.15);
-            this.drawRobloxBlockyLeg(ctx, 0, 0, 0, 0, '#16a34a', false);
+            this.drawRobloxBlockyLeg(ctx, 0, 0, 0, 0, '#8e959f', false);
             ctx.restore();
 
-            // 회전하는 블루 토르소
-            this.drawRobloxBlockyTorso(ctx, 0, 0, 0, '#0284c7');
-
-            // 바닥을 밀어내는 로블록스 컵 손
-            this.drawRobloxBlockyArm(ctx, -26, -10, -0.6, 0.4, '#ffd60a', true);
-            this.drawRobloxBlockyArm(ctx, 26, -10, 0.6, -0.4, '#ffd60a', false);
+            this.drawRobloxBlockyTorso(ctx, 0, 0, 0, '#949ba4');
+            this.drawRobloxBlockyArm(ctx, -26, -10, -0.6, 0.4, '#a1a8b0', true);
+            this.drawRobloxBlockyArm(ctx, 26, -10, 0.6, -0.4, '#a1a8b0', false);
 
             ctx.restore();
 
-            // 바닥에 밀착하여 화면을 바라보며 윙크하는 로블록스 옐로우 헤드
             ctx.save();
             ctx.translate(0, -68);
             this.drawRobloxBlockyHead(ctx, 0, 0, Math.sin(spin) * 0.1, 'wink');
             ctx.restore();
 
         } else {
-            // 🐵 [동물 러너 캐릭터 윈드밀]
             ctx.save();
             ctx.rotate(spin);
 
@@ -3103,7 +3111,6 @@ class PeanutsMonkeyHero {
             ctx.restore();
         }
 
-        // 네온 타이틀 배너
         ctx.save();
         ctx.font = '900 19px system-ui, sans-serif';
         ctx.fillStyle = '#ffbe0b';
@@ -3118,125 +3125,113 @@ class PeanutsMonkeyHero {
     }
 
     // =========================================================================
-    // 🔥 [11~20등] 에이티즈 'BAD' 킬링파트 하이라이트 (She's so BAD! 브라질리언 펑크 바운스)
-    // 유튜브 공식 안무 3ZO5F5wUmBg 하이라이트 파트 집중 구현!
+    // 🔥 [11~20등] 에이티즈 BAD 마지막 하이라이트 (댄스브레이크 & 아웃트로 프리즈 3ZO5F5wUmBg)
     // =========================================================================
     drawAteezBadDance(ctx, danceTime, dancerModel = 'roblox') {
         ctx.save();
 
-        // 138 BPM 브라질리언 펑크 고속 비트
-        const bpm = danceTime * 15.5;
-        const beat = Math.sin(bpm);
-        const isHit = beat > 0.42;
-        const bounceY = Math.abs(beat) * 16;
-        const stepSway = Math.sin(bpm * 0.5) * 12;
+        // 3.6초 아웃트로 하이라이트 사이클 (폭풍 펀치 & 댄스 브레이크 ➔ 극적인 엔딩 프리즈)
+        const cycleTime = danceTime % 3.6;
+        const isFreezeEnding = cycleTime > 2.7; // 마지막 0.9초는 카리스마 엔딩 정지 포즈!
 
-        ctx.translate(stepSway * 0.35, bounceY);
+        if (!isFreezeEnding) {
+            // [하이라이트 난타 구간] 고속 142 BPM 펑크 펀치 & 체스트 팝
+            const bpm = danceTime * 16.0;
+            const beat = Math.sin(bpm);
+            const isHit = beat > 0.45;
+            const bounceY = Math.abs(beat) * 16;
+            const stepSway = Math.sin(bpm * 0.5) * 14;
 
-        // 바닥 타격 베이스 펄스 링
-        if (isHit) {
+            ctx.translate(stepSway * 0.35, bounceY);
+
+            if (isHit) {
+                ctx.save();
+                ctx.strokeStyle = 'rgba(255, 0, 85, 0.8)';
+                ctx.lineWidth = 3.8;
+                ctx.beginPath();
+                ctx.ellipse(0, 24, 78, 22, 0, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            if (dancerModel === 'roblox') {
+                this.drawRobloxBlockyLeg(ctx, -16, -45, -0.32, 0.45, '#8e959f', true);
+                this.drawRobloxBlockyLeg(ctx, 16, -45, 0.32, -0.45, '#8e959f', false);
+
+                ctx.save();
+                ctx.translate(0, -68 + (isHit ? -7 : 3));
+                ctx.scale(isHit ? 1.14 : 0.98, isHit ? 1.08 : 1.0);
+                this.drawRobloxBlockyTorso(ctx, 0, 0, 0, '#949ba4');
+
+                const armAngle = isHit ? -1.35 : -1.0;
+                this.drawRobloxBlockyArm(ctx, -27, -24, armAngle, -1.2, '#a1a8b0', true);
+                this.drawRobloxBlockyArm(ctx, 27, -24, -armAngle, 1.2, '#a1a8b0', false);
+                ctx.restore();
+
+                ctx.save();
+                ctx.translate(0, -68);
+                this.drawRobloxBlockyHead(ctx, 0, 0, isHit ? 0.09 : -0.05, 'bad');
+                ctx.restore();
+            } else {
+                ctx.save();
+                ctx.translate(0, -68);
+                this.drawBackTorsoAndShorts(ctx, 0, true);
+                this.drawFrogHead(ctx, 0, 0, true);
+                ctx.restore();
+            }
+
             ctx.save();
-            ctx.strokeStyle = 'rgba(255, 0, 85, 0.75)';
-            ctx.lineWidth = 3.5;
-            ctx.beginPath();
-            ctx.ellipse(0, 24, 76, 20, 0, 0, Math.PI * 2);
-            ctx.stroke();
-            ctx.restore();
-        }
-
-        if (dancerModel === 'roblox') {
-            // 🤖 [로블록스 마네킹 ATEEZ BAD 하이라이트]
-            // 1. 와이드 딥스쿼트 & 스톰핑 다리
-            this.drawRobloxBlockyLeg(ctx, -16, -45, -0.32, 0.45, '#16a34a', true);
-            this.drawRobloxBlockyLeg(ctx, 16, -45, 0.32, -0.45, '#16a34a', false);
-
-            // 2. 가슴 폭발적 체스트 팝 (앞으로 강하게 튕기며 R15 반동)
-            ctx.save();
-            ctx.translate(0, -68 + (isHit ? -6 : 3));
-            ctx.scale(isHit ? 1.12 : 0.98, isHit ? 1.08 : 1.0);
-            this.drawRobloxBlockyTorso(ctx, 0, 0, 0, '#0284c7');
-
-            // 3. 에이티즈 BAD 시그니처 앵귤러 핸드 락 (가슴 앞 정면 클로 펀치)
-            const armAngle = isHit ? -1.3 : -1.0;
-            this.drawRobloxBlockyArm(ctx, -27, -24, armAngle, -1.2, '#ffd60a', true);
-            this.drawRobloxBlockyArm(ctx, 27, -24, -armAngle, 1.2, '#ffd60a', false);
-            ctx.restore();
-
-            // 4. 머리 박자에 맞춰 파워풀 끄덕임 (카리스마 아이컨택)
-            ctx.save();
-            ctx.translate(0, -68);
-            this.drawRobloxBlockyHead(ctx, 0, 0, isHit ? 0.08 : -0.05, 'bad');
+            ctx.font = '900 23px system-ui, sans-serif';
+            ctx.fillStyle = isHit ? '#ff0055' : '#ffbe0b';
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 4;
+            ctx.textAlign = 'center';
+            ctx.strokeText('🔥 BAD 마지막 댄스브레이크 폭풍 비트! 🔥', 0, -150);
+            ctx.fillText('🔥 BAD 마지막 댄스브레이크 폭풍 비트! 🔥', 0, -150);
             ctx.restore();
 
         } else {
-            // 🐵 [동물 러너 캐릭터 ATEEZ BAD]
-            const colors = this.getSpeciesColors();
-            const armColor = this.costumeType === 'gentleman' ? '#1e2229' : (this.costumeType === 'santa' ? '#d62828' : colors.skin);
-            const handColor = this.costumeType === 'gentleman' ? '#fffcf5' : (this.costumeType === 'santa' ? '#fffcf5' : colors.belly);
+            // [에이티즈 시그니처 엔딩 프리즈 (Freeze Outro)]
+            // 한 손을 머리 뒤로 넘기고, 한 손은 허리에 걸친 채 카메라를 쏘아보는 카리스마 정지 자세!
+            ctx.translate(0, 8);
 
-            ctx.fillStyle = this.costumeType === 'gentleman' ? '#1e2229' : (this.costumeType === 'santa' ? '#d62828' : '#2b303a');
-            ctx.strokeStyle = '#1a1612';
+            if (dancerModel === 'roblox') {
+                this.drawRobloxBlockyLeg(ctx, -18, -45, -0.25, 0.1, '#8e959f', true);
+                this.drawRobloxBlockyLeg(ctx, 18, -45, 0.35, -0.1, '#8e959f', false);
+
+                this.drawRobloxBlockyTorso(ctx, 0, -68, 0.08, '#949ba4');
+
+                // 왼팔: 머리 뒤로 강렬하게 뻗는 프리즈 포즈
+                this.drawRobloxBlockyArm(ctx, -27, -85, -2.4, -1.4, '#a1a8b0', true);
+                // 오른팔: 허리춤에 각지게 고정한 힙합 락
+                this.drawRobloxBlockyArm(ctx, 27, -85, 0.7, -1.1, '#a1a8b0', false);
+
+                // 고개 살짝 숙이며 치명적인 아이컨택
+                this.drawRobloxBlockyHead(ctx, 0, -68, -0.08, 'smug');
+            } else {
+                ctx.save();
+                ctx.translate(0, -68);
+                this.drawBackTorsoAndShorts(ctx, 0, true);
+                this.drawFrogHead(ctx, 0, 0, true);
+                ctx.restore();
+            }
+
+            ctx.save();
+            ctx.font = '900 23px system-ui, sans-serif';
+            ctx.fillStyle = '#ffbe0b';
+            ctx.strokeStyle = '#111827';
             ctx.lineWidth = 4;
-            ctx.fillRect(-38, -45, 24, 72);
-            ctx.strokeRect(-38, -45, 24, 72);
-            ctx.fillRect(14, -45, 24, 72);
-            ctx.strokeRect(14, -45, 24, 72);
-
-            ctx.save();
-            ctx.translate(0, -68 + (isHit ? -6 : 3));
-            ctx.scale(isHit ? 1.12 : 0.98, isHit ? 1.08 : 1.0);
-            this.drawBackTorsoAndShorts(ctx, 0, true);
-
-            [-1, 1].forEach(side => {
-                ctx.fillStyle = armColor;
-                ctx.strokeStyle = '#1a1612';
-                ctx.lineWidth = 4;
-                ctx.beginPath();
-                ctx.moveTo(side * 42, -85);
-                ctx.lineTo(side * 68, -48);
-                ctx.lineTo(side * 26, isHit ? -18 : -28);
-                ctx.lineTo(side * 18, isHit ? -36 : -46);
-                ctx.lineTo(side * 50, -58);
-                ctx.closePath();
-                ctx.fill();
-                ctx.stroke();
-
-                ctx.fillStyle = handColor;
-                ctx.beginPath();
-                ctx.arc(side * 22, isHit ? -24 : -34, 14, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.stroke();
-            });
-            ctx.restore();
-
-            ctx.save();
-            ctx.translate(0, -68);
-            if (this.characterType === 'frog') this.drawFrogHead(ctx, 0, 0, true);
-            else if (this.characterType === 'tiger') this.drawTigerHead(ctx, 0, 0, true);
-            else if (this.characterType === 'penguin') this.drawPenguinHead(ctx, 0, 0, true);
-            else this.drawLookBackHead(ctx, 0, 0);
+            ctx.textAlign = 'center';
+            ctx.strokeText('⚡ ATEEZ BAD 엔딩 프리즈 락! ⚡', 0, -150);
+            ctx.fillText('⚡ ATEEZ BAD 엔딩 프리즈 락! ⚡', 0, -150);
             ctx.restore();
         }
-
-        // BAD! 하이라이트 네온 타이틀
-        ctx.save();
-        ctx.font = '900 24px system-ui, sans-serif';
-        ctx.fillStyle = isHit ? '#ff0055' : '#ffbe0b';
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 4;
-        ctx.textAlign = 'center';
-        ctx.strokeText('🔥 BAD! BAD! BAD! BAD! 🔥', 0, -150);
-        ctx.fillText('🔥 BAD! BAD! BAD! BAD! 🔥', 0, -150);
-        ctx.restore();
 
         ctx.restore();
     }
 
     // =========================================================================
-    // ❤️ [21~30등] 코르티스 제임스 'RED RED' 정통 챌린지 (1skzg2VEq9I 완벽 구현)
-    // 1구간: "팔랑귀 팔랑귀" (양손 귀 털기 제스처)
-    // 2구간: "눈치나 살피기" (손가락 눈가 대고 좌우 눈치 살피기)
-    // 3구간: "도가니 사리기" (무릎 잡고 바운스) & "That's red, red!" X크로스 락!
+    // ❤️ [21~30등] 코르티스 제임스 RED RED 정통 챌린지 (1skzg2VEq9I)
     // =========================================================================
     drawRedRedDance(ctx, danceTime, dancerModel = 'roblox') {
         ctx.save();
@@ -3250,19 +3245,17 @@ class PeanutsMonkeyHero {
         ctx.translate(0, bounceY);
 
         if (dancerModel === 'roblox') {
-            // 🤖 [로블록스 마네킹 RED RED 챌린지]
             if (phase === 0) {
-                // 1구간: "팔랑귀 팔랑귀" (That's red, red) - 양손을 귀 옆에 대고 빠르게 팔랑팔랑!
+                // 1구간: "팔랑귀 팔랑귀"
                 const earFlutter = Math.sin(danceTime * 32) * 0.45;
-                this.drawRobloxBlockyLeg(ctx, -16, -45, -0.2, 0.3, '#16a34a', true);
-                this.drawRobloxBlockyLeg(ctx, 16, -45, 0.2, -0.3, '#16a34a', false);
+                this.drawRobloxBlockyLeg(ctx, -16, -45, -0.2, 0.3, '#8e959f', true);
+                this.drawRobloxBlockyLeg(ctx, 16, -45, 0.2, -0.3, '#8e959f', false);
 
-                this.drawRobloxBlockyTorso(ctx, 0, -68, 0, '#0284c7');
-                this.drawRobloxBlockyArm(ctx, -27, -85, -2.6 + earFlutter, -0.7, '#ffd60a', true);
-                this.drawRobloxBlockyArm(ctx, 27, -85, 2.6 - earFlutter, 0.7, '#ffd60a', false);
+                this.drawRobloxBlockyTorso(ctx, 0, -68, 0, '#949ba4');
+                this.drawRobloxBlockyArm(ctx, -27, -85, -2.6 + earFlutter, -0.7, '#a1a8b0', true);
+                this.drawRobloxBlockyArm(ctx, 27, -85, 2.6 - earFlutter, 0.7, '#a1a8b0', false);
                 this.drawRobloxBlockyHead(ctx, 0, -68, Math.sin(danceTime * 8) * 0.1, 'smile');
 
-                // 배너
                 ctx.font = '900 20px system-ui, sans-serif';
                 ctx.fillStyle = '#ff0055';
                 ctx.strokeStyle = '#ffffff';
@@ -3272,18 +3265,16 @@ class PeanutsMonkeyHero {
                 ctx.fillText("👂 팔랑귀 팔랑귀! (THAT'S RED, RED)", 0, -150);
 
             } else if (phase === 1) {
-                // 2구간: "눈치나 살피기" (That's red, red) - 양손가락으로 눈을 가리키며 좌우로 눈치 살피기!
+                // 2구간: "눈치나 살피기"
                 const lookAngle = Math.sin(danceTime * 6) * 0.25;
-                this.drawRobloxBlockyLeg(ctx, -16, -45, 0.1, 0.2, '#16a34a', true);
-                this.drawRobloxBlockyLeg(ctx, 16, -45, -0.1, -0.2, '#16a34a', false);
+                this.drawRobloxBlockyLeg(ctx, -16, -45, 0.1, 0.2, '#8e959f', true);
+                this.drawRobloxBlockyLeg(ctx, 16, -45, -0.1, -0.2, '#8e959f', false);
 
-                this.drawRobloxBlockyTorso(ctx, 0, -68, lookAngle * 0.3, '#0284c7');
-                // 눈 앞으로 손 올리기
-                this.drawRobloxBlockyArm(ctx, -27, -85, -1.8, -1.1, '#ffd60a', true);
-                this.drawRobloxBlockyArm(ctx, 27, -85, 1.8, 1.1, '#ffd60a', false);
+                this.drawRobloxBlockyTorso(ctx, 0, -68, lookAngle * 0.3, '#949ba4');
+                this.drawRobloxBlockyArm(ctx, -27, -85, -1.8, -1.1, '#a1a8b0', true);
+                this.drawRobloxBlockyArm(ctx, 27, -85, 1.8, 1.1, '#a1a8b0', false);
                 this.drawRobloxBlockyHead(ctx, 0, -68, lookAngle, 'eyes_side');
 
-                // 배너
                 ctx.font = '900 20px system-ui, sans-serif';
                 ctx.fillStyle = '#ffbe0b';
                 ctx.strokeStyle = '#111827';
@@ -3293,17 +3284,15 @@ class PeanutsMonkeyHero {
                 ctx.fillText("👀 눈치나 살피기! (THAT'S RED, RED)", 0, -150);
 
             } else {
-                // 3구간: "도가니 사리기" (That's red, red) - 무릎(도가니)을 짚고 굽히며 딥 바운스!
-                this.drawRobloxBlockyLeg(ctx, -16, -45, -0.4, 0.8, '#16a34a', true);
-                this.drawRobloxBlockyLeg(ctx, 16, -45, 0.4, -0.8, '#16a34a', false);
+                // 3구간: "도가니 사리기"
+                this.drawRobloxBlockyLeg(ctx, -16, -45, -0.4, 0.8, '#8e959f', true);
+                this.drawRobloxBlockyLeg(ctx, 16, -45, 0.4, -0.8, '#8e959f', false);
 
-                this.drawRobloxBlockyTorso(ctx, 0, -62, 0, '#0284c7');
-                // 무릎을 짚는 팔
-                this.drawRobloxBlockyArm(ctx, -27, -85, -0.5, 1.3, '#ffd60a', true);
-                this.drawRobloxBlockyArm(ctx, 27, -85, 0.5, -1.3, '#ffd60a', false);
+                this.drawRobloxBlockyTorso(ctx, 0, -62, 0, '#949ba4');
+                this.drawRobloxBlockyArm(ctx, -27, -85, -0.5, 1.3, '#a1a8b0', true);
+                this.drawRobloxBlockyArm(ctx, 27, -85, 0.5, -1.3, '#a1a8b0', false);
                 this.drawRobloxBlockyHead(ctx, 0, -62, 0, 'bad');
 
-                // 배너
                 ctx.font = '900 20px system-ui, sans-serif';
                 ctx.fillStyle = '#ff0055';
                 ctx.strokeStyle = '#ffffff';
@@ -3314,23 +3303,10 @@ class PeanutsMonkeyHero {
             }
 
         } else {
-            // 🐵 [동물 러너 캐릭터 RED RED]
-            const colors = this.getSpeciesColors();
-            ctx.fillStyle = this.costumeType === 'gentleman' ? '#1e2229' : '#2b303a';
-            ctx.fillRect(-34, -45, 26, 68);
-            ctx.fillRect(8, -45, 26, 68);
-
             ctx.save();
             ctx.translate(0, -65);
             this.drawBackTorsoAndShorts(ctx, 0, true);
-            ctx.restore();
-
-            ctx.save();
-            ctx.translate(0, -65);
-            if (this.characterType === 'frog') this.drawFrogHead(ctx, 0, 0, true);
-            else if (this.characterType === 'tiger') this.drawTigerHead(ctx, 0, 0, true);
-            else if (this.characterType === 'penguin') this.drawPenguinHead(ctx, 0, 0, true);
-            else this.drawLookBackHead(ctx, 0, 0);
+            this.drawFrogHead(ctx, 0, 0, true);
             ctx.restore();
         }
 
@@ -3350,33 +3326,24 @@ class PeanutsMonkeyHero {
         ctx.translate(0, -hopY);
 
         if (dancerModel === 'roblox') {
-            // 🤖 [로블록스 마네킹 Take the L]
-            // 1. 좌우 번갈아 신나게 차올리는 킥 다리
             if (kickDir > 0) {
-                this.drawRobloxBlockyLeg(ctx, -16, -45, -0.95, 0.2, '#16a34a', true);
-                this.drawRobloxBlockyLeg(ctx, 16, -45, 0.15, 0.1, '#16a34a', false);
+                this.drawRobloxBlockyLeg(ctx, -16, -45, -0.95, 0.2, '#8e959f', true);
+                this.drawRobloxBlockyLeg(ctx, 16, -45, 0.15, 0.1, '#8e959f', false);
             } else {
-                this.drawRobloxBlockyLeg(ctx, -16, -45, -0.15, 0.1, '#16a34a', true);
-                this.drawRobloxBlockyLeg(ctx, 16, -45, 0.95, -0.2, '#16a34a', false);
+                this.drawRobloxBlockyLeg(ctx, -16, -45, -0.15, 0.1, '#8e959f', true);
+                this.drawRobloxBlockyLeg(ctx, 16, -45, 0.95, -0.2, '#8e959f', false);
             }
 
-            // 2. 신나게 흔들리는 블루 토르소
-            this.drawRobloxBlockyTorso(ctx, 0, -68, -kickDir * 0.08, '#0284c7');
+            this.drawRobloxBlockyTorso(ctx, 0, -68, -kickDir * 0.08, '#949ba4');
 
-            // 3. 오른팔은 허리 아래에서 앞뒤로 찰랑찰랑 스윙
             const armSwing = Math.sin(tempo) * 0.8;
-            this.drawRobloxBlockyArm(ctx, 27, -85, armSwing, 0.2, '#ffd60a', false);
-
-            // 4. 머리 끄덕임
+            this.drawRobloxBlockyArm(ctx, 27, -85, armSwing, 0.2, '#a1a8b0', false);
             this.drawRobloxBlockyHead(ctx, 0, -68, kickDir * 0.06, 'smug');
 
-            // 5. ★ 이마에 딱 붙인 'L' 손가락 (Take the L)
             ctx.save();
             ctx.translate(0, -85);
-            // 왼팔이 이마로 올라옴
-            this.drawRobloxBlockyArm(ctx, -27, 0, -2.4, -1.2, '#ffd60a', true);
+            this.drawRobloxBlockyArm(ctx, -27, 0, -2.4, -1.2, '#a1a8b0', true);
 
-            // 황금 'L' 홀로그램 네온
             ctx.font = 'bold 32px "Arial Black", sans-serif';
             ctx.fillStyle = '#ffbe0b';
             ctx.strokeStyle = '#111827';
@@ -3387,27 +3354,13 @@ class PeanutsMonkeyHero {
             ctx.restore();
 
         } else {
-            // 🐵 [동물 러너 Take the L]
-            const colors = this.getSpeciesColors();
-            ctx.fillStyle = '#2b303a';
-            ctx.fillRect(-34, -45, 26, 75);
-            ctx.fillRect(8, -45, 26, 75);
-
             ctx.save();
             ctx.translate(0, -65);
             this.drawBackTorsoAndShorts(ctx, 0, true);
-            ctx.restore();
-
-            ctx.save();
-            ctx.translate(0, -65);
-            if (this.characterType === 'frog') this.drawFrogHead(ctx, 0, 0, true);
-            else if (this.characterType === 'tiger') this.drawTigerHead(ctx, 0, 0, true);
-            else if (this.characterType === 'penguin') this.drawPenguinHead(ctx, 0, 0, true);
-            else this.drawLookBackHead(ctx, 0, 0);
+            this.drawFrogHead(ctx, 0, 0, true);
             ctx.restore();
         }
 
-        // 네온 배너
         ctx.save();
         ctx.font = '900 20px system-ui, sans-serif';
         ctx.fillStyle = '#ffea79';
@@ -3422,6 +3375,94 @@ class PeanutsMonkeyHero {
     }
 
     // =========================================================================
+    // 🏍️ [41등+] 지코 '새삥' (New Thing 오토바이 시동 & 주행 라이딩 댄스 바타 안무)
+    // =========================================================================
+    drawZicoNewThingDance(ctx, danceTime, dancerModel = 'roblox') {
+        ctx.save();
+
+        const cycle = 3.6;
+        const phaseTime = danceTime % cycle;
+        const isRevving = phaseTime < 1.4; // 1.4초 동안 부릉부릉 오토바이 시동 걸기!
+
+        if (isRevving) {
+            // [오토바이 시동 걸기 & 킥스타터 밟기]
+            const kickBeat = Math.sin(danceTime * 14.0);
+            const kickY = Math.max(0, kickBeat) * 16;
+            ctx.translate(0, -kickY * 0.4);
+
+            if (dancerModel === 'roblox') {
+                // 왼다리는 단단하게 지탱, 오른다리는 킥스타터 힘차게 밟기!
+                this.drawRobloxBlockyLeg(ctx, -16, -45, 0.1, 0.2, '#8e959f', true);
+                this.drawRobloxBlockyLeg(ctx, 16, -45, -0.5 + Math.max(0, kickBeat) * 0.8, 0.4, '#8e959f', false);
+
+                this.drawRobloxBlockyTorso(ctx, 0, -68, 0.08, '#949ba4');
+
+                // 왼손은 핸들 잡고, 오른손은 스로틀 부릉부릉 감기!
+                this.drawRobloxBlockyArm(ctx, -27, -85, -1.3, -0.6, '#a1a8b0', true);
+                this.drawRobloxBlockyArm(ctx, 27, -85, -1.1 + kickBeat * 0.35, -0.9, '#a1a8b0', false);
+
+                this.drawRobloxBlockyHead(ctx, 0, -68, 0.08, 'smug');
+            } else {
+                ctx.save();
+                ctx.translate(0, -68);
+                this.drawBackTorsoAndShorts(ctx, 0, true);
+                this.drawFrogHead(ctx, 0, 0, true);
+                ctx.restore();
+            }
+
+            ctx.save();
+            ctx.font = '900 21px system-ui, sans-serif';
+            ctx.fillStyle = '#ffbe0b';
+            ctx.strokeStyle = '#111827';
+            ctx.lineWidth = 4;
+            ctx.textAlign = 'center';
+            ctx.strokeText('🏍️ 부릉~ 부릉~ 새삥 오토바이 시동 걸기!', 0, -150);
+            ctx.fillText('🏍️ 부릉~ 부릉~ 새삥 오토바이 시동 걸기!', 0, -150);
+            ctx.restore();
+
+        } else {
+            // [오토바이 질주 주행 라이딩 & 바디 팝] "나는 새삥 모든 게 다 새삥!"
+            const rideBpm = Math.sin(danceTime * 10.0);
+            const rideBounce = Math.abs(rideBpm) * 14;
+            const rideWeave = Math.sin(danceTime * 5.0) * 18;
+
+            ctx.translate(rideWeave * 0.4, rideBounce);
+
+            if (dancerModel === 'roblox') {
+                // 핸들을 꽉 잡고 무릎 바운스 타며 질주
+                this.drawRobloxBlockyLeg(ctx, -16, -45, -0.28, 0.5, '#8e959f', true);
+                this.drawRobloxBlockyLeg(ctx, 16, -45, 0.28, -0.5, '#8e959f', false);
+
+                this.drawRobloxBlockyTorso(ctx, 0, -68, rideWeave * 0.008, '#949ba4');
+
+                // 양손으로 와이드 핸들을 꽉 잡고 운전하는 라이딩 포즈
+                this.drawRobloxBlockyArm(ctx, -27, -85, -1.4, -0.6, '#a1a8b0', true);
+                this.drawRobloxBlockyArm(ctx, 27, -85, 1.4, 0.6, '#a1a8b0', false);
+
+                this.drawRobloxBlockyHead(ctx, 0, -68, rideWeave * 0.006, 'bad');
+            } else {
+                ctx.save();
+                ctx.translate(0, -68);
+                this.drawBackTorsoAndShorts(ctx, 0, true);
+                this.drawFrogHead(ctx, 0, 0, true);
+                ctx.restore();
+            }
+
+            ctx.save();
+            ctx.font = '900 21px system-ui, sans-serif';
+            ctx.fillStyle = '#00f5d4';
+            ctx.strokeStyle = '#111827';
+            ctx.lineWidth = 4;
+            ctx.textAlign = 'center';
+            ctx.strokeText('🔥 지코 - 새삥 (NEW THING) 질주 라이딩! 🔥', 0, -150);
+            ctx.fillText('🔥 지코 - 새삥 (NEW THING) 질주 라이딩! 🔥', 0, -150);
+            ctx.restore();
+        }
+
+        ctx.restore();
+    }
+
+    // =========================================================================
     // 🥦 [41등+] 로블록스 라이벌즈 '야채' (권루트 Vegetables 이모트)
     // =========================================================================
     drawVeggieDance(ctx, danceTime, dancerModel = 'roblox') {
@@ -3431,39 +3472,23 @@ class PeanutsMonkeyHero {
         ctx.translate(0, -jump);
 
         if (dancerModel === 'roblox') {
-            // 🤖 [로블록스 마네킹 야채 댄스]
-            // 무릎 모으고 좌우 까딱까딱 팝핀
             const flap = Math.sin(danceTime * 12.0) * 0.5;
-            this.drawRobloxBlockyLeg(ctx, -14, -45, 0.2, 0.4, '#16a34a', true);
-            this.drawRobloxBlockyLeg(ctx, 14, -45, -0.2, -0.4, '#16a34a', false);
+            this.drawRobloxBlockyLeg(ctx, -14, -45, 0.2, 0.4, '#8e959f', true);
+            this.drawRobloxBlockyLeg(ctx, 14, -45, -0.2, -0.4, '#8e959f', false);
 
-            this.drawRobloxBlockyTorso(ctx, 0, -68, flap * 0.1, '#0284c7');
-            // 양팔 가슴 앞 교차 퍼덕임
-            this.drawRobloxBlockyArm(ctx, -27, -85, -1.2 + flap, -1.3, '#ffd60a', true);
-            this.drawRobloxBlockyArm(ctx, 27, -85, 1.2 - flap, 1.3, '#ffd60a', false);
+            this.drawRobloxBlockyTorso(ctx, 0, -68, flap * 0.1, '#949ba4');
+            this.drawRobloxBlockyArm(ctx, -27, -85, -1.2 + flap, -1.3, '#a1a8b0', true);
+            this.drawRobloxBlockyArm(ctx, 27, -85, 1.2 - flap, 1.3, '#a1a8b0', false);
             this.drawRobloxBlockyHead(ctx, 0, -68, -flap * 0.15, 'smile');
 
         } else {
-            // 🐵 [동물 러너 야채 댄스]
-            ctx.fillStyle = '#2b303a';
-            ctx.fillRect(-32, -45, 24, 65);
-            ctx.fillRect(8, -45, 24, 65);
-
             ctx.save();
             ctx.translate(0, -65);
             this.drawBackTorsoAndShorts(ctx, 0, true);
-            ctx.restore();
-
-            ctx.save();
-            ctx.translate(0, -65);
-            if (this.characterType === 'frog') this.drawFrogHead(ctx, 0, 0, true);
-            else if (this.characterType === 'tiger') this.drawTigerHead(ctx, 0, 0, true);
-            else if (this.characterType === 'penguin') this.drawPenguinHead(ctx, 0, 0, true);
-            else this.drawLookBackHead(ctx, 0, 0);
+            this.drawFrogHead(ctx, 0, 0, true);
             ctx.restore();
         }
 
-        // 춤추는 야채 이모지
         const veggies = ['🥦', '🥕', '🍅', '🌽', '🥬'];
         ctx.font = '24px sans-serif';
         veggies.forEach((v, idx) => {
@@ -3472,7 +3497,6 @@ class PeanutsMonkeyHero {
             ctx.fillText(v, vx, vy);
         });
 
-        // 네온 배너
         ctx.save();
         ctx.font = '900 20px system-ui, sans-serif';
         ctx.fillStyle = '#52b788';
@@ -3499,39 +3523,22 @@ class PeanutsMonkeyHero {
         ctx.translate(hip * 0.35, 0);
 
         if (dancerModel === 'roblox') {
-            // 🤖 [로블록스 마네킹 측면 대 측면 Floss]
-            this.drawRobloxBlockyLeg(ctx, -16, -45, 0.2, 0.1, '#16a34a', true);
-            this.drawRobloxBlockyLeg(ctx, 16, -45, -0.2, -0.1, '#16a34a', false);
+            this.drawRobloxBlockyLeg(ctx, -16, -45, 0.2, 0.1, '#8e959f', true);
+            this.drawRobloxBlockyLeg(ctx, 16, -45, -0.2, -0.1, '#8e959f', false);
 
-            // 골반 반대방향 스윙
-            this.drawRobloxBlockyTorso(ctx, hip * 0.5, -68, hip * 0.008, '#0284c7');
-
-            // 양팔이 골반을 관통하며 좌우로 고속 교차 스윙!
-            this.drawRobloxBlockyArm(ctx, -27, -85, armAngle, 0.1, '#ffd60a', true);
-            this.drawRobloxBlockyArm(ctx, 27, -85, armAngle, 0.1, '#ffd60a', false);
+            this.drawRobloxBlockyTorso(ctx, hip * 0.5, -68, hip * 0.008, '#949ba4');
+            this.drawRobloxBlockyArm(ctx, -27, -85, armAngle, 0.1, '#a1a8b0', true);
+            this.drawRobloxBlockyArm(ctx, 27, -85, armAngle, 0.1, '#a1a8b0', false);
             this.drawRobloxBlockyHead(ctx, 0, -68, -hip * 0.006, 'smile');
 
         } else {
-            // 🐵 [동물 러너 Floss]
-            ctx.fillStyle = '#2b303a';
-            ctx.fillRect(-38, -45, 26, 72);
-            ctx.fillRect(12, -45, 26, 72);
-
-            ctx.save();
-            ctx.translate(hip, -65);
-            this.drawBackTorsoAndShorts(ctx, 0, true);
-            ctx.restore();
-
             ctx.save();
             ctx.translate(0, -65);
-            if (this.characterType === 'frog') this.drawFrogHead(ctx, 0, 0, true);
-            else if (this.characterType === 'tiger') this.drawTigerHead(ctx, 0, 0, true);
-            else if (this.characterType === 'penguin') this.drawPenguinHead(ctx, 0, 0, true);
-            else this.drawLookBackHead(ctx, 0, 0);
+            this.drawBackTorsoAndShorts(ctx, 0, true);
+            this.drawFrogHead(ctx, 0, 0, true);
             ctx.restore();
         }
 
-        // 네온 배너
         ctx.save();
         ctx.font = '900 20px system-ui, sans-serif';
         ctx.fillStyle = '#00f5d4';
@@ -3546,54 +3553,74 @@ class PeanutsMonkeyHero {
     }
 
     // =========================================================================
-    // 🍯 [41등+] 로블록스 라이벌즈 '크림 치즈 허니' (권루트 Cream Cheese Honey)
+    // 🍯 [41등+] 크림 치즈 허니 (다리는 완전히 가만히 서있고, 양팔만 위로 기지개 펴듯이 쭉 뻗는 댄스!)
     // =========================================================================
     drawCreamCheeseHoneyDance(ctx, danceTime, dancerModel = 'roblox') {
         ctx.save();
 
-        const wave = Math.sin(danceTime * 6.5);
-        const waveY = Math.cos(danceTime * 6.5) * 8;
+        // 부드러운 기지개 스트레칭 주기 (4.0초 루프)
+        const stretchCycle = Math.sin(danceTime * 3.5);
+        const stretchHeight = (stretchCycle + 1) * 0.5; // 0 to 1
+        const sideLean = Math.sin(danceTime * 1.8) * 0.08;
 
-        ctx.translate(wave * 14, waveY);
+        // 다리는 가만히 제자리에 고정! (이동 없음)
+        ctx.translate(0, 0);
 
         if (dancerModel === 'roblox') {
-            // 🤖 [로블록스 마네킹 크림 치즈 허니]
-            this.drawRobloxBlockyLeg(ctx, -16, -45, -wave * 0.2, 0.3, '#16a34a', true);
-            this.drawRobloxBlockyLeg(ctx, 16, -45, wave * 0.2, -0.3, '#16a34a', false);
+            // 🤖 [로블록스 마네킹]: 다리는 미동 없이 차렷/단단히 서있음
+            this.drawRobloxBlockyLeg(ctx, -14, -45, 0, 0, '#8e959f', true);
+            this.drawRobloxBlockyLeg(ctx, 14, -45, 0, 0, '#8e959f', false);
 
-            this.drawRobloxBlockyTorso(ctx, 0, -68, wave * 0.1, '#0284c7');
+            // 상체는 기지개 켜며 시원하게 살짝 젖혀짐 & 좌우 기울기
+            this.drawRobloxBlockyTorso(ctx, 0, -68, sideLean, '#949ba4');
 
-            // 양손 턱받침 애교 포즈 (꽃받침)
-            this.drawRobloxBlockyArm(ctx, -27, -85, -2.1, -1.3, '#ffd60a', true);
-            this.drawRobloxBlockyArm(ctx, 27, -85, 2.1, 1.3, '#ffd60a', false);
-            this.drawRobloxBlockyHead(ctx, 0, -68, -wave * 0.12, 'wink');
+            // ★ 핵심: 양팔이 머리 위로 기지개 켜듯이 시원하게 쭉 뻗어짐!
+            // 팔이 하늘 높이 만세하며 좌우로 시원하게 펴짐
+            const stretchAngleLeft = -2.7 + stretchHeight * 0.35;
+            const stretchAngleRight = 2.7 - stretchHeight * 0.35;
+            this.drawRobloxBlockyArm(ctx, -27, -85, stretchAngleLeft, -0.2, '#a1a8b0', true);
+            this.drawRobloxBlockyArm(ctx, 27, -85, stretchAngleRight, 0.2, '#a1a8b0', false);
+
+            // 기지개 켤 때 나른하고 시원하게 눈 감고 미소 짓는 마네킹 헤드
+            this.drawRobloxBlockyHead(ctx, 0, -68, sideLean * 0.8, 'relaxed');
 
         } else {
-            // 🐵 [동물 러너 크림 치즈 허니]
+            // 🐵 [동물 러너 캐릭터]: 다리는 가만히 서서 양팔만 위로 기지개 펴기!
+            const colors = this.getSpeciesColors();
+            const armColor = this.costumeType === 'gentleman' ? '#1e2229' : (this.costumeType === 'santa' ? '#d62828' : colors.skin);
+
             ctx.fillStyle = '#2b303a';
             ctx.fillRect(-30, -45, 24, 72);
             ctx.fillRect(6, -45, 24, 72);
 
             ctx.save();
-            ctx.translate(wave * 14, -65);
+            ctx.translate(0, -65);
+            ctx.rotate(sideLean);
             this.drawBackTorsoAndShorts(ctx, 0, true);
+
+            // 양팔 기지개 만세
+            [-1, 1].forEach(side => {
+                ctx.save();
+                ctx.translate(side * 28, -85);
+                ctx.rotate(side * (0.35 + stretchHeight * 0.2));
+                ctx.fillStyle = armColor;
+                ctx.fillRect(-8, -85, 18, 85);
+                ctx.restore();
+            });
             ctx.restore();
 
             ctx.save();
-            ctx.translate(-wave * 10, -65);
-            if (this.characterType === 'frog') this.drawFrogHead(ctx, 0, 0, true);
-            else if (this.characterType === 'tiger') this.drawTigerHead(ctx, 0, 0, true);
-            else if (this.characterType === 'penguin') this.drawPenguinHead(ctx, 0, 0, true);
-            else this.drawLookBackHead(ctx, 0, 0);
+            ctx.translate(0, -65);
+            this.drawFrogHead(ctx, 0, 0, true);
             ctx.restore();
         }
 
-        // 달콤한 꿀단지 & 치즈 이모지
+        // 반짝이는 아침 햇살 & 꿀방울 이펙트
+        const honeyIcons = ['🍯', '🧀', '✨', '🍯', '✨'];
         ctx.font = '24px sans-serif';
-        const treats = ['🍯', '🧀', '🐝', '🍯', '🧀'];
-        treats.forEach((t, idx) => {
+        honeyIcons.forEach((t, idx) => {
             const tx = -65 + idx * 32;
-            const ty = -115 + Math.sin(danceTime * 5 + idx) * 16;
+            const ty = -125 - stretchHeight * 15 + Math.sin(danceTime * 4 + idx) * 10;
             ctx.fillText(t, tx, ty);
         });
 
@@ -3604,18 +3631,16 @@ class PeanutsMonkeyHero {
         ctx.strokeStyle = '#111827';
         ctx.lineWidth = 3.5;
         ctx.textAlign = 'center';
-        ctx.strokeText('🍯 로블록스 크림 치즈 허니 (CREAM CHEESE HONEY)!', 0, -150);
-        ctx.fillText('🍯 로블록스 크림 치즈 허니 (CREAM CHEESE HONEY)!', 0, -150);
+        ctx.strokeText('🍯 크림 치즈 허니 (다리 고정 & 팔 기지개 댄스)!', 0, -150);
+        ctx.fillText('🍯 크림 치즈 허니 (다리 고정 & 팔 기지개 댄스)!', 0, -150);
         ctx.restore();
 
         ctx.restore();
     }
 
-    // ✨ 댄스 파티 특수 이펙트 (음표, 폭죽, 반짝이)
+    // ✨ 댄스 파티 특수 이펙트
     drawDancePartyEffects(ctx, danceType, danceTime) {
         ctx.save();
-
-        // 춤추는 음표들
         const notes = ['♪', '♫', '♬', '♩'];
         ctx.font = 'bold 22px sans-serif';
         for (let n = 0; n < 6; n++) {
@@ -3624,7 +3649,6 @@ class PeanutsMonkeyHero {
             ctx.fillStyle = n % 2 === 0 ? '#00f5d4' : '#ff007f';
             ctx.fillText(notes[n % notes.length], nx, ny);
         }
-
         ctx.restore();
     }
 }

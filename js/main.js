@@ -255,19 +255,21 @@ function getDanceForRank(rank) {
     if (rank >= 11 && rank <= 20) return 'ateez_bad';
     if (rank >= 21 && rank <= 30) return 'red_red';
     if (rank >= 31 && rank <= 40) return 'take_the_l';
+    if (rank <= 45) return 'zico_newthing';
     if (rank <= 50) return 'veggie';
-    if (rank <= 60) return 'side_to_side';
+    if (rank <= 55) return 'side_to_side';
     return 'cream_cheese_honey';
 }
 
 const DANCE_LABELS = {
     windmill: '🌀 [1~10등] 홀리원 B-BOY 정통 윈드밀!',
-    ateez_bad: '🔥 [11~20등] 에이티즈 - BAD (She\'s so BAD! 하이라이트 킬링파트)',
+    ateez_bad: '🔥 [11~20등] 에이티즈 - BAD (마지막 하이라이트 & 엔딩 프리즈)',
     red_red: '❤️ [21~30등] 코르티스 제임스 RED RED (팔랑귀·눈치·도가니) 챌린지!',
     take_the_l: '🕺 [31~40등] 로블록스 라이벌즈 - L을 가져가 (권루트 챌린지)!',
+    zico_newthing: '🏍️ [41등+] 지코 - 새삥 (New Thing 오토바이 시동 & 질주 라이딩 댄스)!',
     veggie: '🥦 [41등+] 로블록스 라이벌즈 - 야채 (Vegetables)!',
     side_to_side: '↔️ [41등+] 로블록스 라이벌즈 - 측면 대 측면 (Side to Side / Floss)!',
-    cream_cheese_honey: '🍯 [41등+] 로블록스 라이벌즈 - 크림 치즈 허니 (Cream Cheese Honey)!'
+    cream_cheese_honey: '🍯 [41등+] 크림 치즈 허니 (다리 고정 & 팔 기지개 스트레칭 댄스)!'
 };
 
 let currentDanceType = 'windmill';
@@ -285,6 +287,9 @@ function setDanceMode(danceType, triggerPartyBGM = false) {
     danceBtns.forEach(btn => {
         btn.classList.toggle('active', btn.dataset.dance === danceType);
     });
+    if (danceType === 'zico_newthing') {
+        sound.playMotorcycleRev();
+    }
     if (triggerPartyBGM) {
         sound.startDancePartyBGM();
     }
