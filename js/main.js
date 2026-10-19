@@ -262,7 +262,7 @@ function getDanceForRank(rank) {
 
 const DANCE_LABELS = {
     windmill: '🌀 [1~10등 챔피언] 비보이 윈드밀 브레이크댄스!',
-    ateez_bad: '🔥 [11~20등 탑러너] 에이티즈 BAD 힙합 바운스!',
+    ateez_bad: '🔥 [11~20등] 에이티즈 - BAD (She\'s so BAD! 챌린지 댄스)',
     red_red: '❤️ [21~30등 스타] red red K-POP 댄스!',
     take_the_l: '🕺 [31~40등 도전자] L을 가져가 (Take the L) 댄스!',
     veggie: '🥕 [41등+] 신나는 야채 춤 (당근송)!',
