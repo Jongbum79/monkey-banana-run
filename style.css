@@ -676,6 +676,39 @@ body.is-playing .concept-badge {
     text-shadow: 1px 1px 0 #1a1612;
 }
 
+/* 🤖 댄서 모델 선택기 (로블록스 마네킹 / 동물 러너) */
+.dancer-model-selector-bar {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin: 8px 0 4px;
+}
+
+.dancer-model-btn {
+    background: #e5e7eb;
+    border: 2px solid #111827;
+    border-radius: 10px;
+    padding: 5px 12px;
+    font-family: 'Gaegu', cursive;
+    font-size: 14px;
+    font-weight: 800;
+    color: #374151;
+    cursor: pointer;
+    box-shadow: 2px 2px 0 #111827;
+    transition: all 0.12s ease;
+}
+
+.dancer-model-btn:hover {
+    background: #ffd60a;
+    transform: translateY(-1px);
+}
+
+.dancer-model-btn.active {
+    background: #0284c7;
+    color: #ffffff;
+    box-shadow: 2px 2px 0 #111827, 0 0 10px rgba(2, 132, 199, 0.6);
+}
+
 /* 🕺 실시간 캐릭터 축하 댄스 무대 */
 .dance-stage-wrapper {
     display: flex;

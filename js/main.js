@@ -261,16 +261,17 @@ function getDanceForRank(rank) {
 }
 
 const DANCE_LABELS = {
-    windmill: '🌀 [1~10등 챔피언] 비보이 윈드밀 브레이크댄스!',
-    ateez_bad: '🔥 [11~20등] 에이티즈 - BAD (She\'s so BAD! 챌린지 댄스)',
-    red_red: '❤️ [21~30등 스타] red red K-POP 댄스!',
-    take_the_l: '🕺 [31~40등 도전자] L을 가져가 (Take the L) 댄스!',
-    veggie: '🥕 [41등+] 신나는 야채 춤 (당근송)!',
-    side_to_side: '↔️ [41등+] 측면 대 측면 (Floss) 댄스!',
-    cream_cheese_honey: '🍯 [41등+] 달콤한 크림 치즈 허니 댄스!'
+    windmill: '🌀 [1~10등] 홀리원 B-BOY 정통 윈드밀!',
+    ateez_bad: '🔥 [11~20등] 에이티즈 - BAD (She\'s so BAD! 하이라이트 킬링파트)',
+    red_red: '❤️ [21~30등] 코르티스 제임스 RED RED (팔랑귀·눈치·도가니) 챌린지!',
+    take_the_l: '🕺 [31~40등] 로블록스 라이벌즈 - L을 가져가 (권루트 챌린지)!',
+    veggie: '🥦 [41등+] 로블록스 라이벌즈 - 야채 (Vegetables)!',
+    side_to_side: '↔️ [41등+] 로블록스 라이벌즈 - 측면 대 측면 (Side to Side / Floss)!',
+    cream_cheese_honey: '🍯 [41등+] 로블록스 라이벌즈 - 크림 치즈 허니 (Cream Cheese Honey)!'
 };
 
 let currentDanceType = 'windmill';
+let currentDancerModel = 'roblox'; // 'roblox' (기본 로블록스 마네킹) | 'animal'
 let danceAnimationId = null;
 let danceStartTime = 0;
 let rouletteTimer = null;
@@ -302,7 +303,7 @@ function startDanceAnimation(danceType = 'windmill') {
     function danceLoop(now) {
         const elapsed = (now - danceStartTime) / 1000;
         danceCtx.clearRect(0, 0, danceCanvas.width, danceCanvas.height);
-        hero.renderCelebrationDance(danceCtx, 140, 135, 0.58, currentDanceType, elapsed);
+        hero.renderCelebrationDance(danceCtx, 150, 140, 0.58, currentDanceType, elapsed, currentDancerModel);
         danceAnimationId = requestAnimationFrame(danceLoop);
     }
     danceAnimationId = requestAnimationFrame(danceLoop);
@@ -679,6 +680,17 @@ danceBtns.forEach(btn => {
             setDanceMode(danceType, false);
             sound.playSpecialItem();
         }
+    });
+});
+
+// 🤖 댄서 모델 선택기 (로블록스 마네킹 / 동물 러너)
+const dancerModelBtns = document.querySelectorAll('.dancer-model-btn');
+dancerModelBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        dancerModelBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentDancerModel = btn.dataset.model || 'roblox';
+        sound.playSpecialItem();
     });
 });
 document.getElementById('btn-left').addEventListener('click', handleLeft);
