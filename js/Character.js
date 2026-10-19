@@ -47,11 +47,12 @@ class PeanutsMonkeyHero {
                 };
             case 'tiger':
                 return {
-                    skin: '#f77f00',
+                    skin: '#ff9e00',
                     skinLight: '#ffbe0b',
-                    skinDark: '#d62828',
-                    belly: '#fff8e7',
-                    stripes: '#1a1612',
+                    skinDark: '#c1121f',
+                    belly: '#fff8f0',
+                    stripes: '#14110f',
+                    pads: '#ff5d8f',
                     hasFur: true
                 };
             case 'penguin':
@@ -543,6 +544,36 @@ class PeanutsMonkeyHero {
         ctx.stroke();
         ctx.restore();
 
+        // 🐯 호랑이 전용 팔 디테일 (고품격 호랑이 줄무늬 & 손목 솜털 & 핑크 젤리 발바닥)
+        if (this.characterType === 'tiger' && this.costumeType === 'none') {
+            ctx.fillStyle = '#14110f';
+            // 팔뚝 날렵한 줄무늬 2줄
+            ctx.beginPath();
+            ctx.moveTo(-45, 10); ctx.lineTo(-68, 22); ctx.lineTo(-42, 22); ctx.closePath(); ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(-52, 42); ctx.lineTo(-74, 52); ctx.lineTo(-48, 50); ctx.closePath(); ctx.fill();
+
+            // 손목 복슬복슬 흰 털 밴드
+            ctx.fillStyle = '#fff8f0';
+            ctx.beginPath();
+            ctx.ellipse(-56, 73, 14, 7, -0.35, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 앙증맞은 핑크 젤리 발바닥 패드
+            ctx.save();
+            ctx.translate(-62, 86);
+            ctx.fillStyle = '#ff5d8f';
+            ctx.beginPath();
+            ctx.arc(0, 0, 7.5, 0, Math.PI * 2);
+            ctx.fill();
+            [-8, 0, 8].forEach(ox => {
+                ctx.beginPath();
+                ctx.arc(ox, -10, 3.2, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.restore();
+        }
+
         ctx.restore();
     }
 
@@ -579,6 +610,21 @@ class PeanutsMonkeyHero {
         ctx.stroke();
 
         this.drawHatching(ctx, 18, 22, 65, 18, 6, 7, -1.4);
+
+        // 🐯 호랑이 전용 오른팔 디테일 (호랑이 줄무늬 & 손목 털 밴드)
+        if (this.characterType === 'tiger' && this.costumeType === 'none') {
+            ctx.fillStyle = '#14110f';
+            ctx.beginPath();
+            ctx.moveTo(30, 4); ctx.lineTo(46, 18); ctx.lineTo(34, 20); ctx.closePath(); ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(56, 2); ctx.lineTo(72, 14); ctx.lineTo(60, 18); ctx.closePath(); ctx.fill();
+
+            // 손목 흰 털 밴드
+            ctx.fillStyle = '#fff8f0';
+            ctx.beginPath();
+            ctx.ellipse(82, 8, 12, 6, 0.4, 0, Math.PI * 2);
+            ctx.fill();
+        }
 
         // 🍌 껍질 벗겨진 황금 바나나 & 바나나를 감싸 쥔 손
         ctx.save();
@@ -808,6 +854,20 @@ class PeanutsMonkeyHero {
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
+
+        // 🐯 호랑이 전용 등/어깨/옆구리 줄무늬
+        if (this.characterType === 'tiger') {
+            ctx.fillStyle = '#14110f';
+            [-1, 1].forEach(side => {
+                ctx.save();
+                ctx.scale(side, 1);
+                ctx.beginPath();
+                ctx.moveTo(34, -102); ctx.lineTo(48, -106); ctx.lineTo(39, -92); ctx.closePath(); ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(42, -52); ctx.lineTo(58, -45); ctx.lineTo(45, -36); ctx.closePath(); ctx.fill();
+                ctx.restore();
+            });
+        }
 
         // 등판 목선, 진동선, 아랫단 노란색 시보리 파이핑
         ctx.strokeStyle = '#f5cb42';
@@ -1253,9 +1313,18 @@ class PeanutsMonkeyHero {
             ctx.fill();
             ctx.stroke();
 
+            // 🐯 호랑이 다리 줄무늬
+            if (this.characterType === 'tiger' && this.costumeType === 'none') {
+                ctx.fillStyle = '#14110f';
+                ctx.beginPath();
+                ctx.moveTo(-20, 16); ctx.lineTo(-4, 24); ctx.lineTo(-18, 28); ctx.closePath(); ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(22, 34); ctx.lineTo(6, 42); ctx.lineTo(20, 46); ctx.closePath(); ctx.fill();
+            }
+
             this.drawHatching(ctx, -14, 10, 14, 10, 4, 8, 1.5);
 
-            // 신발 / 발 렌더링 (신사복 정장구두 / 산타 부츠 / 펭귄발 / 개구리발 / 스니커즈)
+            // 신발 / 발 렌더링 (신사복 정장구두 / 산타 부츠 / 펭귄발 / 개구리발 / 호랑이 젤리 발바닥 / 스니커즈)
             ctx.save();
             ctx.translate(0, 62 - liftY * 0.5);
 
@@ -1263,78 +1332,128 @@ class PeanutsMonkeyHero {
             const isSanta = this.costumeType === 'santa';
             const isPenguin = this.characterType === 'penguin';
             const isFrog = this.characterType === 'frog';
+            const isTiger = this.characterType === 'tiger' && !isGentleman && !isSanta;
 
-            const shoeMainColor = isGentleman ? '#14171a' : (isSanta ? '#14171a' : (isPenguin ? '#fb8500' : (isFrog ? '#52b788' : '#8b3e2f')));
-            const shoeAccentColor = isGentleman ? '#ffd166' : (isSanta ? '#ffd166' : (isPenguin ? '#ffb703' : (isFrog ? '#74c69d' : '#f5cb42')));
-
-            if (leg.phase > 0.05) {
-                // 뒤(카메라 쪽)로 차올린 발
-                ctx.fillStyle = shoeMainColor;
-                ctx.beginPath();
-                ctx.arc(0, -8, 26, Math.PI, 0);
-                ctx.closePath();
-                ctx.fill();
-                ctx.stroke();
-
-                // 포인트 줄무늬
-                ctx.fillStyle = shoeAccentColor;
-                ctx.lineWidth = 2.5;
-                ctx.fillRect(-22, -16, 44, 6);
-                ctx.strokeRect(-22, -16, 44, 6);
-
-                // 발바닥 밑창 타원 + 가로 미끄럼방지 줄무늬
-                ctx.fillStyle = isPenguin ? '#ffbe0b' : (isFrog ? '#74c69d' : '#f5eedc');
-                ctx.lineWidth = 4;
-                ctx.beginPath();
-                ctx.ellipse(0, 8, 26, 36, 0, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.stroke();
-
-                ctx.fillStyle = isPenguin ? '#fb8500' : (isFrog ? '#52b788' : '#c9bba0');
-                ctx.lineWidth = 2.8;
-                ctx.beginPath();
-                ctx.ellipse(0, 8, 20, 29, 0, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.stroke();
-
-                // 가로 줄무늬 (Treads)
-                ctx.save();
-                ctx.beginPath();
-                ctx.ellipse(0, 8, 20, 29, 0, 0, Math.PI * 2);
-                ctx.clip();
-                ctx.strokeStyle = '#1a1612';
-                ctx.lineWidth = 2.8;
-                for (let ty = -18; ty <= 34; ty += 7.5) {
+            if (isTiger) {
+                // 🐯 [고품격 아기 호랑이 전용 발]: 하얀 솜방망이 털 + 핑크 젤리 찹쌀떡 발바닥!
+                if (leg.phase > 0.05) {
+                    // 뒤로 차올린 발 (핑크 발바닥 패드가 선명히 보임!)
+                    ctx.fillStyle = '#fff8f0';
+                    ctx.strokeStyle = '#14110f';
+                    ctx.lineWidth = 3.6;
                     ctx.beginPath();
-                    ctx.moveTo(-24, ty);
-                    ctx.lineTo(24, ty);
+                    ctx.ellipse(0, 8, 26, 33, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+
+                    // 💖 중앙 메인 젤리 패드 (하트형 핑크 패드)
+                    ctx.fillStyle = '#ff5d8f';
+                    ctx.beginPath();
+                    ctx.ellipse(0, 14, 13, 11, 0, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // 🐾 4개의 앙증맞은 발가락 젤리 빈즈 (Toe Beans)
+                    [
+                        { x: -14, y: -6, r: 5.2 },
+                        { x: -5,  y: -14, r: 5.5 },
+                        { x: 5,   y: -14, r: 5.5 },
+                        { x: 14,  y: -6, r: 5.2 }
+                    ].forEach(bean => {
+                        ctx.beginPath();
+                        ctx.arc(bean.x, bean.y, bean.r, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+                } else {
+                    // 땅을 딛는 발 (귀여운 하얀 호랑이 솜방망이)
+                    ctx.fillStyle = '#fff8f0';
+                    ctx.strokeStyle = '#14110f';
+                    ctx.lineWidth = 3.6;
+                    ctx.beginPath();
+                    ctx.roundRect(-22, -10, 44, 30, 12);
+                    ctx.fill();
+                    ctx.stroke();
+
+                    // 발톱 앞 핑크 포인트 & 털 분할선
+                    ctx.fillStyle = '#ff758f';
+                    [-10, 0, 10].forEach(tx => {
+                        ctx.beginPath();
+                        ctx.arc(tx, 14, 3.5, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+                }
+            } else {
+                const shoeMainColor = isGentleman ? '#14171a' : (isSanta ? '#14171a' : (isPenguin ? '#fb8500' : (isFrog ? '#52b788' : '#8b3e2f')));
+                const shoeAccentColor = isGentleman ? '#ffd166' : (isSanta ? '#ffd166' : (isPenguin ? '#ffb703' : (isFrog ? '#74c69d' : '#f5cb42')));
+
+                if (leg.phase > 0.05) {
+                    // 뒤(카메라 쪽)로 차올린 발
+                    ctx.fillStyle = shoeMainColor;
+                    ctx.beginPath();
+                    ctx.arc(0, -8, 26, Math.PI, 0);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+
+                    // 포인트 줄무늬
+                    ctx.fillStyle = shoeAccentColor;
+                    ctx.lineWidth = 2.5;
+                    ctx.fillRect(-22, -16, 44, 6);
+                    ctx.strokeRect(-22, -16, 44, 6);
+
+                    // 발바닥 밑창 타원 + 가로 미끄럼방지 줄무늬
+                    ctx.fillStyle = isPenguin ? '#ffbe0b' : (isFrog ? '#74c69d' : '#f5eedc');
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    ctx.ellipse(0, 8, 26, 36, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+
+                    ctx.fillStyle = isPenguin ? '#fb8500' : (isFrog ? '#52b788' : '#c9bba0');
+                    ctx.lineWidth = 2.8;
+                    ctx.beginPath();
+                    ctx.ellipse(0, 8, 20, 29, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+
+                    // 가로 줄무늬 (Treads)
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.ellipse(0, 8, 20, 29, 0, 0, Math.PI * 2);
+                    ctx.clip();
+                    ctx.strokeStyle = '#1a1612';
+                    ctx.lineWidth = 2.8;
+                    for (let ty = -18; ty <= 34; ty += 7.5) {
+                        ctx.beginPath();
+                        ctx.moveTo(-24, ty);
+                        ctx.lineTo(24, ty);
+                        ctx.stroke();
+                    }
+                    ctx.restore();
+                } else {
+                    // 땅을 딛고 있는 발
+                    ctx.fillStyle = shoeMainColor;
+                    ctx.lineWidth = 3.8;
+                    ctx.beginPath();
+                    ctx.roundRect(-22, -12, 44, 34, 14);
+                    ctx.fill();
+                    ctx.stroke();
+
+                    // 옆면 포인트 2줄
+                    ctx.fillStyle = shoeAccentColor;
+                    ctx.lineWidth = 2.5;
+                    ctx.fillRect(-22, -4, 44, 5);
+                    ctx.strokeRect(-22, -4, 44, 5);
+                    ctx.fillRect(-22, 4, 44, 5);
+                    ctx.strokeRect(-22, 4, 44, 5);
+
+                    // 밑창 뒤꿈치
+                    ctx.fillStyle = isPenguin ? '#ffbe0b' : (isFrog ? '#74c69d' : '#f5eedc');
+                    ctx.lineWidth = 3.8;
+                    ctx.beginPath();
+                    ctx.roundRect(-25, 14, 50, 14, 7);
+                    ctx.fill();
                     ctx.stroke();
                 }
-                ctx.restore();
-            } else {
-                // 땅을 딛고 있는 발
-                ctx.fillStyle = shoeMainColor;
-                ctx.lineWidth = 3.8;
-                ctx.beginPath();
-                ctx.roundRect(-22, -12, 44, 34, 14);
-                ctx.fill();
-                ctx.stroke();
-
-                // 옆면 포인트 2줄
-                ctx.fillStyle = shoeAccentColor;
-                ctx.lineWidth = 2.5;
-                ctx.fillRect(-22, -4, 44, 5);
-                ctx.strokeRect(-22, -4, 44, 5);
-                ctx.fillRect(-22, 4, 44, 5);
-                ctx.strokeRect(-22, 4, 44, 5);
-
-                // 밑창 뒤꿈치
-                ctx.fillStyle = isPenguin ? '#ffbe0b' : (isFrog ? '#74c69d' : '#f5eedc');
-                ctx.lineWidth = 3.8;
-                ctx.beginPath();
-                ctx.roundRect(-25, 14, 50, 14, 7);
-                ctx.fill();
-                ctx.stroke();
             }
 
             ctx.restore();
@@ -1767,210 +1886,308 @@ class PeanutsMonkeyHero {
         ctx.restore();
     }
 
-    // 5-D. 동글동글 아기 호랑이 머리 (Ultra-Cute Baby Tiger Cub Head)
+    // 5-D. 명품 황금 아기 호랑이 머리 (High-End Cute & Majestic Korean Tiger Cub Head)
     drawTigerHead(ctx, swing, cosSwing, isLookingBack) {
         ctx.save();
         ctx.translate(isLookingBack ? 4 : 0, -288);
         ctx.scale(1.18, 1.18);
         ctx.rotate(isLookingBack ? (0.06 + Math.sin(this.runCycle * 0.5) * 0.04) : (Math.sin(this.runCycle * 0.5) * 0.045));
 
-        ctx.strokeStyle = '#1a1612';
+        ctx.strokeStyle = '#14110f';
         ctx.lineWidth = 4.2;
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
 
-        // 1) 동글동글 솜뭉치 호랑이 귀 (양쪽 귀)
+        // 1) 🐯 호랑이 귀 (앞/뒤 완벽 분기 - 뒤에서는 시그니처 하얀 반점 Ocelli)
         [-66, 66].forEach((ex, idx) => {
             ctx.save();
             ctx.translate(ex, -68);
-            ctx.rotate(idx === 0 ? -0.22 : 0.22);
+            ctx.rotate(idx === 0 ? -0.24 : 0.24);
 
-            // 귀 바깥 둥근 형태 (검은 외곽 + 호랑이 주황)
-            ctx.fillStyle = '#1a1612';
-            ctx.beginPath();
-            ctx.arc(0, 0, 28, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
+            if (isLookingBack) {
+                // --- [앞모습 귀]: 호랑이 골드 외곽 + 귀 끝 블랙 팁 + 복슬복슬 화이트 털 + 핑크 속살 ---
+                ctx.fillStyle = '#ff9e00';
+                ctx.beginPath();
+                ctx.arc(0, 0, 28, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
 
-            ctx.fillStyle = '#f77f00';
-            ctx.beginPath();
-            ctx.arc(0, 0, 22, 0, Math.PI * 2);
-            ctx.fill();
+                // 귀 끝 엣지 블랙 팁
+                ctx.fillStyle = '#14110f';
+                ctx.beginPath();
+                ctx.arc(0, -10, 18, Math.PI * 1.15, Math.PI * 1.85);
+                ctx.quadraticCurveTo(0, -8, 0, -10);
+                ctx.fill();
 
-            // 귀 속 폭신폭신 하얀 털 뭉치
-            ctx.fillStyle = '#fff8e7';
-            ctx.beginPath();
-            ctx.arc(0, 3, 15, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
+                // 귀 속 폭신폭신 하얀 솜털 뭉치
+                ctx.fillStyle = '#fff8f0';
+                ctx.beginPath();
+                ctx.ellipse(0, 3, 17, 21, 0, 0, Math.PI * 2);
+                ctx.fill();
 
-            // 귀 속 핑크 포인트
-            ctx.fillStyle = '#ff758f';
-            ctx.beginPath();
-            ctx.arc(0, 5, 8, 0, Math.PI * 2);
-            ctx.fill();
+                // 귀 속 따뜻한 로즈핑크
+                ctx.fillStyle = '#ff758f';
+                ctx.beginPath();
+                ctx.ellipse(0, 6, 9, 13, 0, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                // --- [뒷모습 귀]: 호랑이 고유의 시그니처 '하얀 눈 반점(Ocelli)' 완비! ---
+                // 칠흑빛 벨벳 베이스
+                ctx.fillStyle = '#14110f';
+                ctx.beginPath();
+                ctx.arc(0, 0, 28, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                // 🌟 호랑이 귀 뒤의 상징! 선명한 원형 화이트 오셀리 (White Ocelli Eye Spot)
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(0, 0, 13, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 귀 밑동 골드 오렌지 그러데이션
+                ctx.fillStyle = '#ff9e00';
+                ctx.beginPath();
+                ctx.arc(0, 14, 15, Math.PI, 0);
+                ctx.fill();
+
+                // 귀 안쪽에서 삐져나온 앙증맞은 흰 털가닥
+                ctx.fillStyle = '#fff8f0';
+                ctx.beginPath();
+                ctx.moveTo(idx === 0 ? 14 : -14, -8);
+                ctx.quadraticCurveTo(idx === 0 ? 24 : -24, -14, idx === 0 ? 20 : -20, 4);
+                ctx.closePath();
+                ctx.fill();
+            }
             ctx.restore();
         });
 
-        // 2) 통통하고 둥글둥글한 아기 호랑이 얼굴 본체 (Round Fluffy Cheeks)
+        // 2) 통통하고 복슬복슬한 황금 아기 호랑이 얼굴 본체 (Royal Golden Amber Gradient)
         const tigerGrad = ctx.createRadialGradient(-15, -20, 15, 0, 10, 115);
-        tigerGrad.addColorStop(0, '#ffd166');
-        tigerGrad.addColorStop(0.55, '#f77f00');
-        tigerGrad.addColorStop(1, '#d62828');
+        tigerGrad.addColorStop(0, '#ffeaa7');
+        tigerGrad.addColorStop(0.35, '#ff9e00');
+        tigerGrad.addColorStop(0.75, '#e85d04');
+        tigerGrad.addColorStop(1, '#c1121f');
         ctx.fillStyle = tigerGrad;
 
         ctx.beginPath();
         ctx.moveTo(-54, -72);
-        ctx.quadraticCurveTo(0, -84, 54, -72);
+        ctx.quadraticCurveTo(0, -86, 54, -72);
         ctx.quadraticCurveTo(76, -45, 82, -10);
-        // 오른쪽 볼 둥글둥글 털 tufts
-        ctx.quadraticCurveTo(100, 12, 88, 30);
-        ctx.quadraticCurveTo(98, 44, 82, 56);
-        ctx.quadraticCurveTo(45, 92, 0, 92);
-        ctx.quadraticCurveTo(-45, 92, -82, 56);
-        // 왼쪽 볼 둥글둥글 털 tufts
-        ctx.quadraticCurveTo(-98, 44, -88, 30);
-        ctx.quadraticCurveTo(-100, 12, -82, -10);
+        // 오른쪽 볼 복슬복슬 입체 털단 (3단 플러피 털)
+        ctx.quadraticCurveTo(102, 12, 90, 30);
+        ctx.quadraticCurveTo(102, 46, 84, 60);
+        ctx.quadraticCurveTo(46, 94, 0, 94);
+        ctx.quadraticCurveTo(-46, 94, -84, 60);
+        // 왼쪽 볼 복슬복슬 입체 털단
+        ctx.quadraticCurveTo(-102, 46, -90, 30);
+        ctx.quadraticCurveTo(-102, 12, -82, -10);
         ctx.quadraticCurveTo(-76, -45, -54, -72);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
         if (isLookingBack) {
-            // --- 뒤돌아볼 때: 초롱초롱 금빛 눈망울의 아기 호랑이! ---
-            // 이마의 귀여운 둥근 호랑이 '王'자 줄무늬
-            ctx.fillStyle = '#1a1612';
+            // --- [앞모습]: 고품격 캘리그래피 '王'자 문양 + 호박빛 고양이 눈망울 + 덧니 스마일! ---
+            // 👑 이마 중앙의 품격 있는 호랑이 '王'자 문양 (골드 엣지 + 칠흑 잉크)
+            ctx.fillStyle = '#14110f';
+            // 세로 기둥
             ctx.beginPath();
-            ctx.roundRect(-4.5, -68, 9, 32, 4);
-            ctx.roundRect(-22, -68, 44, 6.5, 3);
-            ctx.roundRect(-16, -54, 32, 5.5, 3);
-            ctx.roundRect(-25, -40, 50, 6.5, 3);
+            ctx.roundRect(-4.5, -70, 9, 36, 4.5);
+            ctx.fill();
+            // 가로 획 3줄 (위/중간/아래 곡선형)
+            ctx.beginPath();
+            ctx.roundRect(-24, -70, 48, 7.5, 3.5);
+            ctx.roundRect(-16, -53, 32, 6.5, 3);
+            ctx.roundRect(-27, -37, 54, 8, 4);
             ctx.fill();
 
-            // 양 볼 옆 깜찍한 줄무늬
+            // '王'자 문양 골드 하이라이트
+            ctx.fillStyle = '#ffd166';
+            ctx.beginPath();
+            ctx.arc(0, -50, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 양 볼 옆 날렵하고 세련된 호랑이 사이드 스트라이프
             [-1, 1].forEach(dir => {
                 ctx.save();
                 ctx.scale(dir, 1);
+                ctx.fillStyle = '#14110f';
+                // 윗줄
                 ctx.beginPath();
-                ctx.moveTo(56, -12); ctx.lineTo(76, -18); ctx.lineTo(60, -2); ctx.closePath();
-                ctx.fill();
+                ctx.moveTo(56, -14); ctx.quadraticCurveTo(78, -18, 80, -10); ctx.lineTo(60, -4); ctx.closePath(); ctx.fill();
+                // 아랫줄
                 ctx.beginPath();
-                ctx.moveTo(54, 12); ctx.lineTo(74, 8); ctx.lineTo(58, 20); ctx.closePath();
-                ctx.fill();
+                ctx.moveTo(54, 10); ctx.quadraticCurveTo(76, 8, 78, 18); ctx.lineTo(58, 22); ctx.closePath(); ctx.fill();
                 ctx.restore();
             });
 
-            // 💖 복슬복슬 크림빛 하트 주둥이 (Fluffy White Muzzle)
-            ctx.fillStyle = '#fff8e7';
+            // 💖 복슬복슬 하얀 찹쌀떡 주둥이 머즐 (Snowy Muzzle Pads)
+            ctx.fillStyle = '#fff8f0';
             ctx.lineWidth = 3.6;
             ctx.beginPath();
             ctx.ellipse(-18, 38, 24, 20, 0.15, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
+            ctx.fill(); ctx.stroke();
             ctx.beginPath();
             ctx.ellipse(18, 38, 24, 20, -0.15, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
+            ctx.fill(); ctx.stroke();
 
-            // 턱 밑 크림빛 털
+            // 턱 밑 풍성한 화이트 가슴털
             ctx.beginPath();
-            ctx.ellipse(0, 68, 28, 18, 0, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
+            ctx.ellipse(0, 70, 30, 18, 0, 0, Math.PI * 2);
+            ctx.fill(); ctx.stroke();
 
             // 핑크빛 사랑스러운 하트 코 (Heart-shaped Pink Nose)
             ctx.fillStyle = '#ff4d6d';
             ctx.beginPath();
-            ctx.moveTo(0, 32);
-            ctx.bezierCurveTo(-11, 20, -11, 12, 0, 19);
-            ctx.bezierCurveTo(11, 12, 11, 20, 0, 32);
+            ctx.moveTo(0, 34);
+            ctx.bezierCurveTo(-12, 22, -12, 14, 0, 21);
+            ctx.bezierCurveTo(12, 14, 12, 22, 0, 34);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
 
+            // 콧등 하이라이트
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(0, 23, 2.2, 0, Math.PI * 2);
+            ctx.fill();
+
             // 방긋 웃는 아기 호랑이 입 & 핑크 혀
             ctx.fillStyle = '#ff758f';
             ctx.beginPath();
-            ctx.arc(0, 42, 14, 0, Math.PI);
+            ctx.arc(0, 43, 14, 0, Math.PI);
             ctx.fill();
             ctx.stroke();
 
-            ctx.strokeStyle = '#1a1612';
+            ctx.strokeStyle = '#14110f';
             ctx.lineWidth = 3.6;
             ctx.beginPath();
             ctx.moveTo(-18, 38);
             ctx.quadraticCurveTo(0, 48, 18, 38);
             ctx.stroke();
 
-            // 발그레한 볼터치
-            ctx.fillStyle = 'rgba(255, 117, 143, 0.65)';
+            // 🐯 심쿵 포인트: 아기 호랑이 양쪽 귀여운 덧니/송곳니 (Cute Tiger Fangs)!
+            ctx.fillStyle = '#ffffff';
+            ctx.strokeStyle = '#14110f';
+            ctx.lineWidth = 2.2;
+            [-10, 10].forEach(fx => {
+                ctx.beginPath();
+                ctx.moveTo(fx - 3.5, 42);
+                ctx.lineTo(fx, 49);
+                ctx.lineTo(fx + 3.5, 42);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            });
+
+            // 발그레한 살구빛 볼터치
+            ctx.fillStyle = 'rgba(255, 117, 143, 0.68)';
             ctx.beginPath();
-            ctx.ellipse(-52, 22, 14, 10, 0, 0, Math.PI * 2);
-            ctx.ellipse(52, 22, 14, 10, 0, 0, Math.PI * 2);
+            ctx.ellipse(-54, 24, 15, 11, 0, 0, Math.PI * 2);
+            ctx.ellipse(54, 24, 15, 11, 0, 0, Math.PI * 2);
             ctx.fill();
 
-            // 수염 점
-            ctx.fillStyle = '#1a1612';
+            // 수염 점 & 샤프한 흰 수염
+            ctx.fillStyle = '#14110f';
             [-1, 1].forEach(dir => {
                 ctx.beginPath();
                 ctx.arc(dir * 18, 34, 2.6, 0, Math.PI * 2);
-                ctx.arc(dir * 27, 38, 2.6, 0, Math.PI * 2);
+                ctx.arc(dir * 28, 38, 2.6, 0, Math.PI * 2);
                 ctx.arc(dir * 18, 44, 2.6, 0, Math.PI * 2);
                 ctx.fill();
+
+                // 우아한 호랑이 흰 수염 2가닥
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2.4;
+                ctx.beginPath();
+                ctx.moveTo(dir * 32, 36); ctx.quadraticCurveTo(dir * 65, 34, dir * 88, 42); ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(dir * 32, 42); ctx.quadraticCurveTo(dir * 65, 46, dir * 86, 56); ctx.stroke();
             });
 
-            // 🌟 반짝반짝 큰 호랑이 눈 (Golden Amber Anime Eyes with Stars)
+            // 🌟 반짝반짝 깊이 있는 호박석 고양이 눈망울 (Amber Jewel Feline Eyes)
             [-36, 36].forEach(ex => {
                 ctx.save();
                 ctx.translate(ex, -6);
-                ctx.fillStyle = '#ffd166';
+                ctx.fillStyle = '#ffffff';
+                ctx.strokeStyle = '#14110f';
                 ctx.lineWidth = 3.8;
                 ctx.beginPath();
                 ctx.ellipse(0, 0, 18, 20, 0, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.stroke();
 
-                // 호박빛 그라데이션
-                const irisGrad = ctx.createRadialGradient(0, 0, 2, 0, 0, 18);
-                irisGrad.addColorStop(0, '#ffd166');
-                irisGrad.addColorStop(0.7, '#f77f00');
-                irisGrad.addColorStop(1, '#d62828');
+                // 호박빛 에메랄드 오렌지 그라데이션 홍채
+                const irisGrad = ctx.createRadialGradient(0, 0, 2, 0, 0, 17);
+                irisGrad.addColorStop(0, '#fff3b0');
+                irisGrad.addColorStop(0.4, '#ff9e00');
+                irisGrad.addColorStop(0.8, '#e85d04');
+                irisGrad.addColorStop(1, '#9d0208');
                 ctx.fillStyle = irisGrad;
                 ctx.beginPath();
                 ctx.ellipse(0, 0, 15, 17, 0, 0, Math.PI * 2);
                 ctx.fill();
 
-                // 검은 동공
-                ctx.fillStyle = '#1a1612';
+                // 고양이과 특유의 매력적인 세로 슬릿 동공
+                ctx.fillStyle = '#14110f';
                 ctx.beginPath();
-                ctx.ellipse(ex < 0 ? 2 : -2, 1, 10, 14, 0, 0, Math.PI * 2);
+                ctx.ellipse(ex < 0 ? 1.5 : -1.5, 0, 6, 14, 0, 0, Math.PI * 2);
                 ctx.fill();
 
-                // ✦ 별빛 하이라이트
+                // ✦ 별빛 & 하트 하이라이트
                 ctx.fillStyle = '#ffffff';
                 ctx.beginPath();
-                ctx.arc(ex < 0 ? -1 : -5, -5, 6, 0, Math.PI * 2);
+                ctx.arc(ex < 0 ? -2 : -6, -5, 6, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.beginPath();
-                ctx.arc(ex < 0 ? 6 : 2, 5, 3, 0, Math.PI * 2);
+                ctx.arc(ex < 0 ? 6 : 2, 6, 3, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.restore();
             });
         } else {
-            // --- 뒷모습: 뒤통수 귀여운 줄무늬 ---
-            ctx.fillStyle = '#1a1612';
+            // --- [뒷모습]: 촌티(밤티)를 벗어던진 한국 전통 호랑이 명품 뒤통수 & 목덜미 줄무늬! ---
+            ctx.fillStyle = '#14110f';
+            // 중앙 정수리 세련된 왕관형 줄무늬 (Crown Center Stripe)
             ctx.beginPath();
-            ctx.moveTo(-8, -80); ctx.lineTo(8, -80); ctx.lineTo(0, -35); ctx.closePath(); ctx.fill();
-            ctx.beginPath();
-            ctx.moveTo(-36, -72); ctx.lineTo(-24, -75); ctx.lineTo(-12, -45); ctx.closePath(); ctx.fill();
-            ctx.beginPath();
-            ctx.moveTo(-65, -35); ctx.lineTo(-50, -42); ctx.lineTo(-30, -15); ctx.closePath(); ctx.fill();
-            ctx.beginPath();
-            ctx.moveTo(36, -72); ctx.lineTo(24, -75); ctx.lineTo(12, -45); ctx.closePath(); ctx.fill();
-            ctx.beginPath();
-            ctx.moveTo(65, -35); ctx.lineTo(50, -42); ctx.lineTo(30, -15); ctx.closePath(); ctx.fill();
+            ctx.moveTo(-10, -84); ctx.quadraticCurveTo(0, -50, 10, -84);
+            ctx.quadraticCurveTo(4, -40, 0, -26);
+            ctx.quadraticCurveTo(-4, -40, -10, -84);
+            ctx.closePath();
+            ctx.fill();
 
-            this.drawHatching(ctx, -50, 48, 50, 48, 10, 12, 1.4);
+            // 양옆 아름다운 곡선의 호랑이 머리 줄무늬 (Upper Crest Stripes)
+            [-1, 1].forEach(dir => {
+                ctx.save();
+                ctx.scale(dir, 1);
+                // 1번 줄무늬
+                ctx.beginPath();
+                ctx.moveTo(28, -78);
+                ctx.quadraticCurveTo(42, -74, 22, -50);
+                ctx.quadraticCurveTo(14, -58, 28, -78);
+                ctx.closePath();
+                ctx.fill();
+
+                // 2번 옆통수 줄무늬
+                ctx.beginPath();
+                ctx.moveTo(68, -42);
+                ctx.quadraticCurveTo(55, -46, 34, -28);
+                ctx.quadraticCurveTo(48, -24, 68, -42);
+                ctx.closePath();
+                ctx.fill();
+
+                // 3번 목덜미 줄무늬
+                ctx.beginPath();
+                ctx.moveTo(70, -10);
+                ctx.quadraticCurveTo(52, -8, 28, 4);
+                ctx.quadraticCurveTo(46, 12, 70, -10);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+            });
+
+            // 뒤통수 입체 명암 해칭
+            this.drawHatching(ctx, -46, 52, 46, 52, 8, 12, 1.4);
         }
 
         ctx.restore();
@@ -2292,11 +2509,11 @@ class PeanutsMonkeyHero {
         ctx.restore();
     }
 
-    // 6-A. 호랑이 꼬리 (Tiger Tail)
+    // 6-A. 명품 황금 호랑이 꼬리 (Majestic Korean Tiger Tail with Velvet Stripes & White Tip)
     drawTigerTail(ctx, swing, cosSwing) {
         ctx.save();
         ctx.translate(0, -112);
-        const tailWag = Math.sin(this.runCycle * 0.65) * 0.16;
+        const tailWag = Math.sin(this.runCycle * 0.65) * 0.18;
         ctx.rotate(tailWag);
 
         ctx.lineCap = 'round';
@@ -2310,46 +2527,58 @@ class PeanutsMonkeyHero {
             ctx.bezierCurveTo(-222, -68, -192, -52, -184, -72);
         };
 
-        // 1) 검은 외곽선
+        // 1) 칠흑빛 외곽선
         drawTailCurve();
-        ctx.strokeStyle = '#1a1612';
-        ctx.lineWidth = 30;
+        ctx.strokeStyle = '#14110f';
+        ctx.lineWidth = 32;
         ctx.stroke();
 
-        // 2) 주황 호랑이 꼬리 본체
+        // 2) 풍성한 황금 호랑이 꼬리 본체 (Royal Golden Amber Coat)
         drawTailCurve();
-        ctx.strokeStyle = '#f77f00';
-        ctx.lineWidth = 22;
+        ctx.strokeStyle = '#ff9e00';
+        ctx.lineWidth = 24;
         ctx.stroke();
 
-        // 3) 꼬리 하얀 털 끝 (Tip)
-        ctx.save();
-        ctx.translate(-195, -68);
-        ctx.fillStyle = '#fff8e7';
-        ctx.strokeStyle = '#1a1612';
-        ctx.lineWidth = 3.5;
-        ctx.beginPath();
-        ctx.arc(0, 0, 14, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-        ctx.restore();
-
-        // 4) 꼬리 굽이마다 검은 호랑이 줄무늬 5개
-        ctx.fillStyle = '#1a1612';
-        const stripes = [
-            { x: -36,  y: 4,    w: 12, h: 22, rot: 0.3 },
-            { x: -84,  y: -28,  w: 12, h: 22, rot: -0.6 },
-            { x: -126, y: -92,  w: 12, h: 22, rot: -1.2 },
-            { x: -175, y: -164, w: 12, h: 22, rot: -0.4 },
-            { x: -218, y: -130, w: 12, h: 22, rot: 0.7 }
+        // 3) 꼬리 굽이마다 자연스럽게 감싸는 벨벳 블랙 호랑이 링 스트라이프 6개
+        const tailRings = [
+            { x: -36,  y: 6,    w: 16, h: 26, rot: 0.32 },
+            { x: -84,  y: -26,  w: 16, h: 26, rot: -0.58 },
+            { x: -128, y: -94,  w: 16, h: 26, rot: -1.25 },
+            { x: -176, y: -168, w: 16, h: 26, rot: -0.42 },
+            { x: -222, y: -136, w: 16, h: 26, rot: 0.68 },
+            { x: -212, y: -78,  w: 14, h: 24, rot: 1.15 }
         ];
-        stripes.forEach(st => {
+        ctx.fillStyle = '#14110f';
+        tailRings.forEach(st => {
             ctx.save();
             ctx.translate(st.x, st.y);
             ctx.rotate(st.rot);
-            ctx.fillRect(-st.w * 0.5, -st.h * 0.5, st.w, st.h);
+            ctx.beginPath();
+            ctx.ellipse(0, 0, st.w * 0.45, st.h * 0.52, 0, 0, Math.PI * 2);
+            ctx.fill();
             ctx.restore();
         });
+
+        // 4) 꼬리 끝 복슬복슬 스노우 화이트 솜뭉치 (Fluffy White Tip) & 링 포인트
+        ctx.save();
+        ctx.translate(-188, -70);
+        ctx.fillStyle = '#ffffff';
+        ctx.strokeStyle = '#14110f';
+        ctx.lineWidth = 3.6;
+        ctx.beginPath();
+        ctx.arc(0, 0, 16, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // 꼬리 끝 검은 줄 포인트
+        ctx.fillStyle = '#14110f';
+        ctx.beginPath();
+        ctx.arc(6, 4, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        // 꼬리 시작점(엉덩이 연결부) 털 해칭
+        this.drawHatching(ctx, -35, 8, -85, -15, 6, 8, -1.8);
 
         ctx.restore();
     }

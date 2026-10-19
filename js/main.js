@@ -47,12 +47,18 @@ const finalScoreEl = document.getElementById('final-score');
 const finalMathEl = document.getElementById('final-math');
 const bgmBtn = document.getElementById('btn-bgm');
 
-// 🎰 등수 셔플 룰렛 & 올라 캣(OIIA CAT) 세리머니 DOM 요소
+// 🎰 등수 셔플 룰렛 & 올라 캣(OIIA CAT) 360° 캔버스 DOM 요소
 const rankRouletteContainer = document.getElementById('rank-roulette-container');
 const rouletteHeader = document.getElementById('roulette-header');
 const rouletteNum = document.getElementById('roulette-num');
 const rouletteDanceBadge = document.getElementById('roulette-dance-badge');
-const ollaCatIframe = document.getElementById('olla-cat-iframe');
+const oiiaCanvas = document.getElementById('oiia-cat-canvas');
+const oiiaCtx = oiiaCanvas ? oiiaCanvas.getContext('2d') : null;
+const oiiaBubbleText = document.getElementById('oiia-bubble-text');
+const btnOiiaCat = document.getElementById('btn-oiia-cat');
+const btnOiiaTiger = document.getElementById('btn-oiia-tiger');
+const btnOiiaHero = document.getElementById('btn-oiia-hero');
+const btnOiiaSpeed = document.getElementById('btn-oiia-speed');
 
 // 모듈 인스턴스 생성
 const sound = new SoundManager();
@@ -298,6 +304,514 @@ function escapeHtml(str) {
     }[s]));
 }
 
+// =========================================================================
+// 🐱 OIIA OIIA 올라 캣 (Spinning Cat) 360° 실시간 캔버스 렌더러
+// =========================================================================
+let oiiaActive = false;
+let oiiaAnimId = null;
+let oiiaDancer = 'cat'; // 'cat' | 'tiger' | 'hero'
+let oiiaSpeedMode = 'normal'; // 'normal' | 'hyper'
+let oiiaRotAngle = 0;
+let oiiaStars = [];
+
+function initOiiaStars() {
+    oiiaStars = [];
+    const emojis = ['⭐', '🍌', '💖', '🐱', '✨', '🎵', '💫', '🔥', '🐯'];
+    for (let i = 0; i < 22; i++) {
+        oiiaStars.push({
+            x: Math.random() * 480,
+            y: Math.random() * 270,
+            emoji: emojis[Math.floor(Math.random() * emojis.length)],
+            size: 14 + Math.random() * 18,
+            vx: (Math.random() - 0.5) * 1.6,
+            vy: -0.8 - Math.random() * 1.4,
+            rot: Math.random() * Math.PI * 2,
+            vRot: (Math.random() - 0.5) * 0.06
+        });
+    }
+}
+
+// 🌈 회전하는 무지개 디스코 썬버스트 배경
+function drawOiiaDiscoBackground(ctx, w, h, time) {
+    const cx = w * 0.5;
+    const cy = h * 0.5;
+    const numRays = 16;
+    const baseAngle = time * (oiiaSpeedMode === 'hyper' ? 0.007 : 0.0022);
+
+    const colors = [
+        '#ff007f', '#7928ca', '#0070f3', '#00dfd8',
+        '#79ffe1', '#f5a623', '#ff0080', '#e00'
+    ];
+
+    for (let i = 0; i < numRays; i++) {
+        const a1 = baseAngle + (i * Math.PI * 2) / numRays;
+        const a2 = baseAngle + ((i + 1) * Math.PI * 2) / numRays;
+        ctx.fillStyle = colors[i % colors.length];
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, Math.max(w, h) * 1.2, a1, a2);
+        ctx.closePath();
+        ctx.fill();
+    }
+
+    // 중앙 비네팅 및 글로우
+    const radial = ctx.createRadialGradient(cx, cy, 35, cx, cy, w * 0.65);
+    radial.addColorStop(0, 'rgba(255, 255, 255, 0.40)');
+    radial.addColorStop(0.35, 'rgba(0, 0, 0, 0.1)');
+    radial.addColorStop(1, 'rgba(0, 0, 0, 0.82)');
+    ctx.fillStyle = radial;
+    ctx.fillRect(0, 0, w, h);
+
+    // 반짝이는 파티클 별 업데이트 & 렌더
+    ctx.save();
+    oiiaStars.forEach(st => {
+        st.x += st.vx;
+        st.y += st.vy;
+        st.rot += st.vRot;
+        if (st.y < -30) {
+            st.y = h + 20;
+            st.x = Math.random() * w;
+        }
+        ctx.save();
+        ctx.translate(st.x, st.y);
+        ctx.rotate(st.rot);
+        ctx.font = `${st.size}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(st.emoji, 0, 0);
+        ctx.restore();
+    });
+    ctx.restore();
+}
+
+// 🐱 360° 회전 OIIA Ethel Cat 모델 렌더링
+function draw3DOiiaCat(ctx, cx, cy, rot, squish, time) {
+    ctx.save();
+    ctx.translate(cx, cy);
+
+    // 비트에 맞춘 바운스 & 스쿼시
+    const bounceY = -Math.abs(Math.sin(time * 0.012)) * 16;
+    ctx.translate(0, bounceY);
+    ctx.scale(1 + squish * 0.08, 1 - squish * 0.08);
+
+    const cosRot = Math.cos(rot);
+    const sinRot = Math.sin(rot);
+    const isFront = cosRot >= 0;
+
+    // --- (1) 꼬리 (스윙 애니메이션) ---
+    const tailWag = Math.sin(time * 0.015) * 0.35;
+    ctx.save();
+    ctx.translate(sinRot * -35, 45);
+    ctx.rotate(tailWag - sinRot * 0.35);
+    ctx.fillStyle = '#6b7280';
+    ctx.strokeStyle = '#1f2937';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.ellipse(0, -18, 11, 26, 0.25, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    // 꼬리 끝 흰 털
+    ctx.fillStyle = '#f3f4f6';
+    ctx.beginPath();
+    ctx.arc(6, -38, 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // --- (2) 통통한 고양이 몸통 (Chubby Grey Tabby Body) ---
+    ctx.save();
+    ctx.scale(0.85 + Math.abs(cosRot) * 0.25, 1);
+    const bodyGrad = ctx.createRadialGradient(-10, 20, 10, 0, 30, 70);
+    bodyGrad.addColorStop(0, '#d1d5db');
+    bodyGrad.addColorStop(0.6, '#9ca3af');
+    bodyGrad.addColorStop(1, '#4b5563');
+    ctx.fillStyle = bodyGrad;
+    ctx.strokeStyle = '#111827';
+    ctx.lineWidth = 4.5;
+    ctx.beginPath();
+    ctx.ellipse(0, 32, 54, 46, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // 정면일 때 하얀 턱시도 가슴털 (White Chest Bib)
+    if (isFront) {
+        ctx.fillStyle = '#f9fafb';
+        ctx.beginPath();
+        ctx.ellipse(sinRot * 8, 38, 28 * Math.max(0.2, cosRot), 28, 0, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    ctx.restore();
+
+    // --- (3) 3D 궤도 귀 (Orbiting Ears with Z-Sorting) ---
+    const earAngles = [
+        { angle: rot - 0.75, baseSide: -1 },
+        { angle: rot + 0.75, baseSide: 1 }
+    ];
+    earAngles.sort((a, b) => Math.sin(a.angle) - Math.sin(b.angle));
+
+    earAngles.forEach(ear => {
+        const ex = Math.cos(ear.angle) * 44;
+        const ey = -42 + Math.sin(ear.angle) * 8;
+        const earFront = Math.sin(ear.angle) > -0.2;
+
+        ctx.save();
+        ctx.translate(ex, ey);
+        ctx.rotate(ear.baseSide * 0.18 + Math.cos(ear.angle) * 0.15);
+
+        // 귀 외곽
+        ctx.fillStyle = '#4b5563';
+        ctx.strokeStyle = '#111827';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(-16, 12);
+        ctx.lineTo(0, -28);
+        ctx.lineTo(16, 12);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // 앞면일 때 핑크 속살
+        if (earFront && isFront) {
+            ctx.fillStyle = '#f472b6';
+            ctx.beginPath();
+            ctx.moveTo(-9, 8);
+            ctx.lineTo(0, -18);
+            ctx.lineTo(9, 8);
+            ctx.closePath();
+            ctx.fill();
+            // 흰 털
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(0, 2, 6, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.restore();
+    });
+
+    // --- (4) 동글동글 올라 캣 머리 (Round Tabby Head) ---
+    ctx.save();
+    ctx.translate(0, -15);
+    ctx.scale(0.88 + Math.abs(cosRot) * 0.22, 1);
+
+    const headGrad = ctx.createRadialGradient(-15, -15, 10, 0, 0, 65);
+    headGrad.addColorStop(0, '#f3f4f6');
+    headGrad.addColorStop(0.45, '#9ca3af');
+    headGrad.addColorStop(1, '#4b5563');
+    ctx.fillStyle = headGrad;
+    ctx.strokeStyle = '#111827';
+    ctx.lineWidth = 4.8;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 58, 48, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    if (isFront) {
+        // --- 🐱 [정면]: 올라 캣 시그니처 맑은 눈망울 & 입꼬리 & 수염 ---
+        const faceShiftX = sinRot * 18;
+
+        // 이마의 태비 "M" 줄무늬
+        ctx.fillStyle = '#374151';
+        ctx.beginPath();
+        ctx.moveTo(faceShiftX - 14, -38);
+        ctx.lineTo(faceShiftX, -22);
+        ctx.lineTo(faceShiftX + 14, -38);
+        ctx.lineTo(faceShiftX + 8, -44);
+        ctx.lineTo(faceShiftX, -32);
+        ctx.lineTo(faceShiftX - 8, -44);
+        ctx.closePath();
+        ctx.fill();
+
+        // 볼 옆 줄무늬
+        [-1, 1].forEach(side => {
+            ctx.beginPath();
+            ctx.moveTo(faceShiftX + side * 42, -6);
+            ctx.lineTo(faceShiftX + side * 54, -10);
+            ctx.lineTo(faceShiftX + side * 44, 2);
+            ctx.closePath();
+            ctx.fill();
+        });
+
+        // 💖 하얀 주둥이 패드
+        ctx.fillStyle = '#ffffff';
+        ctx.strokeStyle = '#111827';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.ellipse(faceShiftX - 10, 16, 14, 11, 0.1, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.ellipse(faceShiftX + 10, 16, 14, 11, -0.1, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // 핑크 코
+        ctx.fillStyle = '#ec4899';
+        ctx.beginPath();
+        ctx.moveTo(faceShiftX, 15);
+        ctx.lineTo(faceShiftX - 6, 8);
+        ctx.lineTo(faceShiftX + 6, 8);
+        ctx.closePath();
+        ctx.fill();
+
+        // 깜찍한 ':3' 고양이 입
+        ctx.strokeStyle = '#111827';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(faceShiftX - 8, 18, 7, 0.2, Math.PI - 0.2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(faceShiftX + 8, 18, 7, 0.2, Math.PI - 0.2);
+        ctx.stroke();
+
+        // 👀 전설의 OIIA 똥글똥글 큰 눈망울 (Starry Meme Cat Eyes)
+        [-24, 24].forEach((eyeX) => {
+            const curEyeX = faceShiftX + eyeX * Math.max(0.3, cosRot);
+            ctx.save();
+            ctx.translate(curEyeX, -6);
+
+            // 흰자위
+            ctx.fillStyle = '#ffffff';
+            ctx.strokeStyle = '#111827';
+            ctx.lineWidth = 3.6;
+            ctx.beginPath();
+            ctx.arc(0, 0, 15, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // 호박/녹빛 맑은 홍채
+            const eyeGrad = ctx.createRadialGradient(0, 0, 2, 0, 0, 13);
+            eyeGrad.addColorStop(0, '#fef08a');
+            eyeGrad.addColorStop(0.5, '#a3e635');
+            eyeGrad.addColorStop(1, '#4d7c0f');
+            ctx.fillStyle = eyeGrad;
+            ctx.beginPath();
+            ctx.arc(0, 0, 12, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 큰 검은 동공
+            ctx.fillStyle = '#111827';
+            ctx.beginPath();
+            ctx.arc(0, 0, 7.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // ✦ 똥글똥글 하이라이트 별빛
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(-3, -3, 4.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(3, 4, 2.2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        });
+
+        // 〰️ 탄력 있는 하얀 수염
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2.4;
+        [-1, 1].forEach(side => {
+            [-4, 4, 12].forEach(yOff => {
+                ctx.beginPath();
+                ctx.moveTo(faceShiftX + side * 14, 16 + yOff * 0.4);
+                ctx.quadraticCurveTo(
+                    faceShiftX + side * 40,
+                    14 + yOff,
+                    faceShiftX + side * 68,
+                    18 + yOff * 1.5 + Math.sin(time * 0.02) * 3
+                );
+                ctx.stroke();
+            });
+        });
+
+        // 핑크 볼터치
+        ctx.fillStyle = 'rgba(244, 114, 182, 0.55)';
+        ctx.beginPath();
+        ctx.arc(faceShiftX - 32, 14, 9, 0, Math.PI * 2);
+        ctx.arc(faceShiftX + 32, 14, 9, 0, Math.PI * 2);
+        ctx.fill();
+    } else {
+        // --- 🐱 [뒷모습]: 보들보들 뒤통수와 줄무늬 ---
+        ctx.fillStyle = '#374151';
+        [-20, 0, 20].forEach(sx => {
+            ctx.beginPath();
+            ctx.ellipse(sx, -10, 6, 22, 0, 0, Math.PI * 2);
+            ctx.fill();
+        });
+    }
+    ctx.restore();
+
+    // --- (5) 가슴 앞에 모은 앙증맞은 앞발 (Tiny White Paws) ---
+    if (isFront) {
+        [-16, 16].forEach(px => {
+            ctx.save();
+            ctx.translate(px + sinRot * 10, 32);
+            ctx.fillStyle = '#ffffff';
+            ctx.strokeStyle = '#111827';
+            ctx.lineWidth = 3.4;
+            ctx.beginPath();
+            ctx.arc(0, 0, 11, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            // 핑크 젤리
+            ctx.fillStyle = '#f472b6';
+            ctx.beginPath();
+            ctx.arc(0, 2, 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        });
+    }
+
+    ctx.restore();
+}
+
+// 🐯 360° 회전 명품 황금 아기 호랑이 스핀 렌더링
+function draw3DOiiaTiger(ctx, cx, cy, rot, squish, time) {
+    ctx.save();
+    ctx.translate(cx, cy + 20);
+
+    const bounceY = -Math.abs(Math.sin(time * 0.012)) * 16;
+    ctx.translate(0, bounceY);
+    ctx.scale(1 + squish * 0.08, 1 - squish * 0.08);
+
+    const cosRot = Math.cos(rot);
+    const isFront = cosRot >= 0;
+
+    // 회전 스케일
+    ctx.scale(0.85 + Math.abs(cosRot) * 0.25, 1);
+
+    // 꼬리 흔들기
+    ctx.save();
+    ctx.translate(Math.sin(rot) * -20, 60);
+    hero.drawTigerTail(ctx, Math.sin(time * 0.01) * 3, Math.cos(time * 0.01) * 3);
+    ctx.restore();
+
+    // 몸통
+    ctx.save();
+    ctx.translate(0, 60);
+    hero.drawBackTorsoAndShorts(ctx, 0, isFront);
+    ctx.restore();
+
+    // 머리
+    ctx.save();
+    ctx.translate(0, -10);
+    hero.drawTigerHead(ctx, 0, 0, isFront);
+    ctx.restore();
+
+    ctx.restore();
+}
+
+// 🐾 360° 회전 내 캐릭터(러너) 스핀 렌더링
+function draw3DOiiaHero(ctx, cx, cy, rot, squish, time) {
+    ctx.save();
+    ctx.translate(cx, cy + 20);
+
+    const bounceY = -Math.abs(Math.sin(time * 0.012)) * 16;
+    ctx.translate(0, bounceY);
+    ctx.scale(1 + squish * 0.08, 1 - squish * 0.08);
+
+    const cosRot = Math.cos(rot);
+    const isFront = cosRot >= 0;
+
+    ctx.scale(0.85 + Math.abs(cosRot) * 0.25, 1);
+
+    // 몸통 & 머리
+    ctx.save();
+    ctx.translate(0, 60);
+    hero.drawBackTorsoAndShorts(ctx, 0, isFront);
+    ctx.restore();
+
+    ctx.save();
+    ctx.translate(0, -10);
+    if (hero.characterType === 'frog') hero.drawFrogHead(ctx, 0, 0, isFront);
+    else if (hero.characterType === 'tiger') hero.drawTigerHead(ctx, 0, 0, isFront);
+    else if (hero.characterType === 'penguin') hero.drawPenguinHead(ctx, 0, 0, isFront);
+    else {
+        if (isFront) hero.drawLookBackHead(ctx, 0, 0);
+        else hero.drawBackOfHead(ctx, 0, 0);
+    }
+    ctx.restore();
+
+    ctx.restore();
+}
+
+// 🎬 OIIA 360° 스테이지 애니메이션 메인 루프
+function renderOiiaStage(now) {
+    if (!oiiaActive || !oiiaCtx || !oiiaCanvas) return;
+
+    const w = oiiaCanvas.width;
+    const h = oiiaCanvas.height;
+
+    // 회전 각도 갱신
+    const speed = (oiiaSpeedMode === 'hyper' ? 0.22 : 0.065);
+    oiiaRotAngle += speed;
+
+    oiiaCtx.clearRect(0, 0, w, h);
+
+    // 1. 디스코 썬버스트 배경 및 팡파르 별가루
+    drawOiiaDiscoBackground(oiiaCtx, w, h, now);
+
+    // 2. 360° 무한 회전 캐릭터 렌더링
+    const squishFactor = Math.cos(now * 0.014);
+    if (oiiaDancer === 'cat') {
+        draw3DOiiaCat(oiiaCtx, w * 0.5, h * 0.52, oiiaRotAngle, squishFactor, now);
+    } else if (oiiaDancer === 'tiger') {
+        draw3DOiiaTiger(oiiaCtx, w * 0.5, h * 0.50, oiiaRotAngle, squishFactor, now);
+    } else {
+        draw3DOiiaHero(oiiaCtx, w * 0.5, h * 0.50, oiiaRotAngle, squishFactor, now);
+    }
+
+    oiiaAnimId = requestAnimationFrame(renderOiiaStage);
+}
+
+function startOiiaStage() {
+    if (!oiiaCanvas) return;
+    oiiaActive = true;
+    oiiaRotAngle = 0;
+    initOiiaStars();
+    if (oiiaAnimId) cancelAnimationFrame(oiiaAnimId);
+    oiiaAnimId = requestAnimationFrame(renderOiiaStage);
+}
+
+function stopOiiaStage() {
+    oiiaActive = false;
+    if (oiiaAnimId) {
+        cancelAnimationFrame(oiiaAnimId);
+        oiiaAnimId = null;
+    }
+}
+
+// 🕺 OIIA 인터랙티브 컨트롤 버튼 이벤트 연결
+if (btnOiiaCat) {
+    btnOiiaCat.addEventListener('click', () => {
+        oiiaDancer = 'cat';
+        [btnOiiaCat, btnOiiaTiger, btnOiiaHero].forEach(b => b && b.classList.remove('active'));
+        btnOiiaCat.classList.add('active');
+        sound.playSpecialItem();
+    });
+}
+if (btnOiiaTiger) {
+    btnOiiaTiger.addEventListener('click', () => {
+        oiiaDancer = 'tiger';
+        [btnOiiaCat, btnOiiaTiger, btnOiiaHero].forEach(b => b && b.classList.remove('active'));
+        btnOiiaTiger.classList.add('active');
+        sound.playSpecialItem();
+    });
+}
+if (btnOiiaHero) {
+    btnOiiaHero.addEventListener('click', () => {
+        oiiaDancer = 'hero';
+        [btnOiiaCat, btnOiiaTiger, btnOiiaHero].forEach(b => b && b.classList.remove('active'));
+        btnOiiaHero.classList.add('active');
+        sound.playSpecialItem();
+    });
+}
+if (btnOiiaSpeed) {
+    btnOiiaSpeed.addEventListener('click', () => {
+        oiiaSpeedMode = (oiiaSpeedMode === 'normal' ? 'hyper' : 'normal');
+        btnOiiaSpeed.classList.toggle('hyper', oiiaSpeedMode === 'hyper');
+        btnOiiaSpeed.textContent = (oiiaSpeedMode === 'hyper' ? '🌪️ 1000 RPM 초광속!' : '⚡ 초광속 회전!');
+        sound.playPowerUp();
+    });
+}
+
 function resize() {
     width = window.innerWidth;
     height = window.innerHeight;
@@ -403,9 +917,8 @@ function startNewGame(skipPrologue = false) {
         clearTimeout(rouletteTimer);
         rouletteTimer = null;
     }
-    if (ollaCatIframe) {
-        ollaCatIframe.src = '';
-    }
+    stopOiiaStage();
+    sound.stopOiiaOiiaMemeBGM();
     sound.startBGM();
     hero.reset();
     hero.setCharacterType(selectedChar);
@@ -455,11 +968,18 @@ function triggerGameEndModal(titleText, reasonText) {
 
     const userRank = rankingResult.userRank || 50;
 
-    // 🐱 OIIA OIIA 올라 캣(Spinning Cat) 유튜브 영상 자동 재생 & 등수 셔플 룰렛 시작!
-    if (ollaCatIframe) {
-        ollaCatIframe.src = 'https://www.youtube.com/embed/A2LGuBlDloQ?autoplay=1&mute=0&loop=1&playlist=A2LGuBlDloQ';
-    }
     startRankShuffleRoulette(userRank);
+
+    // 🐱 OIIA OIIA 올라 캣(Spinning Cat) 360° 실시간 캔버스 세리머니 & 보컬로이드 신스 BGM 시작!
+    startOiiaStage();
+    sound.playOiiaOiiaMemeBGM((step) => {
+        if (oiiaBubbleText) {
+            const memeTexts = ['OIIA OIIA!', 'OI-OI-OI!', 'SPINNING CAT!', '360° MEME!', '흥덕초 대박! 🎉', '무한 회전!'];
+            oiiaBubbleText.textContent = memeTexts[Math.floor(Math.random() * memeTexts.length)];
+            oiiaBubbleText.classList.add('beat');
+            setTimeout(() => oiiaBubbleText.classList.remove('beat'), 110);
+        }
+    });
 
     gameOverModal.classList.add('active');
 }
@@ -613,6 +1133,8 @@ document.getElementById('btn-look').addEventListener('click', handleLookBack);
 document.getElementById('btn-restart').addEventListener('click', () => startNewGame(true));
 
 document.getElementById('btn-change-name').addEventListener('click', () => {
+    stopOiiaStage();
+    sound.stopOiiaOiiaMemeBGM();
     gameOverModal.classList.remove('active');
     gameState = 'START_MENU';
     document.body.classList.remove('is-playing');
@@ -622,6 +1144,8 @@ document.getElementById('btn-change-name').addEventListener('click', () => {
 });
 
 document.getElementById('btn-open-rank').addEventListener('click', () => {
+    stopOiiaStage();
+    sound.stopOiiaOiiaMemeBGM();
     gameState = 'START_MENU';
     document.body.classList.remove('is-playing');
     renderRankingList(startRankingListEl, getRankings());

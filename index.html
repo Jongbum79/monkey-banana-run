@@ -183,25 +183,23 @@
                 <div class="roulette-badge" id="roulette-dance-badge">🎵 댄스 준비 중...</div>
             </div>
 
-            <!-- 🐱 OIIA OIIA CAT (올라 캣) 영상 플레이어 -->
-            <div class="olla-cat-container">
-                <div class="olla-cat-header">
-                    <span class="olla-badge">🐱 OIIA OIIA CAT (올라 캣)</span>
-                    <span class="olla-desc">🎵 360° 무한 회전 스피닝 캣 세리머니!</span>
+            <!-- 🐱 OIIA OIIA CAT (올라 캣) 360° 캔버스 실시간 스피닝 밈 스테이지 -->
+            <div class="oiia-cat-container">
+                <div class="oiia-cat-header">
+                    <span class="oiia-badge">🐱 OIIA OIIA CAT (올라 캣)</span>
+                    <span class="oiia-desc">🎵 360° 캔버스 실시간 무한 회전 밈!</span>
+                    <span class="oiia-sound-tag" id="oiia-sound-tag">🔊 OIIA BGM ON</span>
                 </div>
-                <div class="olla-video-box">
-                    <iframe id="olla-cat-iframe"
-                        src=""
-                        title="OIIA OIIA CAT (Spinning Cat)"
-                        frameborder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                        allowfullscreen>
-                    </iframe>
+                <div class="oiia-canvas-box">
+                    <canvas id="oiia-cat-canvas" width="480" height="270"></canvas>
+                    <div class="oiia-bubble-text" id="oiia-bubble-text">OIIA OIIA!</div>
                 </div>
-                <div class="olla-footer">
-                    <a href="https://www.youtube.com/watch?v=A2LGuBlDloQ" target="_blank" rel="noopener" class="olla-link-btn">
-                        ▶️ YouTube에서 올라캣(OIIA CAT) 영상 크게 보기
-                    </a>
+                <!-- 🕺 스피너 캐릭터 & 속도 인터랙티브 컨트롤 바 -->
+                <div class="oiia-ctrl-bar">
+                    <button type="button" class="oiia-btn active" id="btn-oiia-cat" data-target="cat">🐱 올라 캣</button>
+                    <button type="button" class="oiia-btn" id="btn-oiia-tiger" data-target="tiger">🐯 명품 호랑이</button>
+                    <button type="button" class="oiia-btn" id="btn-oiia-hero" data-target="hero">🐾 내 러너 스핀</button>
+                    <button type="button" class="oiia-btn oiia-speed-btn" id="btn-oiia-speed">⚡ 초광속 회전!</button>
                 </div>
             </div>
 

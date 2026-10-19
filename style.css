@@ -677,18 +677,20 @@ body.is-playing .concept-badge {
 }
 
 /* 🤖 댄서 모델 선택기 (로블록스 마네킹 / 동물 러너) */
-/* 🐱 OIIA OIIA CAT (올라 캣) 영상 플레이어 */
-.olla-cat-container {
-    background: #0f172a;
+/* 🐱 OIIA OIIA CAT (올라 캣) 360° 캔버스 실시간 스피닝 밈 스테이지 */
+.oiia-cat-container {
+    background: linear-gradient(135deg, #0b0f19 0%, #1e1b4b 50%, #311042 100%);
     border: 3.5px solid #1a1612;
     border-radius: 18px;
     padding: 10px;
     margin: 10px 0;
-    box-shadow: 4px 4px 0 #1a1612, 0 0 20px rgba(0, 245, 212, 0.25);
+    box-shadow: 4px 4px 0 #1a1612, 0 0 25px rgba(255, 0, 127, 0.35);
     text-align: center;
+    position: relative;
+    overflow: hidden;
 }
 
-.olla-cat-header {
+.oiia-cat-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -696,63 +698,127 @@ body.is-playing .concept-badge {
     padding: 0 4px;
 }
 
-.olla-badge {
-    background: #ff007f;
+.oiia-badge {
+    background: linear-gradient(90deg, #ff007f, #7928ca);
     color: #ffffff;
     font-size: 13.5px;
     font-weight: 800;
-    padding: 3px 10px;
+    padding: 4px 10px;
     border-radius: 12px;
     border: 1.5px solid #ffffff;
     text-shadow: 1px 1px 0 #1a1612;
+    box-shadow: 0 0 10px rgba(255, 0, 127, 0.5);
 }
 
-.olla-desc {
-    font-size: 13px;
+.oiia-desc {
+    font-size: 12.5px;
     font-weight: 700;
     color: #00f5d4;
     text-shadow: 1px 1px 0 #1a1612;
 }
 
-.olla-video-box {
+.oiia-sound-tag {
+    background: #10b981;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 10px;
+    border: 1px solid #ffffff;
+    text-shadow: 1px 1px 0 #1a1612;
+    animation: pulseGlow 1s infinite alternate;
+}
+
+@keyframes pulseGlow {
+    from { transform: scale(1); box-shadow: 0 0 4px #10b981; }
+    to { transform: scale(1.06); box-shadow: 0 0 12px #34d399; }
+}
+
+.oiia-canvas-box {
     position: relative;
     width: 100%;
-    padding-bottom: 56.25%; /* 16:9 비율 */
-    height: 0;
-    overflow: hidden;
-    border-radius: 12px;
-    border: 2px solid #334155;
+    border-radius: 14px;
+    border: 2.5px solid #38bdf8;
     background: #000000;
+    overflow: hidden;
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8), 0 0 15px rgba(56, 189, 248, 0.3);
 }
 
-.olla-video-box iframe {
-    position: absolute;
-    top: 0;
-    left: 0;
+#oiia-cat-canvas {
+    display: block;
     width: 100%;
-    height: 100%;
-    border: none;
-    border-radius: 10px;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    background: transparent;
 }
 
-.olla-footer {
+.oiia-bubble-text {
+    position: absolute;
+    bottom: 10px;
+    right: 14px;
+    font-size: 18px;
+    font-weight: 900;
+    color: #ffe600;
+    text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 0 0 10px #ff007f;
+    letter-spacing: 1px;
+    pointer-events: none;
+    transform: scale(1);
+    transition: transform 0.08s ease;
+}
+
+.oiia-bubble-text.beat {
+    transform: scale(1.3) rotate(-3deg);
+    color: #00ffff;
+}
+
+.oiia-ctrl-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
     margin-top: 8px;
 }
 
-.olla-link-btn {
-    display: inline-block;
-    background: #ff0000;
-    color: #ffffff;
-    text-decoration: none;
+.oiia-btn {
+    background: #1e293b;
+    color: #e2e8f0;
+    border: 2px solid #475569;
     font-size: 13px;
-    font-weight: 800;
-    padding: 5px 14px;
-    border-radius: 8px;
-    border: 1.5px solid #1a1612;
-    box-shadow: 1.5px 1.5px 0 #1a1612;
-    transition: transform 0.1s ease;
+    font-weight: 700;
+    padding: 5px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow: 2px 2px 0 #1a1612;
+    transition: all 0.15s ease;
 }
 
-.olla-link-btn:hover {
-    transform: scale(1.04);
+.oiia-btn:hover {
+    background: #334155;
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+
+.oiia-btn.active {
+    background: linear-gradient(135deg, #ec4899, #8b5cf6);
+    color: #ffffff;
+    border-color: #ffffff;
+    box-shadow: 0 0 10px rgba(236, 72, 153, 0.6), 2px 2px 0 #1a1612;
+}
+
+.oiia-speed-btn {
+    background: #f59e0b;
+    color: #1a1612;
+    border-color: #1a1612;
+}
+
+.oiia-speed-btn.hyper {
+    background: #ef4444;
+    color: #ffffff;
+    animation: hyperShake 0.15s infinite;
+}
+
+@keyframes hyperShake {
+    0% { transform: translate(1px, 1px) rotate(0deg); }
+    50% { transform: translate(-1px, -1px) rotate(-1deg); }
+    100% { transform: translate(1px, -1px) rotate(1deg); }
 }

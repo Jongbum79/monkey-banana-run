@@ -568,4 +568,121 @@ class SoundManager {
             this.danceBgmTimer = null;
         }
     }
+
+    // =========================================================================
+    // 🐱🎵 전 세계를 휩쓴 OIIA OIIA 올라 캣 (Spinning Cat) 밈 전용 신스 BGM (135 BPM)
+    // =========================================================================
+    playOiiaOiiaMemeBGM(onBeat) {
+        this.stopBGM();
+        this.stopDancePartyBGM();
+        this.stopOiiaOiiaMemeBGM();
+        this.init();
+        this.oiiaBgmPlaying = true;
+        this.oiiaStep = 0;
+
+        // "Oi-ia Oi-ia Oi-ia Oi-ia O-i-i-a-o-i-i-i-a-i!"
+        // 멜로디 시퀀스 (32스텝 루프, 16분음표 단위)
+        const oiiaMelody = [
+            // Bar 1: Oi-ia (E5, G5), Oi-ia (E5, G5), Oi-ia (E5, A5), O-i-i-a (G5, E5, D5, E5)
+            659.25, 783.99, 0, 659.25, 783.99, 0, 659.25, 880.00,
+            783.99, 659.25, 587.33, 659.25, 783.99, 659.25, 587.33, 523.25,
+            // Bar 2: Oi-ia (E5, G5), Oi-ia (E5, G5), Oi-ia (A5, B5), O-i-i-a-i (A5, G5, E5, D5, E5, G5, E5)
+            659.25, 783.99, 0, 659.25, 783.99, 0, 880.00, 987.77,
+            880.00, 783.99, 659.25, 587.33, 659.25, 783.99, 659.25, 0
+        ];
+
+        // 베이스라인 (통통 튀는 옥타브 유로댄스 베이스)
+        const oiiaBass = [
+            110, 220, 110, 220, 110, 220, 110, 220,
+            130.81, 261.63, 130.81, 261.63, 98, 196, 98, 196,
+            110, 220, 110, 220, 110, 220, 110, 220,
+            130.81, 261.63, 130.81, 261.63, 123.47, 246.94, 98, 196
+        ];
+
+        const tick = () => {
+            if (!this.oiiaBgmPlaying) return;
+            if (!this.muted && this.ctx) {
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+
+                const s = this.oiiaStep % 32;
+
+                // 1. 4온더플로어 댄스 킥
+                if (s % 4 === 0) {
+                    this.playKickDrum(0.22);
+                    if (typeof onBeat === 'function') onBeat(s);
+                }
+
+                // 2. 스네어 & 클랩 (2, 4박)
+                if (s % 4 === 2) {
+                    this.playSnareDrum(0.18);
+                }
+
+                // 3. 디스코 오프비트 오픈 하이햇 (16분음표 엇박)
+                if (s % 2 === 1) {
+                    this.playHiHat(0.06, 0.04);
+                }
+
+                // 4. 통통 튀는 베이스
+                const bNote = oiiaBass[s];
+                if (bNote > 0) {
+                    this.playBassNote(bNote, 0.09, 0.15);
+                }
+
+                // 5. 시그니처 OIIA OIIA 보컬로이드 신스 리드!
+                const mNote = oiiaMelody[s];
+                if (mNote > 0) {
+                    this.playOiiaLead(mNote, 0.14, 0.13);
+                }
+
+                this.oiiaStep++;
+            }
+
+            // 135 BPM: 약 111ms 간격의 초고속 댄스 비트
+            this.oiiaBgmTimer = setTimeout(tick, 111);
+        };
+
+        tick();
+    }
+
+    // 🤖 올라 캣 특유의 콧소리 섞인 포먼트 보컬로이드 신스
+    playOiiaLead(freq, duration, volume = 0.12) {
+        if (!this.ctx || this.muted) return;
+        const osc1 = this.ctx.createOscillator();
+        const osc2 = this.ctx.createOscillator();
+        const filter = this.ctx.createBiquadFilter();
+        const gain = this.ctx.createGain();
+
+        osc1.type = 'sawtooth';
+        osc2.type = 'square';
+        osc1.frequency.setValueAtTime(freq, this.ctx.currentTime);
+        osc2.frequency.setValueAtTime(freq * 1.006, this.ctx.currentTime); // 코러스 디튠
+
+        // 포먼트 대역 강조 (인간 목소리 포먼트 필터링)
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(1400, this.ctx.currentTime);
+        filter.Q.setValueAtTime(4.5, this.ctx.currentTime);
+
+        const now = this.ctx.currentTime;
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.linearRampToValueAtTime(volume, now + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+        osc1.connect(filter);
+        osc2.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc1.start(now);
+        osc2.start(now);
+        osc1.stop(now + duration);
+        osc2.stop(now + duration);
+    }
+
+    stopOiiaOiiaMemeBGM() {
+        this.oiiaBgmPlaying = false;
+        if (this.oiiaBgmTimer) {
+            clearTimeout(this.oiiaBgmTimer);
+            this.oiiaBgmTimer = null;
+        }
+    }
 }
