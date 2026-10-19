@@ -1886,324 +1886,275 @@ class PeanutsMonkeyHero {
         ctx.restore();
     }
 
-    // 5-D. 명품 황금 아기 호랑이 머리 (High-End Cute & Majestic Korean Tiger Cub Head)
+    // 5-D. 🐯 KIA 타이거즈 공식 마스코트 '호걸이(HOGEORI)'
     drawTigerHead(ctx, swing, cosSwing, isLookingBack) {
         ctx.save();
-        ctx.translate(isLookingBack ? 4 : 0, -288);
-        ctx.scale(1.18, 1.18);
-        ctx.rotate(isLookingBack ? (0.06 + Math.sin(this.runCycle * 0.5) * 0.04) : (Math.sin(this.runCycle * 0.5) * 0.045));
+        ctx.translate(isLookingBack ? 2 : 0, -285);
+        ctx.scale(1.15, 1.15);
+        ctx.rotate(isLookingBack ? (0.05 + Math.sin(this.runCycle * 0.5) * 0.03) : (Math.sin(this.runCycle * 0.5) * 0.04));
 
-        ctx.strokeStyle = '#14110f';
-        ctx.lineWidth = 4.2;
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 4;
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
 
-        // 1) 🐯 호랑이 귀 (앞/뒤 완벽 분기 - 뒤에서는 시그니처 하얀 반점 Ocelli)
-        [-66, 66].forEach((ex, idx) => {
+        // 1) 둥글둥글 귀여운 호걸이 귀 (양쪽 귀)
+        [-52, 52].forEach((ex, idx) => {
             ctx.save();
-            ctx.translate(ex, -68);
-            ctx.rotate(idx === 0 ? -0.24 : 0.24);
+            ctx.translate(ex, -52);
+            ctx.rotate(idx === 0 ? -0.22 : 0.22);
+
+            // 귀 외곽 (검은색 테두리 + 밝은 오렌지)
+            ctx.fillStyle = '#ff9e00';
+            ctx.beginPath();
+            ctx.arc(0, 0, 24, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
 
             if (isLookingBack) {
-                // --- [앞모습 귀]: 호랑이 골드 외곽 + 귀 끝 블랙 팁 + 복슬복슬 화이트 털 + 핑크 속살 ---
-                ctx.fillStyle = '#ff9e00';
-                ctx.beginPath();
-                ctx.arc(0, 0, 28, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.stroke();
-
-                // 귀 끝 엣지 블랙 팁
-                ctx.fillStyle = '#14110f';
-                ctx.beginPath();
-                ctx.arc(0, -10, 18, Math.PI * 1.15, Math.PI * 1.85);
-                ctx.quadraticCurveTo(0, -8, 0, -10);
-                ctx.fill();
-
-                // 귀 속 폭신폭신 하얀 솜털 뭉치
+                // 앞모습: 귀 안쪽 부드러운 크림빛 털
                 ctx.fillStyle = '#fff8f0';
                 ctx.beginPath();
-                ctx.ellipse(0, 3, 17, 21, 0, 0, Math.PI * 2);
+                ctx.ellipse(0, 2, 14, 17, 0, 0, Math.PI * 2);
                 ctx.fill();
-
-                // 귀 속 따뜻한 로즈핑크
-                ctx.fillStyle = '#ff758f';
+                // 살구 핑크 포인트
+                ctx.fillStyle = '#ffb4a2';
                 ctx.beginPath();
-                ctx.ellipse(0, 6, 9, 13, 0, 0, Math.PI * 2);
+                ctx.ellipse(0, 5, 8, 10, 0, 0, Math.PI * 2);
                 ctx.fill();
             } else {
-                // --- [뒷모습 귀]: 호랑이 고유의 시그니처 '하얀 눈 반점(Ocelli)' 완비! ---
-                // 칠흑빛 벨벳 베이스
-                ctx.fillStyle = '#14110f';
+                // 뒷모습: 검은 귀 뒤 + 하얀 오셀리 반점
+                ctx.fillStyle = '#1a1612';
                 ctx.beginPath();
-                ctx.arc(0, 0, 28, 0, Math.PI * 2);
+                ctx.arc(0, 0, 24, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.stroke();
 
-                // 🌟 호랑이 귀 뒤의 상징! 선명한 원형 화이트 오셀리 (White Ocelli Eye Spot)
                 ctx.fillStyle = '#ffffff';
                 ctx.beginPath();
-                ctx.arc(0, 0, 13, 0, Math.PI * 2);
-                ctx.fill();
-
-                // 귀 밑동 골드 오렌지 그러데이션
-                ctx.fillStyle = '#ff9e00';
-                ctx.beginPath();
-                ctx.arc(0, 14, 15, Math.PI, 0);
-                ctx.fill();
-
-                // 귀 안쪽에서 삐져나온 앙증맞은 흰 털가닥
-                ctx.fillStyle = '#fff8f0';
-                ctx.beginPath();
-                ctx.moveTo(idx === 0 ? 14 : -14, -8);
-                ctx.quadraticCurveTo(idx === 0 ? 24 : -24, -14, idx === 0 ? 20 : -20, 4);
-                ctx.closePath();
+                ctx.arc(0, 0, 11, 0, Math.PI * 2);
                 ctx.fill();
             }
             ctx.restore();
         });
 
-        // 2) 통통하고 복슬복슬한 황금 아기 호랑이 얼굴 본체 (Royal Golden Amber Gradient)
-        const tigerGrad = ctx.createRadialGradient(-15, -20, 15, 0, 10, 115);
-        tigerGrad.addColorStop(0, '#ffeaa7');
-        tigerGrad.addColorStop(0.35, '#ff9e00');
-        tigerGrad.addColorStop(0.75, '#e85d04');
-        tigerGrad.addColorStop(1, '#c1121f');
-        ctx.fillStyle = tigerGrad;
+        // 2) 호걸이의 둥글둥글하고 통통한 얼굴 (Bright Friendly Mascot Face)
+        const faceGrad = ctx.createRadialGradient(0, -10, 15, 0, 15, 80);
+        faceGrad.addColorStop(0, '#ffbe0b');
+        faceGrad.addColorStop(0.7, '#ff9e00');
+        faceGrad.addColorStop(1, '#ea580c');
+        ctx.fillStyle = faceGrad;
 
         ctx.beginPath();
-        ctx.moveTo(-54, -72);
-        ctx.quadraticCurveTo(0, -86, 54, -72);
-        ctx.quadraticCurveTo(76, -45, 82, -10);
-        // 오른쪽 볼 복슬복슬 입체 털단 (3단 플러피 털)
-        ctx.quadraticCurveTo(102, 12, 90, 30);
-        ctx.quadraticCurveTo(102, 46, 84, 60);
-        ctx.quadraticCurveTo(46, 94, 0, 94);
-        ctx.quadraticCurveTo(-46, 94, -84, 60);
-        // 왼쪽 볼 복슬복슬 입체 털단
-        ctx.quadraticCurveTo(-102, 46, -90, 30);
-        ctx.quadraticCurveTo(-102, 12, -82, -10);
-        ctx.quadraticCurveTo(-76, -45, -54, -72);
-        ctx.closePath();
+        ctx.ellipse(0, 12, 64, 52, 0, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
 
-        if (isLookingBack) {
-            // --- 🐯 [앞모습]: KIA 타이거즈 공식 마스코트 '호걸이(HOGEORI)' 완벽 구현! ---
-            // 1) 👑 이마 중앙의 기아 타이거즈 3선 마스코트 스트라이프 (Bold Tigers Crest)
-            ctx.fillStyle = '#14110f';
-            // 중앙 굵은 쐐기 줄무늬
+        // 3) 🧢 호걸이의 시그니처: 빨간색 KIA 야구모자 (KIA Tigers Red Baseball Cap)
+        // (신사복이나 산타 복장이 아닐 때 호걸이의 대표 빨간 야구모자 착용!)
+        if (this.costumeType === 'none') {
+            ctx.save();
+            ctx.translate(0, -42);
+
+            const capGrad = ctx.createLinearGradient(-50, -40, 50, 20);
+            capGrad.addColorStop(0, '#e63946');
+            capGrad.addColorStop(0.6, '#c8102e'); // KIA Tigers Red
+            capGrad.addColorStop(1, '#8b0000');
+            ctx.fillStyle = capGrad;
+            ctx.strokeStyle = '#1a1612';
+            ctx.lineWidth = 4;
+
+            // 모자 둥근 크라운 돔
             ctx.beginPath();
-            ctx.moveTo(0, -28);
-            ctx.lineTo(-8, -68);
-            ctx.quadraticCurveTo(0, -72, 8, -68);
-            ctx.closePath();
-            ctx.fill();
-
-            // 이마 양옆 대칭 2선
-            [-1, 1].forEach(side => {
-                ctx.beginPath();
-                ctx.moveTo(side * 14, -40);
-                ctx.lineTo(side * 26, -65);
-                ctx.lineTo(side * 20, -68);
-                ctx.lineTo(side * 10, -44);
-                ctx.closePath();
-                ctx.fill();
-            });
-
-            // 2) 🤨 호걸이의 핵심 상징! 짙고 당당한 '표정부자 눈알쇼' 마스코트 눈썹 (Bold Eyebrows)
-            [-34, 34].forEach((bx, idx) => {
-                ctx.save();
-                ctx.translate(bx, -28);
-                ctx.rotate(idx === 0 ? 0.08 : -0.08);
-                ctx.fillStyle = '#14110f';
-                ctx.beginPath();
-                ctx.roundRect(-17, -5, 34, 10, 5);
-                ctx.fill();
-                ctx.restore();
-            });
-
-            // 3) 👀 호걸이 전매특허: 똥글똥글하고 맑은 만화/디즈니풍 마스코트 눈망울
-            [-34, 34].forEach((ex, idx) => {
-                ctx.save();
-                ctx.translate(ex, -8);
-
-                // 흰자위 (크고 둥글둥글한 눈)
-                ctx.fillStyle = '#ffffff';
-                ctx.strokeStyle = '#14110f';
-                ctx.lineWidth = 3.8;
-                ctx.beginPath();
-                ctx.ellipse(0, 0, 18, 20, 0, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.stroke();
-
-                // 큼직하고 또렷한 검은 동공 (익살스럽고 잔망스러운 호걸이 시선)
-                ctx.fillStyle = '#14110f';
-                ctx.beginPath();
-                ctx.ellipse(idx === 0 ? 2 : -2, 0, 12, 14, 0, 0, Math.PI * 2);
-                ctx.fill();
-
-                // ✦ 맑고 영롱한 큰 원형 하이라이트 + 작은 보조 반사광
-                ctx.fillStyle = '#ffffff';
-                ctx.beginPath();
-                ctx.arc(idx === 0 ? -2 : -6, -5, 5.5, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.beginPath();
-                ctx.arc(idx === 0 ? 5 : 1, 4, 3, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.restore();
-            });
-
-            // 4) 🐯 볼 양옆의 시원한 기아 타이거즈 3가닥 블랙 스트라이프
-            [-1, 1].forEach(dir => {
-                ctx.save();
-                ctx.scale(dir, 1);
-                ctx.fillStyle = '#14110f';
-                // 1번 줄
-                ctx.beginPath();
-                ctx.moveTo(56, -14); ctx.quadraticCurveTo(80, -18, 82, -8); ctx.lineTo(60, -4); ctx.closePath(); ctx.fill();
-                // 2번 줄
-                ctx.beginPath();
-                ctx.moveTo(54, 8); ctx.quadraticCurveTo(78, 6, 80, 16); ctx.lineTo(58, 20); ctx.closePath(); ctx.fill();
-                // 3번 줄
-                ctx.beginPath();
-                ctx.moveTo(50, 30); ctx.quadraticCurveTo(72, 30, 74, 38); ctx.lineTo(54, 40); ctx.closePath(); ctx.fill();
-                ctx.restore();
-            });
-
-            // 5) 💖 호걸이의 복슬복슬 크고 둥근 화이트 머즐 (White Muzzle Pads)
-            ctx.fillStyle = '#ffffff';
-            ctx.strokeStyle = '#14110f';
-            ctx.lineWidth = 3.8;
-            ctx.beginPath();
-            ctx.ellipse(-20, 38, 26, 21, 0.12, 0, Math.PI * 2);
-            ctx.fill(); ctx.stroke();
-            ctx.beginPath();
-            ctx.ellipse(20, 38, 26, 21, -0.12, 0, Math.PI * 2);
-            ctx.fill(); ctx.stroke();
-
-            // 턱 밑 풍성한 화이트 가슴털
-            ctx.beginPath();
-            ctx.ellipse(0, 70, 32, 19, 0, 0, Math.PI * 2);
-            ctx.fill(); ctx.stroke();
-
-            // 6) 👃 호걸이의 상징: 윤기 나는 큼직하고 둥근 '블랙 마스코트 코' (Black Mascot Nose)
-            ctx.fillStyle = '#14110f';
-            ctx.strokeStyle = '#14110f';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.roundRect(-15, 20, 30, 18, 9);
-            ctx.fill();
-
-            // 코 윗부분 매끄러운 흰색 윤기 하이라이트 타원
-            ctx.fillStyle = '#ffffff';
-            ctx.beginPath();
-            ctx.ellipse(0, 24, 8, 3.5, 0, 0, Math.PI * 2);
-            ctx.fill();
-
-            // 7) 😃 호걸이의 호쾌하고 장난기 넘치는 활짝 웃는 입 & 핑크 혀
-            ctx.fillStyle = '#c1121f';
-            ctx.strokeStyle = '#14110f';
-            ctx.lineWidth = 3.6;
-            ctx.beginPath();
-            ctx.arc(0, 42, 16, 0, Math.PI);
+            ctx.moveTo(-50, 12);
+            ctx.bezierCurveTo(-54, -48, 54, -48, 50, 12);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
 
-            // 말랑한 핑크 혀
+            // 모자 꼭짓점 버튼
+            ctx.fillStyle = '#1a1612';
+            ctx.beginPath();
+            ctx.arc(0, -42, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            if (isLookingBack) {
+                // 모자 정면 챙 (살짝 위로 들린 발랄한 야구모자 챙)
+                ctx.fillStyle = '#1a1612';
+                ctx.beginPath();
+                ctx.ellipse(0, 14, 58, 14, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#c8102e';
+                ctx.beginPath();
+                ctx.ellipse(0, 10, 54, 10, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 모자 중앙 심플하고 멋진 화이트 마크 (KIA / T 로고 느낌)
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.roundRect(-14, -26, 28, 7, 3);
+                ctx.roundRect(-4, -26, 8, 20, 3);
+                ctx.fill();
+            } else {
+                // 모자 뒤통수: 사이즈 조절 벨크로 스트랩 & 홀
+                ctx.fillStyle = '#1a1612';
+                ctx.beginPath();
+                ctx.arc(0, 12, 16, Math.PI, 0);
+                ctx.fill();
+
+                ctx.fillStyle = '#e2e8f0';
+                ctx.beginPath();
+                ctx.roundRect(-18, 8, 36, 6, 2);
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+
+        if (isLookingBack) {
+            // =================================================================
+            // 🐯 [호걸이 앞모습]: 디즈니/KBO 마스코트다운 밝고 귀여운 호걸이 얼굴
+            // =================================================================
+
+            // 1) 🤨 호걸이의 대표 눈썹: 부드러운 아치형 검은 눈썹 (Mascot Eyebrows)
+            [-28, 28].forEach((bx, idx) => {
+                ctx.save();
+                ctx.translate(bx, -18);
+                ctx.rotate(idx === 0 ? 0.08 : -0.08);
+                ctx.fillStyle = '#1a1612';
+                ctx.beginPath();
+                ctx.roundRect(-14, -4, 28, 8, 4);
+                ctx.fill();
+                ctx.restore();
+            });
+
+            // 2) 👀 호걸이의 크고 맑은 똥글똥글 만화 눈 (Big Round Friendly Eyes)
+            [-28, 28].forEach((ex, idx) => {
+                ctx.save();
+                ctx.translate(ex, 2);
+
+                // 흰자위
+                ctx.fillStyle = '#ffffff';
+                ctx.strokeStyle = '#1a1612';
+                ctx.lineWidth = 3.6;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 15, 17, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                // 큼직하고 둥근 검은 눈동자
+                ctx.fillStyle = '#1a1612';
+                ctx.beginPath();
+                ctx.arc(idx === 0 ? 2 : -2, 1, 10, 0, Math.PI * 2);
+                ctx.fill();
+
+                // ✦ 반짝반짝 큰 하이라이트 원형 반사광 (순하고 귀여운 눈빛!)
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(idx === 0 ? -1 : -5, -3, 4.8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(idx === 0 ? 5 : 1, 5, 2.4, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            });
+
+            // 3) 볼 양옆의 깔끔하고 귀여운 마스코트 줄무늬 2가닥 (Soft Cheek Stripes)
+            [-1, 1].forEach(side => {
+                ctx.save();
+                ctx.scale(side, 1);
+                ctx.fillStyle = '#1a1612';
+                ctx.beginPath();
+                ctx.moveTo(48, 2); ctx.quadraticCurveTo(62, 0, 64, 6); ctx.lineTo(48, 8); ctx.closePath(); ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(46, 18); ctx.quadraticCurveTo(60, 18, 62, 24); ctx.lineTo(46, 24); ctx.closePath(); ctx.fill();
+                ctx.restore();
+            });
+
+            // 4) 💖 빵빵하고 둥근 하얀 찹쌀떡 주둥이 (Puffy White Muzzle)
+            ctx.fillStyle = '#ffffff';
+            ctx.strokeStyle = '#1a1612';
+            ctx.lineWidth = 3.6;
+            ctx.beginPath();
+            ctx.ellipse(-16, 28, 22, 18, 0.1, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.ellipse(16, 28, 22, 18, -0.1, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // 5) 👃 윤기 나는 도톰하고 둥근 검은색 코 (Cute Black Mascot Nose)
+            ctx.fillStyle = '#1a1612';
+            ctx.beginPath();
+            ctx.ellipse(0, 17, 13, 9, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 코 윤기 하이라이트
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.ellipse(-2, 14, 5, 2.5, -0.2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 6) 😃 해맑게 웃는 반달 스마일 입매 & 분홍 혀 (:D)
+            ctx.fillStyle = '#d90429';
+            ctx.strokeStyle = '#1a1612';
+            ctx.lineWidth = 3.4;
+            ctx.beginPath();
+            ctx.arc(0, 32, 14, 0, Math.PI);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // 통통한 핑크 혀
             ctx.fillStyle = '#ff758f';
             ctx.beginPath();
-            ctx.arc(0, 50, 10, Math.PI, 0);
+            ctx.arc(0, 39, 9, Math.PI, 0);
             ctx.fill();
 
-            // 입꼬리 앙증맞은 송곳니 2개 (귀여운 타이거즈 포인트)
-            ctx.fillStyle = '#ffffff';
-            ctx.strokeStyle = '#14110f';
-            ctx.lineWidth = 2.2;
-            [-11, 11].forEach(fx => {
-                ctx.beginPath();
-                ctx.moveTo(fx - 3.5, 42);
-                ctx.lineTo(fx, 48);
-                ctx.lineTo(fx + 3.5, 42);
-                ctx.closePath();
-                ctx.fill();
-                ctx.stroke();
-            });
-
-            // 주둥이 중앙 인중 분할선
-            ctx.strokeStyle = '#14110f';
-            ctx.lineWidth = 3.6;
+            // 인중 선
+            ctx.strokeStyle = '#1a1612';
+            ctx.lineWidth = 3.2;
             ctx.beginPath();
-            ctx.moveTo(0, 36);
-            ctx.lineTo(0, 42);
+            ctx.moveTo(0, 24);
+            ctx.lineTo(0, 32);
             ctx.stroke();
 
-            // 8) 양 볼 생기 넘치는 살구빛 볼터치
-            ctx.fillStyle = 'rgba(255, 107, 107, 0.55)';
+            // 7) 발그레하고 귀여운 살구빛 볼터치
+            ctx.fillStyle = 'rgba(255, 130, 110, 0.50)';
             ctx.beginPath();
-            ctx.ellipse(-52, 22, 14, 10, 0, 0, Math.PI * 2);
-            ctx.ellipse(52, 22, 14, 10, 0, 0, Math.PI * 2);
+            ctx.ellipse(-42, 22, 11, 8, 0, 0, Math.PI * 2);
+            ctx.ellipse(42, 22, 11, 8, 0, 0, Math.PI * 2);
             ctx.fill();
 
-            // 9) 호걸이의 앙증맞은 수염 점 3개씩 & 흰 수염
-            ctx.fillStyle = '#14110f';
-            [-1, 1].forEach(dir => {
+            // 8) 귀여운 주근깨 수염 점 3개씩
+            ctx.fillStyle = '#1a1612';
+            [-1, 1].forEach(side => {
                 ctx.beginPath();
-                ctx.arc(dir * 18, 34, 2.5, 0, Math.PI * 2);
-                ctx.arc(dir * 28, 38, 2.5, 0, Math.PI * 2);
-                ctx.arc(dir * 18, 44, 2.5, 0, Math.PI * 2);
+                ctx.arc(side * 15, 26, 2, 0, Math.PI * 2);
+                ctx.arc(side * 23, 29, 2, 0, Math.PI * 2);
+                ctx.arc(side * 15, 33, 2, 0, Math.PI * 2);
                 ctx.fill();
-
-                ctx.strokeStyle = '#ffffff';
-                ctx.lineWidth = 2.2;
-                ctx.beginPath();
-                ctx.moveTo(dir * 32, 36); ctx.quadraticCurveTo(dir * 60, 35, dir * 82, 42); ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(dir * 32, 42); ctx.quadraticCurveTo(dir * 60, 46, dir * 80, 54); ctx.stroke();
             });
+
         } else {
-            // --- [뒷모습]: 촌티(밤티)를 벗어던진 한국 전통 호랑이 명품 뒤통수 & 목덜미 줄무늬! ---
-            ctx.fillStyle = '#14110f';
-            // 중앙 정수리 세련된 왕관형 줄무늬 (Crown Center Stripe)
-            ctx.beginPath();
-            ctx.moveTo(-10, -84); ctx.quadraticCurveTo(0, -50, 10, -84);
-            ctx.quadraticCurveTo(4, -40, 0, -26);
-            ctx.quadraticCurveTo(-4, -40, -10, -84);
-            ctx.closePath();
-            ctx.fill();
-
-            // 양옆 아름다운 곡선의 호랑이 머리 줄무늬 (Upper Crest Stripes)
-            [-1, 1].forEach(dir => {
+            // =================================================================
+            // 🐯 [호걸이 뒷모습]: 모자 아래로 드러난 단정하고 귀여운 목덜미
+            // =================================================================
+            ctx.fillStyle = '#1a1612';
+            // 목덜미 귀여운 줄무늬 2가닥
+            [-1, 1].forEach(side => {
                 ctx.save();
-                ctx.scale(dir, 1);
-                // 1번 줄무늬
+                ctx.scale(side, 1);
                 ctx.beginPath();
-                ctx.moveTo(28, -78);
-                ctx.quadraticCurveTo(42, -74, 22, -50);
-                ctx.quadraticCurveTo(14, -58, 28, -78);
-                ctx.closePath();
-                ctx.fill();
-
-                // 2번 옆통수 줄무늬
-                ctx.beginPath();
-                ctx.moveTo(68, -42);
-                ctx.quadraticCurveTo(55, -46, 34, -28);
-                ctx.quadraticCurveTo(48, -24, 68, -42);
-                ctx.closePath();
-                ctx.fill();
-
-                // 3번 목덜미 줄무늬
-                ctx.beginPath();
-                ctx.moveTo(70, -10);
-                ctx.quadraticCurveTo(52, -8, 28, 4);
-                ctx.quadraticCurveTo(46, 12, 70, -10);
-                ctx.closePath();
-                ctx.fill();
+                ctx.moveTo(42, 20); ctx.quadraticCurveTo(24, 26, 12, 38); ctx.lineTo(24, 40); ctx.closePath(); ctx.fill();
                 ctx.restore();
             });
 
-            // 뒤통수 입체 명암 해칭
-            this.drawHatching(ctx, -46, 52, 46, 52, 8, 12, 1.4);
+            this.drawHatching(ctx, -38, 44, 38, 44, 6, 10, 1.3);
         }
 
         ctx.restore();
