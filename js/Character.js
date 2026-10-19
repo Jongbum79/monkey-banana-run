@@ -79,9 +79,9 @@ class PeanutsMonkeyHero {
         // 착지 직전(y < 48)에도 선입력 점프가 즉시 먹히도록 반응성 대폭 개선!
         if (!this.isJumping || this.y < 48) {
             this.isJumping = true;
-            // 점프 키를 누른 즉시 높이를 띄우고 강력한 점프력(31.0 / 슈퍼점프 40.0) 부여!
+            // 점프 키를 누른 즉시 높이를 띄우고 긴 체공 시간(중력 0.88)으로 먼 거리를 날아가는 긴 점프력 부여!
             this.y = Math.max(this.y, 48);
-            this.vy = this.superJumpTimer > 0 ? 40.0 : 31.0;
+            this.vy = this.superJumpTimer > 0 ? 35.0 : 26.5;
             return true;
         }
         return false;
@@ -151,10 +151,10 @@ class PeanutsMonkeyHero {
         // 장애물/트럭 지붕 위(platformY) 즉각적이고 부드러운 등반/하강
         this.platformY += (this.targetPlatformY - this.platformY) * Math.min(1, dt * 22);
 
-        // 초고속 반응 점프 물리
+        // 먼 거리를 웅장하게 도약하는 롱 점프(체공 시간 증가 & 점프 거리 대폭 확장)
         if (this.isJumping) {
             this.y += this.vy * (dt * 60);
-            this.vy -= 1.25 * (dt * 60);
+            this.vy -= 0.88 * (dt * 60);
             if (this.y <= 0) {
                 this.y = 0;
                 this.vy = 0;
@@ -408,39 +408,24 @@ class PeanutsMonkeyHero {
 
     drawGroundShadow(ctx, x, y, scale) {
         ctx.save();
-        const jumpRatio = Math.max(0.35, 1 - this.y / 320);
-        const rx = 86 * scale * jumpRatio;
+        const jumpRatio = Math.max(0.25, 1 - this.y / 460);
+        const rx = 84 * scale * jumpRatio;
         const ry = 22 * scale * jumpRatio;
+        const shadowAlpha = Math.max(0.12, 0.48 * jumpRatio);
 
         ctx.translate(x, y + 8 * scale);
 
-        // 🎯 바닥 착지 지점 & 레인 히트박스 링 (언제 점프하고 어느 레인에 있는지 100% 명확하게 표시!)
-        const ringCol = this.stumbleTimer > 0
-            ? '#ff0055'
-            : (this.isJumping ? '#06d6a0' : '#00f5d4');
-        ctx.fillStyle = 'rgba(0, 245, 212, 0.16)';
-        ctx.strokeStyle = ringCol;
-        ctx.lineWidth = 3.2;
-        ctx.beginPath();
-        ctx.ellipse(0, 0, 74 * scale, 20 * scale, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
+        // 부드럽고 사실적인 원근 3D 바닥 그림자 그라데이션
+        const shadowGrad = ctx.createRadialGradient(0, 0, 4 * scale, 0, 0, rx);
+        shadowGrad.addColorStop(0, `rgba(20, 16, 12, ${shadowAlpha})`);
+        shadowGrad.addColorStop(0.7, `rgba(20, 16, 12, ${shadowAlpha * 0.55})`);
+        shadowGrad.addColorStop(1, 'rgba(20, 16, 12, 0)');
 
-        ctx.fillStyle = 'rgba(42, 32, 22, 0.24)';
+        ctx.fillStyle = shadowGrad;
         ctx.beginPath();
         ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.strokeStyle = 'rgba(26, 22, 18, 0.65)';
-        ctx.lineWidth = 2.2 * scale;
-        ctx.lineCap = 'round';
-        for (let dy = -ry * 0.8; dy <= ry * 0.8; dy += 5.5 * scale) {
-            const halfW = rx * Math.sqrt(Math.max(0, 1 - (dy * dy) / (ry * ry)));
-            ctx.beginPath();
-            ctx.moveTo(-halfW, dy);
-            ctx.lineTo(halfW, dy - 2 * scale);
-            ctx.stroke();
-        }
         ctx.restore();
     }
 

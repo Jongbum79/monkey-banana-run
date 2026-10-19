@@ -88,20 +88,21 @@ body, html {
     right: 126px;
 }
 
-/* 게임 플레이 중(is-playing) 상단 말풍선 설명창 및 하단 키 조작/아이템 설명창 완전 숨김 */
+/* 게임 플레이 중(is-playing) 상단 말풍선, 왼쪽 상단 헤더 박스, 왼쪽 하단 컨트롤 박스 완전 숨김 */
 body.is-playing .peanuts-speech-bubble {
     display: none !important;
 }
 
-body.is-playing .controls-card h3,
-body.is-playing .controls-card .key-guide {
+body.is-playing .header-box {
     display: none !important;
 }
 
-body.is-playing .controls-card {
-    padding: 6px 12px;
-    background: rgba(255, 252, 245, 0.85);
-    border-radius: 12px;
+body.is-playing .bottom-bar {
+    display: none !important;
+}
+
+body.is-playing .concept-badge {
+    display: none !important;
 }
 
 /* UI 오버레이 */

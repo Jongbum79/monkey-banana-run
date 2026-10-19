@@ -506,7 +506,9 @@ function gameLoop(now) {
         const stInfo = STAGE_INFO[track.stage] || STAGE_INFO[1];
         // 최고 속도를 30% 낮추어 후반 스테이지에서도 쾌적한 조작 보장!
         gameSpeed = stInfo.speedBase + Math.min(0.14, score / 7000);
-        const effectiveSpeed = (hero.boostTimer > 0 || hero.invincibleTimer > 0) ? gameSpeed * 1.15 : gameSpeed;
+        // 요청 반영: 점프 길이를 대폭 확장하여 도약 시 시원하게 전방을 돌파 (jumpBoost 1.35x)
+        const jumpBoost = hero.isJumping ? 1.35 : 1.0;
+        const effectiveSpeed = ((hero.boostTimer > 0 || hero.invincibleTimer > 0) ? gameSpeed * 1.15 : gameSpeed) * jumpBoost;
 
         hero.update(dt, effectiveSpeed);
         dragon.update(dt);
@@ -719,6 +721,11 @@ function gameLoop(now) {
     const shake = dragon.getScreenShakeOffset();
     ctx.translate(shake.x, shake.y);
 
+    // 🎯 실감나는 3D 카메라 뱅킹 틸트 (원숭이 좌우 이동 시 트랙 전체가 역동적으로 기울어짐)
+    ctx.translate(width * 0.5, height * 0.55);
+    ctx.rotate(-hero.laneX * 0.016);
+    ctx.translate(-width * 0.5, -height * 0.55);
+
     track.renderBackgroundAndRoad(ctx, width, height, hero.time);
 
     track.renderEntities(ctx, width, height, hero.time, 0, 0.88);
@@ -754,6 +761,11 @@ function gameLoop(now) {
 
     if (track.stage < 6) {
         dragon.renderInGameChase(ctx, width, height);
+    }
+
+    // 🎯 왼쪽 상단/왼쪽 아래 DOM 박스가 사라진 자리에 캔버스 자체 아케이드 HUD 렌더링
+    if (gameState === 'PLAYING') {
+        track.renderCanvasHUD(ctx, width, height, score, track.stage, STAGE_INFO[track.stage], mathGate.solvedCount);
     }
 
     ctx.restore();

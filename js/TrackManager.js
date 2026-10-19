@@ -90,12 +90,12 @@ class TrackManager {
         return { x, y, roadW, scale, zPow, horizonY, groundY, centerX, topRoadW, botRoadW, roadFrac };
     }
 
-    // 정사각형 바닥 트랙의 한 칸(타일)과 100% 동일한 원근 4꼭짓점 계산
+    // 컴팩트하게 최적화된 바닥 히트박스 4꼭짓점 계산 (요청 반영: 히트박스 크기 축소!)
     getTrackCellCorners(z, lane, width, height) {
         const p = this.project(z, lane, width, height);
         const progCenter = Math.pow(p.roadFrac, 1 / 1.85);
-        // renderBackgroundAndRoad의 타일 1칸 세로 길이(0.82 / 9 = 0.0911)와 정확히 동일!
-        const halfTileProg = (0.82 / 9) * 0.5;
+        // 타일 1칸 대비 컴팩트한 히트박스(가로 폭 및 깊이 축소)
+        const halfTileProg = (0.82 / 9) * 0.28;
         const prog1 = Math.max(0.001, progCenter - halfTileProg);
         const prog2 = Math.min(1.06, progCenter + halfTileProg);
 
@@ -107,11 +107,11 @@ class TrackManager {
         const w1 = p.topRoadW + (p.botRoadW - p.topRoadW) * rf1;
         const w2 = p.topRoadW + (p.botRoadW - p.topRoadW) * rf2;
 
-        // renderBackgroundAndRoad의 타일 1칸 가로 폭((col - 0.44) ~ (col + 0.44))과 정확히 동일!
-        const x1L = p.centerX + (lane - 0.44) * (w1 / 3);
-        const x1R = p.centerX + (lane + 0.44) * (w1 / 3);
-        const x2R = p.centerX + (lane + 0.44) * (w2 / 3);
-        const x2L = p.centerX + (lane - 0.44) * (w2 / 3);
+        // 레인 너비의 ±0.26으로 줄여 억울한 피격을 방지하고 명확한 판정 부여!
+        const x1L = p.centerX + (lane - 0.26) * (w1 / 3);
+        const x1R = p.centerX + (lane + 0.26) * (w1 / 3);
+        const x2R = p.centerX + (lane + 0.26) * (w2 / 3);
+        const x2L = p.centerX + (lane - 0.26) * (w2 / 3);
 
         return { x1L, y1, x1R, x2R, y2, x2L };
     }
@@ -268,7 +268,7 @@ class TrackManager {
 
             // 1) 경사로(ramp): 밟고 올라가서 달릴 수 있는 경사 발판
             if (obs.type === 'ramp') {
-                if (obs.z > 0.68 && obs.z < 1.04 && Math.abs(hero.laneX - obs.lane) < 0.48) {
+                if (obs.z > 0.70 && obs.z < 1.04 && Math.abs(hero.laneX - obs.lane) < 0.36) {
                     onRampHeight = 88;
                     if (!obs.passed) {
                         obs.passed = true;
@@ -279,7 +279,7 @@ class TrackManager {
                 // 2) 멈춘 대형 트럭/버스(climb_truck):
                 // 점프해서 올라타거나(hero.y > 22) 이미 높은 플랫폼 위에 있으면 트럭 지붕 위를 달릴 수 있고,
                 // 점프하지 않고 맨땅에서 트럭 정면에 그대로 부딪히면 다른 장애물과 동일하게 충돌 데미지(-25 HP)가 들어감!
-                if (obs.z > 0.64 && obs.z < 1.05 && Math.abs(hero.laneX - obs.lane) < 0.48) {
+                if (obs.z > 0.68 && obs.z < 1.05 && Math.abs(hero.laneX - obs.lane) < 0.36) {
                     if (obs.climbing || hero.y > 22 || hero.platformY > 36) {
                         obs.climbing = true;
                         onRampHeight = 106;
@@ -287,16 +287,15 @@ class TrackManager {
                             obs.passed = true;
                             callbacks.onRampClimb(obs);
                         }
-                    } else if (!obs.hit && obs.z > 0.80 && obs.z < 1.02) {
+                    } else if (!obs.hit && obs.z > 0.86 && obs.z < 1.01 && Math.abs(hero.laneX - obs.lane) < 0.32) {
                         obs.hit = true;
                         callbacks.onObstacleHit(obs);
                     }
                 }
             } else if (!obs.hit) {
-                // 3) 모든 공격형 장애물(통나무, 허들, 아치, 기둥, 이동 기물, 스테이지별 돌진 기물)의 완벽한 데미지 판정!
-                // 캐릭터가 위치한 Z 구간(0.80 ~ 1.03) 전체에서 매 프레임 충돌을 검사하며,
-                // 일찍 점프했다가 기물 위에 착지하거나 옆에서 부딪혀도 데미지가 절대 씹히지 않도록 1.03 이후에만 passed 처리!
-                if (obs.z > 0.80 && obs.z < 1.03 && Math.abs(hero.laneX - obs.lane) < 0.48) {
+                // 3) 모든 공격형 장애물(통나무, 허들, 아치, 기둥, 이동 기물, 스테이지별 돌진 기물)
+                // 요청 반영: 히트박스를 컴팩트하게 줄여(레인 ±0.32, Z: 0.86 ~ 1.01) 억울한 충돌 방지 및 쾌적한 플레이!
+                if (obs.z > 0.86 && obs.z < 1.01 && Math.abs(hero.laneX - obs.lane) < 0.32) {
                     let avoided = false;
                     const totalHeroHeight = hero.y + hero.platformY;
 
@@ -315,7 +314,7 @@ class TrackManager {
                         obs.hit = true;
                         callbacks.onObstacleHit(obs);
                     }
-                } else if (!obs.passed && obs.z >= 1.03) {
+                } else if (!obs.passed && obs.z >= 1.01) {
                     obs.passed = true;
                     callbacks.onObstacleAvoided(obs);
                 }
@@ -905,7 +904,7 @@ class TrackManager {
                 const x2L = centerX + (col - 0.44) * (w2 / 3);
 
                 // 타일 앞쪽 3D 입체 두께 단차
-                ctx.fillStyle = 'rgba(26, 22, 18, 0.32)';
+                ctx.fillStyle = 'rgba(26, 22, 18, 0.35)';
                 ctx.beginPath();
                 ctx.moveTo(x2L, y2);
                 ctx.lineTo(x2R, y2);
@@ -914,6 +913,7 @@ class TrackManager {
                 ctx.closePath();
                 ctx.fill();
 
+                // 3D 조명 그라데이션이 적용된 바닥 타일
                 ctx.fillStyle = (i + col) % 2 === 0 ? th.tileA : th.tileB;
                 ctx.strokeStyle = this.stage === 5 ? '#ff007f' : '#1a1612';
                 ctx.lineWidth = 1.4 + z1 * 2.4;
@@ -926,6 +926,56 @@ class TrackManager {
                 ctx.closePath();
                 ctx.fill();
                 ctx.stroke();
+
+                // 3D 상단 햇빛 하이라이트 (입체감 증폭)
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.14)';
+                ctx.beginPath();
+                ctx.moveTo(x1L, y1);
+                ctx.lineTo(x1R, y1);
+                ctx.lineTo(x1R, y1 + (y2 - y1) * 0.25);
+                ctx.lineTo(x1L, y1 + (y2 - y1) * 0.25);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            // 3D 레인 분할 점선 (True 3D Perspective Lane Dividers)
+            if (i % 2 === 0) {
+                for (const divCol of [-0.5, 0.5]) {
+                    const d1x = centerX + divCol * (w1 / 3);
+                    const d2x = centerX + divCol * (w2 / 3);
+                    const dw1 = Math.max(2.0, 4.0 * z1);
+                    const dw2 = Math.max(3.0, 6.5 * z2);
+
+                    ctx.fillStyle = this.stage === 5 ? '#00f5d4' : '#fffcf5';
+                    ctx.beginPath();
+                    ctx.moveTo(d1x - dw1 * 0.5, y1);
+                    ctx.lineTo(d1x + dw1 * 0.5, y1);
+                    ctx.lineTo(d2x + dw2 * 0.5, y2);
+                    ctx.lineTo(d2x - dw2 * 0.5, y2);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+            }
+
+            // 3D 도로변 입체 반사경 기둥 (3D Roadside Guide Posts)
+            if (i % 2 === 1 && z2 > 0.08) {
+                const postH = 26 * z2;
+                const postW = Math.max(2.5, 5.5 * z2);
+                const postLip = 3 * z2;
+
+                // 좌측 연석 가이드 기둥
+                const leftPostX = centerX - w2 * 0.5 - postW * 1.5;
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(leftPostX, y2 - postH, postW, postH);
+                ctx.fillStyle = '#ff0055';
+                ctx.fillRect(leftPostX, y2 - postH + postLip, postW, postLip * 2);
+
+                // 우측 연석 가이드 기둥
+                const rightPostX = centerX + w2 * 0.5 + postW * 0.5;
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(rightPostX, y2 - postH, postW, postH);
+                ctx.fillStyle = '#00f5d4';
+                ctx.fillRect(rightPostX, y2 - postH + postLip, postW, postLip * 2);
             }
         }
 
@@ -3758,5 +3808,44 @@ class TrackManager {
 
             ctx.restore();
         }
+    }
+
+    // 캔버스에 직접 그리는 깔끔한 아케이드 3D HUD (HTML 박스 없이 전체화면 시야 보장)
+    renderCanvasHUD(ctx, width, height, score, stage, stageInfo, solvedCount) {
+        ctx.save();
+        // 1) 좌측 상단: 미니멀 3D 스테이지 배지
+        ctx.font = 'bold 18px "Gaegu", sans-serif';
+        const stText = stageInfo ? stageInfo.badge : `STAGE ${stage}`;
+        const stW = ctx.measureText(stText).width + 32;
+
+        ctx.fillStyle = 'rgba(26, 22, 18, 0.76)';
+        ctx.beginPath();
+        ctx.roundRect(24, 24, stW, 36, 18);
+        ctx.fill();
+        ctx.strokeStyle = '#ffea79';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(stText, 40, 42);
+
+        // 2) 우측 상단: 아케이드 스코어 & 사칙연산 문제 해결 수 배지
+        const scoreText = `🪙 ${score.toLocaleString()} 점   🧮 ${solvedCount}/10`;
+        const scW = ctx.measureText(scoreText).width + 36;
+        const scX = width - scW - 24;
+
+        ctx.fillStyle = 'rgba(26, 22, 18, 0.76)';
+        ctx.beginPath();
+        ctx.roundRect(scX, 24, scW, 36, 18);
+        ctx.fill();
+        ctx.strokeStyle = '#ffd166';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+
+        ctx.fillStyle = '#ffd166';
+        ctx.fillText(scoreText, scX + 18, 42);
+        ctx.restore();
     }
 }
