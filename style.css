@@ -618,3 +618,129 @@ body.is-playing .concept-badge {
 .rank-score {
     color: #2a9d8f;
 }
+
+/* 🎰 실시간 등수 셔플 룰렛 박스 */
+.rank-roulette-container {
+    background: linear-gradient(135deg, #0d1b2a, #1b263b);
+    border: 3.5px solid #ffbe0b;
+    border-radius: 20px;
+    padding: 12px 16px;
+    margin: 10px 0 12px;
+    box-shadow: 0 0 20px rgba(255, 190, 11, 0.45), 4px 4px 0 #1a1612;
+    text-align: center;
+}
+
+.roulette-header {
+    font-size: 14px;
+    font-weight: 700;
+    color: #90e0ef;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.roulette-display {
+    padding: 4px 0;
+}
+
+.roulette-num {
+    font-family: 'Arial Black', sans-serif;
+    font-size: 42px;
+    font-weight: 900;
+    color: #ffbe0b;
+    text-shadow: 0 0 16px rgba(255, 234, 121, 0.9), 3px 3px 0 #1a1612;
+    display: inline-block;
+    transition: transform 0.1s ease;
+}
+
+.roulette-num.rolling {
+    animation: rouletteBounce 0.08s infinite alternate;
+    color: #00f5d4;
+    text-shadow: 0 0 16px rgba(0, 245, 212, 0.8), 3px 3px 0 #1a1612;
+}
+
+@keyframes rouletteBounce {
+    0% { transform: scale(1.0) translateY(-2px); }
+    100% { transform: scale(1.08) translateY(2px); }
+}
+
+.roulette-badge {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.55);
+    border: 1.5px solid #00f5d4;
+    border-radius: 12px;
+    padding: 4px 14px;
+    font-size: 15px;
+    font-weight: 800;
+    color: #fffcf5;
+    margin-top: 4px;
+    text-shadow: 1px 1px 0 #1a1612;
+}
+
+/* 🕺 실시간 캐릭터 축하 댄스 무대 */
+.dance-stage-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: radial-gradient(circle at center, #24243e 0%, #0f0c29 100%);
+    border: 3.5px solid #1a1612;
+    border-radius: 18px;
+    padding: 6px;
+    margin: 8px 0;
+    box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.7), 4px 4px 0 #1a1612;
+}
+
+#dance-canvas {
+    max-width: 100%;
+    height: auto;
+    border-radius: 12px;
+}
+
+/* 🎵 댄스 선택 툴바 */
+.dance-toolbar {
+    margin: 8px 0 12px;
+    background: #fdf0d5;
+    border: 2px dashed #1a1612;
+    border-radius: 14px;
+    padding: 8px 10px;
+}
+
+.dance-toolbar-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #43281c;
+    margin-bottom: 6px;
+}
+
+.dance-btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    justify-content: center;
+}
+
+.dance-btn {
+    background: #ffffff;
+    border: 2px solid #1a1612;
+    border-radius: 9px;
+    padding: 4px 9px;
+    font-family: 'Gaegu', cursive;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #1a1612;
+    cursor: pointer;
+    box-shadow: 1.5px 1.5px 0 #1a1612;
+    transition: all 0.12s;
+}
+
+.dance-btn:hover {
+    background: #ffea79;
+    transform: translateY(-1px);
+}
+
+.dance-btn.active {
+    background: #ff007f;
+    color: #ffffff;
+    border-color: #1a1612;
+    box-shadow: 0 0 10px rgba(255, 0, 127, 0.7), 2px 2px 0 #1a1612;
+    transform: scale(1.04);
+}

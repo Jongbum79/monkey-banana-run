@@ -424,4 +424,128 @@ class SoundManager {
         this.playTone(1480, 'sawtooth', 0.16, 0.20, 220);
         this.playTone(980, 'square', 0.14, 0.14, 140);
     }
+
+    // 🎰 등수 셔플 룰렛 회전 효과음 (빠른 기계식 딸깍음)
+    playShuffleTick() {
+        if (this.muted) return;
+        this.init();
+        this.playTone(1100 + Math.random() * 350, 'square', 0.025, 0.05, 550);
+    }
+
+    // 🎺 최종 등수 확정 팡파르 & 축하 환호 사운드
+    playFanfareCheer() {
+        if (this.muted) return;
+        this.init();
+        const fanfareNotes = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+        fanfareNotes.forEach((f, idx) => {
+            setTimeout(() => {
+                this.playTone(f, 'sawtooth', 0.32, 0.18);
+                this.playTone(f * 0.5, 'triangle', 0.32, 0.15);
+            }, idx * 65);
+        });
+        setTimeout(() => {
+            // 화려한 피날레 오케스트라 브라스 코드
+            [523.25, 659.25, 783.99, 1046.50].forEach(f => {
+                this.playTone(f, 'sawtooth', 0.75, 0.16);
+            });
+            this.playKickDrum(0.25);
+        }, 360);
+    }
+
+    // 🎉 초신나는 엔딩 댄스 파티 BGM (132 BPM 신스웨이브 & 디스코 펑크 댄스 뮤직)
+    startDancePartyBGM() {
+        this.stopBGM();
+        this.stopDancePartyBGM();
+        this.init();
+        this.danceBgmPlaying = true;
+        this.danceStep = 0;
+
+        // 신나는 댄스 리드 멜로디 (32스텝, C Major & A Minor 축제 테마)
+        const danceLead = [
+            // Bar 1: 신나는 펑키 멜로디
+            523.25, 523.25, 659.25, 0,      783.99, 0, 880.00, 783.99,
+            659.25, 0, 587.33, 523.25,      587.33, 0, 659.25, 0,
+            // Bar 2: 에너제틱 클라이맥스
+            783.99, 880.00, 1046.50, 0,     880.00, 0, 783.99, 0,
+            659.25, 783.99, 659.25, 587.33, 523.25, 0, 0, 0
+        ];
+
+        // 춤추게 만드는 펑키 슬랩 베이스라인 (32스텝)
+        const danceBass = [
+            130.81, 261.63, 130.81, 196.00,  146.83, 293.66, 146.83, 220.00,
+            164.81, 329.63, 164.81, 246.94,  174.61, 349.23, 196.00, 261.63,
+            130.81, 261.63, 130.81, 196.00,  146.83, 293.66, 146.83, 220.00,
+            164.81, 329.63, 174.61, 349.23,  196.00, 392.00, 130.81, 261.63
+        ];
+
+        // 경쾌한 브라스 신스 코드 (8스텝마다 전환)
+        const danceChords = [
+            [261.63, 329.63, 392.00, 523.25], // C Maj
+            [293.66, 349.23, 440.00, 587.33], // Dm
+            [329.63, 392.00, 493.88, 659.25], // Em
+            [349.23, 440.00, 523.25, 698.46]  // F Maj
+        ];
+
+        const tick = () => {
+            if (!this.danceBgmPlaying) return;
+            if (!this.muted && this.ctx) {
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+
+                const s = this.danceStep % 32;
+
+                // 1. 4온더플로어 묵직한 디스코 킥 (매 4분음표)
+                if (s % 4 === 0) {
+                    this.playKickDrum(0.20);
+                }
+
+                // 2. 파워풀한 백비트 스네어/클랩 (2, 4박)
+                if (s % 4 === 2) {
+                    this.playSnareDrum(0.16);
+                }
+
+                // 3. 댄스 그루브 오프비트 오픈 하이햇
+                if (s % 4 === 2 || s % 8 === 6) {
+                    this.playHiHat(0.08, 0.05);
+                } else {
+                    this.playHiHat(0.03, 0.02);
+                }
+
+                // 4. 통통 튀는 슬랩 베이스
+                const bNote = danceBass[s];
+                if (bNote > 0) {
+                    this.playBassNote(bNote, 0.11, 0.14);
+                }
+
+                // 5. 브라스 신스 화음 (경쾌한 엇박 스타카토)
+                if (s % 4 === 1 || s % 4 === 3) {
+                    const chord = danceChords[Math.floor(s / 8) % 4];
+                    chord.forEach(freq => {
+                        this.playTone(freq, 'sawtooth', 0.08, 0.038);
+                    });
+                }
+
+                // 6. 초신나는 메인 댄스 리드 멜로디
+                const mNote = danceLead[s];
+                if (mNote > 0) {
+                    this.playLeadSynth(mNote, 0.16, 0.09);
+                    this.playTone(mNote * 0.5, 'triangle', 0.16, 0.06);
+                }
+
+                this.danceStep++;
+            }
+
+            // 132 BPM: 약 113.6ms 간격의 초고속 신나는 파티 비트
+            this.danceBgmTimer = setTimeout(tick, 114);
+        };
+
+        tick();
+    }
+
+    stopDancePartyBGM() {
+        this.danceBgmPlaying = false;
+        if (this.danceBgmTimer) {
+            clearTimeout(this.danceBgmTimer);
+            this.danceBgmTimer = null;
+        }
+    }
 }

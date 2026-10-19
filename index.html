@@ -174,6 +174,34 @@
                 풀어낸 6학년 문제: <span id="final-math">0</span>개
             </p>
 
+            <!-- 🎰 실시간 등수 셔플 룰렛 & 세리머니 박스 -->
+            <div class="rank-roulette-container" id="rank-roulette-container">
+                <div class="roulette-header" id="roulette-header">🎲 실시간 흥덕초등학교 랭킹 산출 중...</div>
+                <div class="roulette-display" id="roulette-display">
+                    <span class="roulette-num" id="roulette-num">???위</span>
+                </div>
+                <div class="roulette-badge" id="roulette-dance-badge">🎵 댄스 준비 중...</div>
+            </div>
+
+            <!-- 🕺 실시간 캐릭터 축하 댄스 무대 캔버스 -->
+            <div class="dance-stage-wrapper">
+                <canvas id="dance-canvas" width="280" height="230"></canvas>
+            </div>
+
+            <!-- 🎵 댄스 모드 직접 선택 툴바 -->
+            <div class="dance-toolbar">
+                <div class="dance-toolbar-title">🕺 댄스 모드 직접 선택해서 구경하기</div>
+                <div class="dance-btn-group" id="dance-btn-group">
+                    <button type="button" class="dance-btn" data-dance="windmill">🌀 윈드밀 (1~10등)</button>
+                    <button type="button" class="dance-btn" data-dance="ateez_bad">🔥 에이티즈 bad (11~20등)</button>
+                    <button type="button" class="dance-btn" data-dance="red_red">❤️ red red (21~30등)</button>
+                    <button type="button" class="dance-btn" data-dance="take_the_l">🕺 L을 가져가 (31~40등)</button>
+                    <button type="button" class="dance-btn" data-dance="veggie">🥕 야채 춤 (41등+)</button>
+                    <button type="button" class="dance-btn" data-dance="side_to_side">↔️ 측면 대 측면 (41등+)</button>
+                    <button type="button" class="dance-btn" data-dance="cream_cheese_honey">🍯 크림 치즈 허니 (41등+)</button>
+                </div>
+            </div>
+
             <div class="ranking-box">
                 <h3>🏆 실시간 랭킹 보드</h3>
                 <ul class="ranking-list" id="gameover-ranking-list"></ul>

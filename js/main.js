@@ -47,6 +47,15 @@ const finalScoreEl = document.getElementById('final-score');
 const finalMathEl = document.getElementById('final-math');
 const bgmBtn = document.getElementById('btn-bgm');
 
+// 🎰 등수 셔플 룰렛 & 댄스 세리머니 DOM 요소
+const rankRouletteContainer = document.getElementById('rank-roulette-container');
+const rouletteHeader = document.getElementById('roulette-header');
+const rouletteNum = document.getElementById('roulette-num');
+const rouletteDanceBadge = document.getElementById('roulette-dance-badge');
+const danceCanvas = document.getElementById('dance-canvas');
+const danceCtx = danceCanvas ? danceCanvas.getContext('2d') : null;
+const danceBtns = document.querySelectorAll('.dance-btn');
+
 // 모듈 인스턴스 생성
 const sound = new SoundManager();
 const hero = new PeanutsMonkeyHero();
@@ -127,23 +136,78 @@ const STAGE_INFO = {
 // =========================================================================
 // 🏆 랭킹 시스템
 // =========================================================================
-const RANKING_STORAGE_KEY = 'smilegames_monkey_rankings_v1';
+const RANKING_STORAGE_KEY = 'smilegames_monkey_rankings_v2';
 
 function getRankings() {
     const raw = localStorage.getItem(RANKING_STORAGE_KEY);
     if (raw) {
         try {
-            return JSON.parse(raw);
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed) && parsed.length >= 20) {
+                return parsed;
+            }
         } catch (e) {
             console.error(e);
         }
     }
+    // 🏫 흥덕초등학교 6학년 학생 러너 명예의 전당 (50위까지 촘촘한 점수대 배치!)
     const defaultRankings = [
-        { name: '최지훈', score: 1250, math: 10 },
-        { name: '박주아', score: 980, math: 8 },
-        { name: '김이수', score: 840, math: 7 },
-        { name: '최우영', score: 710, math: 6 },
-        { name: '전준우', score: 620, math: 5 }
+        // 1~5위: 개발자 및 챔피언 라인 (2650~1910)
+        { name: '최지훈 (개발자)', score: 2650, math: 22 },
+        { name: '박주아 (개발자)', score: 2420, math: 19 },
+        { name: '김이수 (개발자)', score: 2210, math: 17 },
+        { name: '최우영 (개발자)', score: 2050, math: 16 },
+        { name: '전준우 (개발자)', score: 1910, math: 15 },
+        // 6~10위: 1~10등 윈드밀 댄스 구간 (1800~1480)
+        { name: '흥덕 6-1 민준', score: 1800, math: 14 },
+        { name: '흥덕 6-1 서연', score: 1690, math: 13 },
+        { name: '흥덕 6-2 도윤', score: 1590, math: 12 },
+        { name: '흥덕 6-2 예은', score: 1530, math: 12 },
+        { name: '흥덕 6-1 시우', score: 1480, math: 11 },
+        // 11~20위: 11~20등 에이티즈 bad 댄스 구간 (1420~980)
+        { name: '흥덕 6-2 하은', score: 1420, math: 11 },
+        { name: '흥덕 6-3 지호', score: 1360, math: 10 },
+        { name: '흥덕 6-3 수아', score: 1300, math: 10 },
+        { name: '흥덕 6-2 은우', score: 1240, math: 9 },
+        { name: '흥덕 6-3 지민', score: 1190, math: 9 },
+        { name: '흥덕 6-1 예준', score: 1140, math: 8 },
+        { name: '흥덕 6-3 윤서', score: 1090, math: 8 },
+        { name: '흥덕 6-2 서진', score: 1050, math: 7 },
+        { name: '흥덕 6-3 채원', score: 1010, math: 7 },
+        { name: '흥덕 6-1 유찬', score: 980,  math: 7 },
+        // 21~30위: 21~30등 red red 댄스 구간 (940~650)
+        { name: '흥덕 6-4 선우', score: 940, math: 6 },
+        { name: '흥덕 6-4 지아', score: 900, math: 6 },
+        { name: '흥덕 6-4 현우', score: 860, math: 6 },
+        { name: '흥덕 6-4 서아', score: 820, math: 5 },
+        { name: '흥덕 6-2 준서', score: 790, math: 5 },
+        { name: '흥덕 6-4 다은', score: 760, math: 5 },
+        { name: '흥덕 6-3 정우', score: 730, math: 4 },
+        { name: '흥덕 6-4 아린', score: 700, math: 4 },
+        { name: '흥덕 6-1 도현', score: 670, math: 4 },
+        { name: '흥덕 6-4 하윤', score: 650, math: 4 },
+        // 31~40위: 31~40등 L을 가져가 댄스 구간 (620~390)
+        { name: '흥덕 6-5 건우', score: 620, math: 3 },
+        { name: '흥덕 6-5 시아', score: 590, math: 3 },
+        { name: '흥덕 6-5 우진', score: 560, math: 3 },
+        { name: '흥덕 6-5 소율', score: 530, math: 3 },
+        { name: '흥덕 6-3 민재', score: 500, math: 2 },
+        { name: '흥덕 6-5 지유', score: 470, math: 2 },
+        { name: '흥덕 6-4 태윤', score: 450, math: 2 },
+        { name: '흥덕 6-5 서하', score: 430, math: 2 },
+        { name: '흥덕 6-2 승우', score: 410, math: 2 },
+        { name: '흥덕 6-5 예나', score: 390, math: 1 },
+        // 41위 이상: 야채 춤 / 측면 대 측면 / 크림 치즈 허니 구간 (370~120)
+        { name: '흥덕 6-5 주원', score: 370, math: 1 },
+        { name: '흥덕 6-1 지안', score: 350, math: 1 },
+        { name: '흥덕 6-4 유진', score: 320, math: 1 },
+        { name: '흥덕 6-3 서율', score: 290, math: 1 },
+        { name: '흥덕 6-5 재윤', score: 260, math: 0 },
+        { name: '흥덕 6-2 나은', score: 230, math: 0 },
+        { name: '흥덕 6-4 시현', score: 200, math: 0 },
+        { name: '흥덕 6-1 채은', score: 170, math: 0 },
+        { name: '흥덕 6-5 민서', score: 140, math: 0 },
+        { name: '흥덕 6-3 동현', score: 120, math: 0 }
     ];
     localStorage.setItem(RANKING_STORAGE_KEY, JSON.stringify(defaultRankings));
     return defaultRankings;
@@ -152,7 +216,7 @@ function getRankings() {
 function saveScoreToRanking(name, newScore, mathCount) {
     const list = getRankings();
     const entry = {
-        name: name || '익명 원숭이',
+        name: name || '익명 러너',
         score: newScore,
         math: mathCount,
         isNew: true
@@ -160,9 +224,9 @@ function saveScoreToRanking(name, newScore, mathCount) {
     list.forEach(item => delete item.isNew);
     list.push(entry);
     list.sort((a, b) => b.score - a.score || b.math - a.math);
-    const top10 = list.slice(0, 10);
-    localStorage.setItem(RANKING_STORAGE_KEY, JSON.stringify(top10));
-    return top10;
+    localStorage.setItem(RANKING_STORAGE_KEY, JSON.stringify(list));
+    const userRank = list.findIndex(item => item.isNew) + 1;
+    return { list: list.slice(0, 15), userRank };
 }
 
 function renderRankingList(ulElement, rankings) {
@@ -183,6 +247,121 @@ function renderRankingList(ulElement, rankings) {
     if (rankings.length > 0) {
         bestScoreEl.textContent = `${rankings[0].score} (${rankings[0].name})`;
     }
+}
+
+// 🕺 등수별 매칭 댄스 타입 반환
+function getDanceForRank(rank) {
+    if (rank >= 1 && rank <= 10) return 'windmill';
+    if (rank >= 11 && rank <= 20) return 'ateez_bad';
+    if (rank >= 21 && rank <= 30) return 'red_red';
+    if (rank >= 31 && rank <= 40) return 'take_the_l';
+    if (rank <= 50) return 'veggie';
+    if (rank <= 60) return 'side_to_side';
+    return 'cream_cheese_honey';
+}
+
+const DANCE_LABELS = {
+    windmill: '🌀 [1~10등 챔피언] 비보이 윈드밀 브레이크댄스!',
+    ateez_bad: '🔥 [11~20등 탑러너] 에이티즈 BAD 힙합 바운스!',
+    red_red: '❤️ [21~30등 스타] red red K-POP 댄스!',
+    take_the_l: '🕺 [31~40등 도전자] L을 가져가 (Take the L) 댄스!',
+    veggie: '🥕 [41등+] 신나는 야채 춤 (당근송)!',
+    side_to_side: '↔️ [41등+] 측면 대 측면 (Floss) 댄스!',
+    cream_cheese_honey: '🍯 [41등+] 달콤한 크림 치즈 허니 댄스!'
+};
+
+let currentDanceType = 'windmill';
+let danceAnimationId = null;
+let danceStartTime = 0;
+let rouletteTimer = null;
+
+// 🕺 세리머니 댄스 모드 전환 함수
+function setDanceMode(danceType, triggerPartyBGM = false) {
+    currentDanceType = danceType;
+    if (rouletteDanceBadge) {
+        rouletteDanceBadge.textContent = DANCE_LABELS[danceType] || '🎵 축하 댄스!';
+    }
+    danceBtns.forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.dance === danceType);
+    });
+    if (triggerPartyBGM) {
+        sound.startDancePartyBGM();
+    }
+}
+
+// 🕺 캔버스 세리머니 댄스 애니메이션 시작
+function startDanceAnimation(danceType = 'windmill') {
+    if (!danceCanvas || !danceCtx) return;
+    setDanceMode(danceType, false);
+    if (danceAnimationId) {
+        cancelAnimationFrame(danceAnimationId);
+        danceAnimationId = null;
+    }
+    danceStartTime = performance.now();
+
+    function danceLoop(now) {
+        const elapsed = (now - danceStartTime) / 1000;
+        danceCtx.clearRect(0, 0, danceCanvas.width, danceCanvas.height);
+        hero.renderCelebrationDance(danceCtx, 140, 135, 0.58, currentDanceType, elapsed);
+        danceAnimationId = requestAnimationFrame(danceLoop);
+    }
+    danceAnimationId = requestAnimationFrame(danceLoop);
+}
+
+// 🛑 댄스 애니메이션 정지
+function stopDanceAnimation() {
+    if (danceAnimationId) {
+        cancelAnimationFrame(danceAnimationId);
+        danceAnimationId = null;
+    }
+    if (rouletteTimer) {
+        clearTimeout(rouletteTimer);
+        rouletteTimer = null;
+    }
+    sound.stopDancePartyBGM();
+}
+
+// 🎰 등수 숫자가 엄청 많이 바뀌다가 최종 등수가 나타나는 룰렛 연출!
+function startRankShuffleRoulette(targetRank, finalDance) {
+    if (!rouletteNum || !rouletteHeader || !rouletteDanceBadge) return;
+
+    if (rouletteTimer) {
+        clearTimeout(rouletteTimer);
+        rouletteTimer = null;
+    }
+
+    rouletteHeader.textContent = '🎲 실시간 흥덕초등학교 랭킹 산출 중...';
+    rouletteDanceBadge.textContent = '🎵 댄스 세리머니 준비 중...';
+    rouletteNum.classList.add('rolling');
+
+    let rollCount = 0;
+    const maxRolls = 28; // 약 2.4초간 긴장감 넘치는 슬롯머신 셔플
+    let currentInterval = 40; // 초기 40ms 고속 롤링
+
+    function step() {
+        rollCount++;
+        // 롤링 중 번개처럼 바뀌는 랜덤 등수
+        const fakeRank = Math.floor(Math.random() * 60) + 1;
+        rouletteNum.textContent = `${fakeRank}위`;
+        sound.playShuffleTick();
+
+        if (rollCount < maxRolls) {
+            // 점진적으로 감속하여 아케이드 슬롯머신 감속 연출
+            if (rollCount > 20) currentInterval += 30;
+            else if (rollCount > 12) currentInterval += 14;
+            else currentInterval += 4;
+            rouletteTimer = setTimeout(step, currentInterval);
+        } else {
+            // 🎯 최종 등수 확정 및 화려한 팡파레!
+            rouletteNum.textContent = `🎉 ${targetRank}위! 🎉`;
+            rouletteNum.classList.remove('rolling');
+            rouletteHeader.textContent = `🏆 최종 결과 확정! 흥덕초등학교 ${targetRank}위 달성!`;
+            setDanceMode(finalDance, false);
+            sound.playFanfareCheer();
+        }
+    }
+
+    rouletteTimer = setTimeout(step, currentInterval);
 }
 
 function escapeHtml(str) {
@@ -292,6 +471,8 @@ function startWithPlayerName() {
 }
 
 function startNewGame(skipPrologue = false) {
+    stopDanceAnimation();
+    sound.startBGM();
     hero.reset();
     hero.setCharacterType(selectedChar);
     hero.setCostumeType(selectedCostume);
@@ -334,9 +515,17 @@ function triggerGameEndModal(titleText, reasonText) {
     finalMathEl.textContent = mathGate.solvedCount;
     document.getElementById('gameover-reason').textContent = reasonText;
 
-    const updatedRankings = saveScoreToRanking(playerName, score, mathGate.solvedCount);
-    renderRankingList(gameOverRankingListEl, updatedRankings);
-    renderRankingList(startRankingListEl, updatedRankings);
+    const rankingResult = saveScoreToRanking(playerName, score, mathGate.solvedCount);
+    renderRankingList(gameOverRankingListEl, rankingResult.list);
+    renderRankingList(startRankingListEl, rankingResult.list);
+
+    const userRank = rankingResult.userRank || 50;
+    const finalDance = getDanceForRank(userRank);
+
+    // 🕺 신나는 엔딩 댄스 파티 BGM & 캐릭터 축하 댄스 & 등수 셔플 룰렛 시작!
+    sound.startDancePartyBGM();
+    startDanceAnimation(finalDance);
+    startRankShuffleRoulette(userRank, finalDance);
 
     gameOverModal.classList.add('active');
 }
@@ -479,6 +668,17 @@ costumeBtns.forEach(btn => {
         localStorage.setItem('smilegames_costume', selectedCostume);
         hero.setCostumeType(selectedCostume);
         sound.playSpecialItem();
+    });
+});
+
+// 🕺 세리머니 댄스 직접 선택 버튼 이벤트 연결
+danceBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        const danceType = btn.dataset.dance;
+        if (danceType) {
+            setDanceMode(danceType, false);
+            sound.playSpecialItem();
+        }
     });
 });
 document.getElementById('btn-left').addEventListener('click', handleLeft);

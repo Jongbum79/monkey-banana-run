@@ -2704,4 +2704,828 @@ class PeanutsMonkeyHero {
 
         ctx.restore();
     }
+
+    // =========================================================================
+    // 🕺 엔딩 댄스 파티 세리머니 렌더링 시스템 (등수별 맞춤형 고품격 안무)
+    // 1~10등: 윈드밀 (Windmill B-boy Breakdance)
+    // 11~20등: 에이티즈 bad (ATEEZ BOUNCY / BAD 힙합 안무)
+    // 21~30등: red red (Red Red K-pop 댄스)
+    // 31~40등: L을 가져가 (Take the L 바이럴 댄스)
+    // 41등 이상: 야채 춤(당근송), 측면 대 측면(Floss), 크림 치즈 허니(Wiggle Wave)
+    // =========================================================================
+    renderCelebrationDance(ctx, cx, cy, scale, danceType = 'windmill', danceTime = 0) {
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.scale(scale, scale);
+
+        // 1. 화려한 댄스 플로어 & 스포트라이트
+        this.drawDanceStageAndSpotlight(ctx, danceType, danceTime);
+
+        // 2. 등수별 지정 안무 렌더링
+        switch (danceType) {
+            case 'windmill':
+                this.drawWindmillBreakdance(ctx, danceTime);
+                break;
+            case 'ateez_bad':
+                this.drawAteezBadDance(ctx, danceTime);
+                break;
+            case 'red_red':
+                this.drawRedRedDance(ctx, danceTime);
+                break;
+            case 'take_the_l':
+                this.drawTakeTheLDance(ctx, danceTime);
+                break;
+            case 'veggie':
+                this.drawVeggieDance(ctx, danceTime);
+                break;
+            case 'side_to_side':
+                this.drawSideToSideDance(ctx, danceTime);
+                break;
+            case 'cream_cheese_honey':
+            default:
+                this.drawCreamCheeseHoneyDance(ctx, danceTime);
+                break;
+        }
+
+        // 3. 댄스 파티 특수 이펙트 (음표, 하트, 폭죽, 채소, 치즈 등)
+        this.drawDancePartyEffects(ctx, danceType, danceTime);
+
+        ctx.restore();
+    }
+
+    // 🌟 화려한 원형 무대 & 스포트라이트 조명
+    drawDanceStageAndSpotlight(ctx, danceType, danceTime) {
+        ctx.save();
+
+        // 상단 스포트라이트 광원 (무대 위로 쏟아지는 조명)
+        const spotGrad = ctx.createRadialGradient(0, -180, 20, 0, 80, 160);
+        spotGrad.addColorStop(0, 'rgba(255, 235, 120, 0.45)');
+        spotGrad.addColorStop(0.65, 'rgba(0, 245, 212, 0.18)');
+        spotGrad.addColorStop(1, 'rgba(255, 0, 127, 0.0)');
+        ctx.fillStyle = spotGrad;
+        ctx.beginPath();
+        ctx.moveTo(0, -280);
+        ctx.lineTo(-145, 90);
+        ctx.lineTo(145, 90);
+        ctx.closePath();
+        ctx.fill();
+
+        // 댄스 플로어 원형 발판
+        const floorGrad = ctx.createLinearGradient(-130, 90, 130, 90);
+        floorGrad.addColorStop(0, '#2b2d42');
+        floorGrad.addColorStop(0.5, '#4a4e69');
+        floorGrad.addColorStop(1, '#22223b');
+        ctx.fillStyle = floorGrad;
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.ellipse(0, 90, 135, 36, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // 무대 네온 링 테두리
+        ctx.strokeStyle = Math.sin(danceTime * 8) > 0 ? '#00f5d4' : '#ff007f';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.ellipse(0, 88, 128, 32, 0, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // 배경 비트 이퀄라이저 바 7개
+        for (let eq = -3; eq <= 3; eq++) {
+            const eqH = 15 + Math.abs(Math.sin(danceTime * 9 + eq * 0.8)) * 32;
+            const eqX = eq * 32;
+            ctx.fillStyle = eq % 2 === 0 ? 'rgba(0, 245, 212, 0.35)' : 'rgba(255, 0, 127, 0.35)';
+            ctx.fillRect(eqX - 8, 55 - eqH, 16, eqH);
+        }
+
+        ctx.restore();
+    }
+
+    // 🌀 [1~10등] 비보이 윈드밀 브레이크댄스 (Windmill B-boy)
+    drawWindmillBreakdance(ctx, danceTime) {
+        ctx.save();
+        ctx.translate(0, 25);
+
+        const spin = danceTime * 11.5;
+
+        // 바닥 마찰 스파크 & 회전 바람 궤적
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
+        ctx.lineWidth = 3.5;
+        for (let a = 0; a < 3; a++) {
+            const arcAng = spin + (a * Math.PI * 2) / 3;
+            ctx.beginPath();
+            ctx.arc(0, 0, 75 + a * 16, arcAng, arcAng + 1.2);
+            ctx.stroke();
+        }
+
+        // 바닥 스파크 파티클
+        ctx.fillStyle = '#ffbe0b';
+        for (let sp = 0; sp < 6; sp++) {
+            const sx = Math.cos(spin * 2 + sp) * (55 + sp * 8);
+            const sy = 40 + Math.sin(spin * 3 + sp) * 8;
+            ctx.beginPath();
+            ctx.arc(sx, sy, 3 + (sp % 3), 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.restore();
+
+        // 회전하는 몸통 & 다리 (V자 스플릿으로 풍차처럼 고속 회전!)
+        ctx.save();
+        ctx.rotate(spin);
+
+        // V자 스플릿 다리 (윈드밀 프로펠러 회전)
+        const colors = this.getSpeciesColors();
+        const legColor = this.costumeType === 'gentleman' ? '#1e2229' : (this.costumeType === 'santa' ? '#d62828' : colors.skin);
+        ctx.fillStyle = legColor;
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 4;
+
+        // 다리 1 (왼쪽 위 방향)
+        ctx.save();
+        ctx.rotate(-0.65);
+        ctx.fillRect(-18, 0, 36, 115);
+        ctx.strokeRect(-18, 0, 36, 115);
+        ctx.fillStyle = '#ff0055';
+        ctx.beginPath();
+        ctx.arc(0, 115, 22, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+
+        // 다리 2 (오른쪽 아래 방향)
+        ctx.save();
+        ctx.rotate(Math.PI - 0.65);
+        ctx.fillStyle = legColor;
+        ctx.fillRect(-18, 0, 36, 115);
+        ctx.strokeRect(-18, 0, 36, 115);
+        ctx.fillStyle = '#00f5d4';
+        ctx.beginPath();
+        ctx.arc(0, 115, 22, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+
+        // 몸통 중심부
+        ctx.fillStyle = this.costumeType === 'gentleman' ? '#14171a' : (this.costumeType === 'santa' ? '#b7094c' : colors.skin);
+        ctx.beginPath();
+        ctx.arc(0, 0, 48, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.restore();
+
+        // 바닥을 지탱하는 브레이크댄스 손
+        ctx.fillStyle = '#fffcf5';
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 3.5;
+        [-45, 45].forEach(hx => {
+            ctx.beginPath();
+            ctx.ellipse(hx, 62, 18, 12, hx > 0 ? 0.3 : -0.3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+        });
+
+        // 윈드밀 회전 중 화면을 보며 윙크하는 정면 머리
+        ctx.save();
+        ctx.translate(0, -65);
+        ctx.scale(0.85, 0.85);
+        if (this.characterType === 'frog') {
+            this.drawFrogHead(ctx, 0, 0, true);
+        } else if (this.characterType === 'tiger') {
+            this.drawTigerHead(ctx, 0, 0, true);
+        } else if (this.characterType === 'penguin') {
+            this.drawPenguinHead(ctx, 0, 0, true);
+        } else {
+            this.drawLookBackHead(ctx, 0, 0);
+        }
+        if (this.costumeType === 'gentleman') this.drawGentlemanTopHat(ctx, 0, true);
+        else if (this.costumeType === 'santa') this.drawSantaHat(ctx, 0, true);
+        ctx.restore();
+
+        ctx.restore();
+    }
+
+    // 🔥 [11~20등] 에이티즈 BOUNCY / BAD 힙합 안무 (ATEEZ BAD Dance)
+    drawAteezBadDance(ctx, danceTime) {
+        ctx.save();
+
+        const beat = Math.sin(danceTime * 11.5);
+        const bounceY = Math.abs(beat) * 18;
+        ctx.translate(0, bounceY);
+
+        const colors = this.getSpeciesColors();
+
+        // 1) 파워풀한 와이드 스탠스 다리 (무릎 바운스)
+        const kneeSpread = 28 + Math.abs(beat) * 12;
+        const pantsColor = this.costumeType === 'gentleman' ? '#1e2229' : (this.costumeType === 'santa' ? '#d62828' : '#2b303a');
+        ctx.fillStyle = pantsColor;
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 4;
+
+        // 왼다리
+        ctx.beginPath();
+        ctx.moveTo(-15, -45);
+        ctx.lineTo(-kneeSpread - 16, 15);
+        ctx.lineTo(-kneeSpread + 12, 15);
+        ctx.lineTo(-2, -45);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // 오른다리
+        ctx.beginPath();
+        ctx.moveTo(15, -45);
+        ctx.lineTo(kneeSpread + 16, 15);
+        ctx.lineTo(kneeSpread - 12, 15);
+        ctx.lineTo(2, -45);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // 힙합 스니커즈 슈즈
+        ctx.fillStyle = '#ffbe0b';
+        ctx.fillRect(-kneeSpread - 26, 12, 42, 22);
+        ctx.strokeRect(-kneeSpread - 26, 12, 42, 22);
+        ctx.fillRect(kneeSpread - 16, 12, 42, 22);
+        ctx.strokeRect(kneeSpread - 16, 12, 42, 22);
+
+        // 2) 가슴을 파워풀하게 튕기는 몸통 (Chest Isolation Pop)
+        ctx.save();
+        ctx.translate(0, -68);
+        ctx.rotate(beat * 0.08);
+        this.drawBackTorsoAndShorts(ctx, 0, true);
+
+        // 3) 에이티즈 시그니처 팔 안무:
+        // 다운비트: 양팔을 아래로 'X'자로 단단하게 교차 (Bad Swagger Pose)
+        // 업비트: 팔꿈치를 양옆으로 튕기며 주먹을 가슴 앞으로 당김 (Chest Pop)
+        const armColor = this.costumeType === 'gentleman' ? '#1e2229' : (this.costumeType === 'santa' ? '#d62828' : colors.skin);
+        const handColor = this.costumeType === 'gentleman' ? '#fffcf5' : (this.costumeType === 'santa' ? '#fffcf5' : colors.belly);
+        ctx.fillStyle = armColor;
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 4;
+
+        if (beat < 0) {
+            // 양팔 X자 교차 파워 포즈
+            ctx.beginPath();
+            ctx.moveTo(-45, -85);
+            ctx.lineTo(20, -10);
+            ctx.lineTo(8, 6);
+            ctx.lineTo(-55, -70);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(45, -85);
+            ctx.lineTo(-20, -10);
+            ctx.lineTo(-8, 6);
+            ctx.lineTo(55, -70);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = handColor;
+            ctx.beginPath();
+            ctx.arc(14, -2, 14, 0, Math.PI * 2);
+            ctx.arc(-14, -2, 14, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+        } else {
+            // 팔꿈치 양옆 플레어 & 체스트 팝 포즈
+            [-1, 1].forEach(side => {
+                ctx.beginPath();
+                ctx.moveTo(side * 42, -85);
+                ctx.lineTo(side * 68, -48);
+                ctx.lineTo(side * 28, -25);
+                ctx.lineTo(side * 20, -42);
+                ctx.lineTo(side * 52, -58);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = handColor;
+                ctx.beginPath();
+                ctx.arc(side * 24, -32, 15, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+            });
+        }
+        ctx.restore();
+
+        // 4) 자신감 넘치는 정면 머리 & 헤드 끄덕임
+        ctx.save();
+        ctx.translate(0, -68);
+        ctx.rotate(-beat * 0.05);
+        if (this.characterType === 'frog') {
+            this.drawFrogHead(ctx, 0, 0, true);
+        } else if (this.characterType === 'tiger') {
+            this.drawTigerHead(ctx, 0, 0, true);
+        } else if (this.characterType === 'penguin') {
+            this.drawPenguinHead(ctx, 0, 0, true);
+        } else {
+            this.drawLookBackHead(ctx, 0, 0);
+        }
+        if (this.costumeType === 'gentleman') this.drawGentlemanTopHat(ctx, 0, true);
+        else if (this.costumeType === 'santa') this.drawSantaHat(ctx, 0, true);
+        ctx.restore();
+
+        // 발밑 힙합 불꽃 스파크
+        ctx.fillStyle = '#ff0055';
+        for (let f = -2; f <= 2; f++) {
+            const fy = 28 + Math.sin(danceTime * 14 + f) * 12;
+            ctx.beginPath();
+            ctx.arc(f * 36, fy, 4 + Math.abs(f), 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        ctx.restore();
+    }
+
+    // ❤️ [21~30등] red red K-pop 바이럴 댄스 (골반 스웨이 & 손가락 총 & 하트)
+    drawRedRedDance(ctx, danceTime) {
+        ctx.save();
+
+        const tempo = danceTime * 7.5;
+        const hipSway = Math.sin(tempo) * 24;
+        const headTilt = -Math.sin(tempo) * 0.16;
+
+        ctx.translate(hipSway * 0.35, 0);
+
+        const colors = this.getSpeciesColors();
+
+        // 1) 리드미컬 스텝 다리
+        const leftLift = Math.max(0, -Math.sin(tempo)) * 14;
+        const rightLift = Math.max(0, Math.sin(tempo)) * 14;
+        ctx.fillStyle = this.costumeType === 'gentleman' ? '#1e2229' : (this.costumeType === 'santa' ? '#d62828' : '#2b303a');
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 4;
+
+        ctx.fillRect(-34, -45, 26, 68 - leftLift);
+        ctx.strokeRect(-34, -45, 26, 68 - leftLift);
+        ctx.fillRect(8, -45, 26, 68 - rightLift);
+        ctx.strokeRect(8, -45, 26, 68 - rightLift);
+
+        // 2) 매력적인 골반 힙 스웨이 몸통
+        ctx.save();
+        ctx.translate(hipSway * 0.7, -65);
+        ctx.rotate(hipSway * 0.008);
+        this.drawBackTorsoAndShorts(ctx, 0, true);
+
+        // 3) red red 시그니처 손 안무:
+        // 교대로 핑거 건(👉)을 좌우로 쏘다가 가슴 앞 손하트(❤️) 포즈!
+        const armColor = this.costumeType === 'gentleman' ? '#1e2229' : (this.costumeType === 'santa' ? '#d62828' : colors.skin);
+        const handColor = this.costumeType === 'gentleman' ? '#fffcf5' : (this.costumeType === 'santa' ? '#fffcf5' : colors.belly);
+        ctx.fillStyle = armColor;
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 4;
+
+        const isHeartPhase = Math.sin(tempo * 0.5) > 0.4;
+        if (isHeartPhase) {
+            // 두 손 모아 가슴 앞 손하트 포즈
+            [-1, 1].forEach(side => {
+                ctx.beginPath();
+                ctx.moveTo(side * 40, -85);
+                ctx.quadraticCurveTo(side * 52, -45, side * 12, -48);
+                ctx.lineTo(side * 6, -38);
+                ctx.quadraticCurveTo(side * 42, -35, side * 32, -80);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            });
+            // 하트 손
+            ctx.fillStyle = '#ff0055';
+            ctx.beginPath();
+            ctx.arc(-8, -46, 9, 0, Math.PI * 2);
+            ctx.arc(8, -46, 9, 0, Math.PI * 2);
+            ctx.fill();
+        } else {
+            // 핑거 건 찌르기 안무
+            const shootDir = Math.sin(tempo) > 0 ? 1 : -1;
+            // 찌르는 쪽 팔
+            ctx.beginPath();
+            ctx.moveTo(shootDir * 35, -85);
+            ctx.lineTo(shootDir * 78, -75);
+            ctx.lineTo(shootDir * 78, -60);
+            ctx.lineTo(shootDir * 35, -70);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            // 핑거 건 손가락
+            ctx.fillStyle = handColor;
+            ctx.fillRect(shootDir > 0 ? 76 : -96, -78, 20, 14);
+            ctx.strokeRect(shootDir > 0 ? 76 : -96, -78, 20, 14);
+
+            // 반대쪽 손은 허리에 걸침
+            ctx.fillStyle = armColor;
+            ctx.beginPath();
+            ctx.moveTo(-shootDir * 38, -85);
+            ctx.quadraticCurveTo(-shootDir * 58, -55, -shootDir * 32, -30);
+            ctx.lineTo(-shootDir * 24, -38);
+            ctx.quadraticCurveTo(-shootDir * 46, -60, -shootDir * 30, -80);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        }
+        ctx.restore();
+
+        // 4) 살랑거리는 정면 머리 & 윙크 미소
+        ctx.save();
+        ctx.translate(hipSway * 0.4, -65);
+        ctx.rotate(headTilt);
+        if (this.characterType === 'frog') {
+            this.drawFrogHead(ctx, 0, 0, true);
+        } else if (this.characterType === 'tiger') {
+            this.drawTigerHead(ctx, 0, 0, true);
+        } else if (this.characterType === 'penguin') {
+            this.drawPenguinHead(ctx, 0, 0, true);
+        } else {
+            this.drawLookBackHead(ctx, 0, 0);
+        }
+        if (this.costumeType === 'gentleman') this.drawGentlemanTopHat(ctx, 0, true);
+        else if (this.costumeType === 'santa') this.drawSantaHat(ctx, 0, true);
+        ctx.restore();
+
+        // 흩날리는 레드 하트들
+        ctx.fillStyle = '#ff0055';
+        for (let h = 0; h < 5; h++) {
+            const hx = Math.sin(danceTime * 3 + h * 1.5) * 65;
+            const hy = -120 - ((danceTime * 45 + h * 30) % 95);
+            ctx.beginPath();
+            ctx.arc(hx - 5, hy, 6, 0, Math.PI * 2);
+            ctx.arc(hx + 5, hy, 6, 0, Math.PI * 2);
+            ctx.lineTo(hx, hy + 10);
+            ctx.fill();
+        }
+
+        ctx.restore();
+    }
+
+    // 🕺 [31~40등] L을 가져가 (Take the L 바이럴 댄스)
+    drawTakeTheLDance(ctx, danceTime) {
+        ctx.save();
+
+        const tempo = danceTime * 8.5;
+        const hopY = Math.abs(Math.sin(tempo)) * 22;
+        const kickDir = Math.sin(tempo);
+
+        ctx.translate(0, -hopY);
+
+        const colors = this.getSpeciesColors();
+        const armColor = this.costumeType === 'gentleman' ? '#1e2229' : (this.costumeType === 'santa' ? '#d62828' : colors.skin);
+        const handColor = this.costumeType === 'gentleman' ? '#fffcf5' : (this.costumeType === 'santa' ? '#fffcf5' : colors.belly);
+        const pantsColor = this.costumeType === 'gentleman' ? '#1e2229' : (this.costumeType === 'santa' ? '#d62828' : '#2b303a');
+
+        // 1) 좌우 번갈아 신나게 차올리는 킥 다리 (Alternating High Side Kicks)
+        ctx.fillStyle = pantsColor;
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 4;
+
+        if (kickDir > 0) {
+            // 왼발 킥 아웃!
+            ctx.save();
+            ctx.translate(-15, -45);
+            ctx.rotate(-0.55);
+            ctx.fillRect(-14, 0, 28, 72);
+            ctx.strokeRect(-14, 0, 28, 72);
+            ctx.fillStyle = '#f5cb42';
+            ctx.fillRect(-22, 62, 42, 20);
+            ctx.strokeRect(-22, 62, 42, 20);
+            ctx.restore();
+
+            // 디딤발 (오른발)
+            ctx.fillRect(8, -45, 26, 75);
+            ctx.strokeRect(8, -45, 26, 75);
+        } else {
+            // 오른발 킥 아웃!
+            ctx.save();
+            ctx.translate(15, -45);
+            ctx.rotate(0.55);
+            ctx.fillRect(-14, 0, 28, 72);
+            ctx.strokeRect(-14, 0, 28, 72);
+            ctx.fillStyle = '#f5cb42';
+            ctx.fillRect(-18, 62, 42, 20);
+            ctx.strokeRect(-18, 62, 42, 20);
+            ctx.restore();
+
+            // 디딤발 (왼발)
+            ctx.fillRect(-34, -45, 26, 75);
+            ctx.strokeRect(-34, -45, 26, 75);
+        }
+
+        // 2) 신나게 흔들리는 몸통
+        ctx.save();
+        ctx.translate(0, -65);
+        ctx.rotate(-kickDir * 0.08);
+        this.drawBackTorsoAndShorts(ctx, 0, true);
+
+        // 3) 왼팔은 허리춤에서 신나게 흔들흔들
+        ctx.fillStyle = armColor;
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(-38, -85);
+        ctx.quadraticCurveTo(-65, -55, -45, -20);
+        ctx.lineTo(-34, -28);
+        ctx.quadraticCurveTo(-52, -55, -30, -80);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.restore();
+
+        // 4) 정면 머리
+        ctx.save();
+        ctx.translate(0, -65);
+        ctx.rotate(kickDir * 0.06);
+        if (this.characterType === 'frog') {
+            this.drawFrogHead(ctx, 0, 0, true);
+        } else if (this.characterType === 'tiger') {
+            this.drawTigerHead(ctx, 0, 0, true);
+        } else if (this.characterType === 'penguin') {
+            this.drawPenguinHead(ctx, 0, 0, true);
+        } else {
+            this.drawLookBackHead(ctx, 0, 0);
+        }
+        if (this.costumeType === 'gentleman') this.drawGentlemanTopHat(ctx, 0, true);
+        else if (this.costumeType === 'santa') this.drawSantaHat(ctx, 0, true);
+
+        // 5) ★ 핵심 시그니처: 이마에 딱 붙인 'L' 손가락 (Take the L Hand Sign!)
+        ctx.save();
+        ctx.translate(0, -325);
+
+        // 오른팔이 이마로 올라옴
+        ctx.fillStyle = armColor;
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 4.2;
+        ctx.beginPath();
+        ctx.moveTo(42, 140);
+        ctx.quadraticCurveTo(65, 80, 18, 15);
+        ctx.lineTo(8, 26);
+        ctx.quadraticCurveTo(48, 85, 30, 135);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // 이마 위의 완벽한 'L' 모양 손: 엄지는 오른쪽 가로, 검지는 하늘 위 세로!
+        ctx.fillStyle = handColor;
+        ctx.beginPath();
+        // 손바닥 중심
+        ctx.roundRect(-10, -5, 24, 26, 6);
+        // 검지 손가락 (하늘로 곧게 뻗음)
+        ctx.roundRect(-8, -36, 12, 34, 5);
+        // 엄지 손가락 (오른쪽으로 직각 뻗음)
+        ctx.roundRect(10, 8, 28, 12, 5);
+        ctx.fill();
+        ctx.stroke();
+
+        // 번쩍이는 황금빛 'L' 홀로그램 네온 기호
+        ctx.fillStyle = '#ffea79';
+        ctx.font = 'bold 28px "Arial Black", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('L', 0, -48);
+
+        ctx.restore();
+        ctx.restore();
+
+        ctx.restore();
+    }
+
+    // 🥕 [41등+] 야채 춤 / 당근송 (Veggie Dance)
+    drawVeggieDance(ctx, danceTime) {
+        ctx.save();
+
+        const jump = Math.abs(Math.sin(danceTime * 9.5)) * 28;
+        ctx.translate(0, -jump);
+
+        const colors = this.getSpeciesColors();
+        const armColor = this.costumeType === 'gentleman' ? '#1e2229' : (this.costumeType === 'santa' ? '#d62828' : colors.skin);
+        const handColor = this.costumeType === 'gentleman' ? '#fffcf5' : (this.costumeType === 'santa' ? '#fffcf5' : colors.belly);
+
+        // 통통 뛰는 다리
+        ctx.fillStyle = this.costumeType === 'gentleman' ? '#1e2229' : (this.costumeType === 'santa' ? '#d62828' : '#2b303a');
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 4;
+        ctx.fillRect(-32, -45, 24, 65);
+        ctx.strokeRect(-32, -45, 24, 65);
+        ctx.fillRect(8, -45, 24, 65);
+        ctx.strokeRect(8, -45, 24, 65);
+
+        // 몸통
+        ctx.save();
+        ctx.translate(0, -65);
+        this.drawBackTorsoAndShorts(ctx, 0, true);
+
+        // 새싹/당근처럼 머리 위로 두 팔 번쩍 흔들흔들!
+        const armSway = Math.sin(danceTime * 9.5) * 0.35;
+        [-1, 1].forEach(side => {
+            ctx.save();
+            ctx.translate(side * 36, -85);
+            ctx.rotate(side * 0.4 + armSway);
+            ctx.fillStyle = armColor;
+            ctx.fillRect(-10, -75, 22, 75);
+            ctx.strokeRect(-10, -75, 22, 75);
+            ctx.fillStyle = handColor;
+            ctx.beginPath();
+            ctx.arc(1, -78, 16, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+        });
+        ctx.restore();
+
+        // 활짝 웃는 머리
+        ctx.save();
+        ctx.translate(0, -65);
+        if (this.characterType === 'frog') {
+            this.drawFrogHead(ctx, 0, 0, true);
+        } else if (this.characterType === 'tiger') {
+            this.drawTigerHead(ctx, 0, 0, true);
+        } else if (this.characterType === 'penguin') {
+            this.drawPenguinHead(ctx, 0, 0, true);
+        } else {
+            this.drawLookBackHead(ctx, 0, 0);
+        }
+        if (this.costumeType === 'gentleman') this.drawGentlemanTopHat(ctx, 0, true);
+        else if (this.costumeType === 'santa') this.drawSantaHat(ctx, 0, true);
+        ctx.restore();
+
+        // 춤추는 당근 & 브로콜리 & 토마토 이모지
+        const veggies = ['🥕', '🥦', '🍅', '🥬', '🌽'];
+        ctx.font = '24px sans-serif';
+        veggies.forEach((v, idx) => {
+            const vx = -70 + idx * 35;
+            const vy = -110 - Math.sin(danceTime * 6 + idx) * 20;
+            ctx.fillText(v, vx, vy);
+        });
+
+        ctx.restore();
+    }
+
+    // ↔️ [41등+] 측면 대 측면 (Side to Side / Floss 댄스)
+    drawSideToSideDance(ctx, danceTime) {
+        ctx.save();
+
+        const tempo = danceTime * 10.0;
+        const hip = Math.sin(tempo) * 26;
+        const arm = -Math.sin(tempo) * 36;
+
+        ctx.translate(hip * 0.4, 0);
+
+        const colors = this.getSpeciesColors();
+        const armColor = this.costumeType === 'gentleman' ? '#1e2229' : (this.costumeType === 'santa' ? '#d62828' : colors.skin);
+        const handColor = this.costumeType === 'gentleman' ? '#fffcf5' : (this.costumeType === 'santa' ? '#fffcf5' : colors.belly);
+
+        // 넓은 스탠스 다리
+        ctx.fillStyle = this.costumeType === 'gentleman' ? '#1e2229' : (this.costumeType === 'santa' ? '#d62828' : '#2b303a');
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 4;
+        ctx.fillRect(-38, -45, 26, 72);
+        ctx.strokeRect(-38, -45, 26, 72);
+        ctx.fillRect(12, -45, 26, 72);
+        ctx.strokeRect(12, -45, 26, 72);
+
+        // 플로스(Floss) 힙 반대방향 스윙
+        ctx.save();
+        ctx.translate(hip, -65);
+        this.drawBackTorsoAndShorts(ctx, 0, true);
+
+        // 양팔이 골반을 관통하며 좌우로 고속 교차 스윙!
+        ctx.fillStyle = armColor;
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 4;
+
+        ctx.beginPath();
+        ctx.moveTo(-35, -85);
+        ctx.lineTo(arm - 15, -10);
+        ctx.lineTo(arm + 15, -10);
+        ctx.lineTo(35, -85);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = handColor;
+        ctx.beginPath();
+        ctx.arc(arm, -6, 16, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.restore();
+
+        // 살랑이는 머리
+        ctx.save();
+        ctx.translate(0, -65);
+        ctx.rotate(-hip * 0.006);
+        if (this.characterType === 'frog') {
+            this.drawFrogHead(ctx, 0, 0, true);
+        } else if (this.characterType === 'tiger') {
+            this.drawTigerHead(ctx, 0, 0, true);
+        } else if (this.characterType === 'penguin') {
+            this.drawPenguinHead(ctx, 0, 0, true);
+        } else {
+            this.drawLookBackHead(ctx, 0, 0);
+        }
+        if (this.costumeType === 'gentleman') this.drawGentlemanTopHat(ctx, 0, true);
+        else if (this.costumeType === 'santa') this.drawSantaHat(ctx, 0, true);
+        ctx.restore();
+
+        ctx.restore();
+    }
+
+    // 🍯 [41등+] 크림 치즈 허니 (Cream Cheese Honey / Wiggle Wave)
+    drawCreamCheeseHoneyDance(ctx, danceTime) {
+        ctx.save();
+
+        const wave = Math.sin(danceTime * 6.0);
+        const waveY = Math.cos(danceTime * 6.0) * 8;
+
+        ctx.translate(wave * 12, waveY);
+
+        const colors = this.getSpeciesColors();
+        const armColor = this.costumeType === 'gentleman' ? '#1e2229' : (this.costumeType === 'santa' ? '#d62828' : colors.skin);
+        const handColor = this.costumeType === 'gentleman' ? '#fffcf5' : (this.costumeType === 'santa' ? '#fffcf5' : colors.belly);
+
+        // 다리
+        ctx.fillStyle = this.costumeType === 'gentleman' ? '#1e2229' : (this.costumeType === 'santa' ? '#d62828' : '#2b303a');
+        ctx.strokeStyle = '#1a1612';
+        ctx.lineWidth = 4;
+        ctx.fillRect(-30, -45, 24, 72);
+        ctx.strokeRect(-30, -45, 24, 72);
+        ctx.fillRect(6, -45, 24, 72);
+        ctx.strokeRect(6, -45, 24, 72);
+
+        // 부드럽게 물결치는 웨이브 몸통
+        ctx.save();
+        ctx.translate(wave * 14, -65);
+        ctx.rotate(wave * 0.12);
+        this.drawBackTorsoAndShorts(ctx, 0, true);
+
+        // 양손 꽃받침 (턱받침 애교 포즈)
+        [-1, 1].forEach(side => {
+            ctx.fillStyle = armColor;
+            ctx.strokeStyle = '#1a1612';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(side * 38, -85);
+            ctx.quadraticCurveTo(side * 62, -55, side * 22, -110);
+            ctx.lineTo(side * 14, -100);
+            ctx.quadraticCurveTo(side * 48, -50, side * 30, -80);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // 턱받침 손
+            ctx.fillStyle = handColor;
+            ctx.beginPath();
+            ctx.arc(side * 20, -112, 14, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+        });
+        ctx.restore();
+
+        // 꿀 떨어지는 사랑스러운 머리
+        ctx.save();
+        ctx.translate(-wave * 10, -65);
+        ctx.rotate(-wave * 0.10);
+        if (this.characterType === 'frog') {
+            this.drawFrogHead(ctx, 0, 0, true);
+        } else if (this.characterType === 'tiger') {
+            this.drawTigerHead(ctx, 0, 0, true);
+        } else if (this.characterType === 'penguin') {
+            this.drawPenguinHead(ctx, 0, 0, true);
+        } else {
+            this.drawLookBackHead(ctx, 0, 0);
+        }
+        if (this.costumeType === 'gentleman') this.drawGentlemanTopHat(ctx, 0, true);
+        else if (this.costumeType === 'santa') this.drawSantaHat(ctx, 0, true);
+        ctx.restore();
+
+        // 달콤한 꿀단지 & 크림치즈 큐브 이모지
+        ctx.font = '24px sans-serif';
+        const treats = ['🍯', '🧀', '🐝', '🍯', '🧀'];
+        treats.forEach((t, idx) => {
+            const tx = -65 + idx * 32;
+            const ty = -115 + Math.sin(danceTime * 5 + idx) * 16;
+            ctx.fillText(t, tx, ty);
+        });
+
+        ctx.restore();
+    }
+
+    // ✨ 댄스 파티 특수 이펙트 (음표, 폭죽, 반짝이)
+    drawDancePartyEffects(ctx, danceType, danceTime) {
+        ctx.save();
+
+        // 춤추는 음표들
+        const notes = ['♪', '♫', '♬', '♩'];
+        ctx.font = 'bold 22px sans-serif';
+        for (let n = 0; n < 6; n++) {
+            const nx = Math.sin(danceTime * 2.5 + n * 1.2) * 95;
+            const ny = -70 - ((danceTime * 40 + n * 35) % 150);
+            ctx.fillStyle = n % 2 === 0 ? '#00f5d4' : '#ff007f';
+            ctx.fillText(notes[n % notes.length], nx, ny);
+        }
+
+        ctx.restore();
+    }
 }
