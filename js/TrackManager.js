@@ -454,6 +454,8 @@ class TrackManager {
      */
     draw3DBox(ctx, x, y, w, h, dx, dy, frontCol, topCol, sideCol) {
         const hw = w * 0.5;
+        const cornerR = Math.min(14, w * 0.18, h * 0.18);
+
         // 1) 윗면 (Top Face)
         ctx.fillStyle = topCol;
         ctx.beginPath();
@@ -483,10 +485,26 @@ class TrackManager {
         ctx.fill();
         ctx.stroke();
 
-        // 3) 정면 (Front Face)
+        // 3) 정면 (Front Face - 동글동글 라운드 큐브 & 고퀄리티 젤리 글로스)
         ctx.fillStyle = frontCol;
-        ctx.fillRect(x - hw, y - h, w, h);
-        ctx.strokeRect(x - hw, y - h, w, h);
+        ctx.beginPath();
+        if (ctx.roundRect) {
+            ctx.roundRect(x - hw, y - h, w, h, cornerR);
+        } else {
+            ctx.rect(x - hw, y - h, w, h);
+        }
+        ctx.fill();
+        ctx.stroke();
+
+        // 상단 부드러운 하이라이트 띠
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+        ctx.beginPath();
+        if (ctx.roundRect) {
+            ctx.roundRect(x - hw + 4, y - h + 4, w - 8, Math.max(5, h * 0.22), cornerR * 0.5);
+        } else {
+            ctx.rect(x - hw + 4, y - h + 4, w - 8, Math.max(5, h * 0.22));
+        }
+        ctx.fill();
     }
 
     // 🌺 스폰지밥 비키니 시티 스타일 해저 꽃구름(Tropical Flower Cloud) 렌더링 헬퍼
@@ -4034,38 +4052,87 @@ class TrackManager {
         ctx.textBaseline = 'middle';
 
         if (item.type === 'coin') {
-            // 3D 골드 코인 (옆면 두께 림 + 정면 + 양각 별)
-            ctx.fillStyle = '#b58318';
+            // ✨ 고퀄리티 3D 황금 코인 (빛나는 골드 림 + 젤리 글로스 + 양각 황금별)
+            const coinGlow = ctx.createRadialGradient(0, 0, 10, 0, 0, 42);
+            coinGlow.addColorStop(0, 'rgba(255, 230, 100, 0.45)');
+            coinGlow.addColorStop(1, 'rgba(255, 230, 100, 0)');
+            ctx.fillStyle = coinGlow;
+            ctx.beginPath();
+            ctx.arc(0, 0, 42, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 옆면 두께 림
+            ctx.fillStyle = '#b57c1e';
             ctx.beginPath();
             ctx.ellipse(thickness, 0, 26 * spinScaleX, 34, 0, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
 
-            ctx.fillStyle = '#f6d54a';
+            // 정면 골드 메달
+            const coinGrad = ctx.createLinearGradient(-26 * spinScaleX, -34, 26 * spinScaleX, 34);
+            coinGrad.addColorStop(0, '#fff3a3');
+            coinGrad.addColorStop(0.45, '#ffd13b');
+            coinGrad.addColorStop(1, '#e69500');
+            ctx.fillStyle = coinGrad;
             ctx.beginPath();
             ctx.ellipse(0, 0, 26 * spinScaleX, 34, 0, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
 
-            // 내부 3D 홈
-            ctx.strokeStyle = '#d4a62a';
-            ctx.lineWidth = 2.5;
+            // 내부 3D 엠보싱 링
+            ctx.strokeStyle = '#d48806';
+            ctx.lineWidth = 2.4;
             ctx.beginPath();
-            ctx.ellipse(0, 0, 16 * spinScaleX, 22, 0, 0, Math.PI * 2);
+            ctx.ellipse(0, 0, 18 * spinScaleX, 24, 0, 0, Math.PI * 2);
             ctx.stroke();
 
-        } else if (item.type === 'banana') {
-            // 3D 황금 바나나 캡슐 큐브 (직접 그린 바나나 송이 벡터 아이콘)
-            this.draw3DBox(ctx, 0, 24, 54, 54, 14, -14, '#ffea79', '#fff8cc', '#d4a62a');
-            ctx.fillStyle = '#ffb703';
-            ctx.strokeStyle = '#1a1612';
-            ctx.lineWidth = 2.5;
+            // 중앙 반짝이는 양각 별
+            if (Math.abs(spinScaleX) > 0.35) {
+                ctx.fillStyle = '#fff9db';
+                ctx.font = `bold ${Math.round(20 * Math.abs(spinScaleX))}px sans-serif`;
+                ctx.fillText('★', 0, 1);
+            }
+
+            // 상단 반원형 젤리 광택 하이라이트
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
             ctx.beginPath();
-            ctx.arc(-2, -4, 15, 0.2, Math.PI * 1.15);
-            ctx.quadraticCurveTo(-4, -2, 12, -10);
+            ctx.ellipse(0, -12, 18 * spinScaleX, 10, 0, Math.PI, Math.PI * 2);
+            ctx.fill();
+
+        } else if (item.type === 'banana') {
+            // 🍌 통통하고 동글동글한 고퀄리티 황금 바나나 크리스탈 큐브
+            this.draw3DBox(ctx, 0, 24, 56, 56, 14, -14, '#ffea79', '#fff8cc', '#d4a62a');
+
+            // 바나나 본체 (통통하고 둥근 황금 곡선)
+            const banGrad = ctx.createLinearGradient(-16, -14, 16, 14);
+            banGrad.addColorStop(0, '#fff066');
+            banGrad.addColorStop(0.65, '#ffcc00');
+            banGrad.addColorStop(1, '#ff9900');
+            ctx.fillStyle = banGrad;
+            ctx.strokeStyle = '#1a1612';
+            ctx.lineWidth = 2.8;
+
+            ctx.beginPath();
+            ctx.moveTo(-16, 12);
+            ctx.quadraticCurveTo(-18, -14, 12, -18);
+            ctx.quadraticCurveTo(18, -16, 18, -10);
+            ctx.quadraticCurveTo(-4, -6, -8, 14);
+            ctx.quadraticCurveTo(-14, 16, -16, 12);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
+
+            // 꼭지 초록 포인트
+            ctx.fillStyle = '#52b788';
+            ctx.beginPath();
+            ctx.arc(16, -15, 3.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 반짝이는 하이라이트
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.ellipse(-8, -4, 4, 10, 0.4, 0, Math.PI * 2);
+            ctx.fill();
 
         } else if (item.type === 'shield') {
             // 3D 입체 방패 크리스탈 큐브 (직접 그린 기사 문장 방패 벡터 아이콘)

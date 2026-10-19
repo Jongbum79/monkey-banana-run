@@ -292,21 +292,21 @@ class PeanutsMonkeyHero {
         }
     }
 
-    // 펜 해칭(빗금 음영) 헬퍼
+    // 펜 해칭(빗금 음영) 헬퍼 -> 동글동글하고 고퀄리티인 3D 소프트 앰비언트 음영으로 업그레이드!
     drawHatching(ctx, x1, y1, x2, y2, count, len, angle = -0.6) {
         ctx.save();
-        ctx.strokeStyle = 'rgba(28, 22, 18, 0.42)';
-        ctx.lineWidth = 1.8;
-        ctx.lineCap = 'round';
-        for (let i = 0; i <= count; i++) {
-            const t = i / count;
-            const px = x1 + (x2 - x1) * t;
-            const py = y1 + (y2 - y1) * t;
-            ctx.beginPath();
-            ctx.moveTo(px, py);
-            ctx.lineTo(px + Math.cos(angle) * len, py + Math.sin(angle) * len);
-            ctx.stroke();
-        }
+        const mx = (x1 + x2) * 0.5;
+        const my = (y1 + y2) * 0.5;
+        const rx = Math.hypot(x2 - x1, y2 - y1) * 0.55 + 8;
+        const ry = len * 0.55 + 6;
+        const grad = ctx.createRadialGradient(mx, my, 0, mx, my, Math.max(rx, ry));
+        grad.addColorStop(0, 'rgba(20, 16, 12, 0.22)');
+        grad.addColorStop(0.65, 'rgba(20, 16, 12, 0.08)');
+        grad.addColorStop(1, 'rgba(20, 16, 12, 0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.ellipse(mx, my, rx, ry, angle, 0, Math.PI * 2);
+        ctx.fill();
         ctx.restore();
     }
 
@@ -538,21 +538,23 @@ class PeanutsMonkeyHero {
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
 
+        // 동글동글 통통하고 귀여운 곡선의 팔
         ctx.beginPath();
         ctx.moveTo(8, -10);
-        ctx.quadraticCurveTo(-48, -14, -74, 22);
-        // 팔꿈치 복슬복슬 잔털 3가닥 (털이 있는 종족 또는 의상)
-        ctx.lineTo(-86, 28);
-        ctx.lineTo(-76, 33);
-        ctx.lineTo(-86, 42);
-        ctx.lineTo(-76, 46);
-        ctx.quadraticCurveTo(-84, 68, -72, 84);
-        ctx.lineTo(-50, 78);
-        ctx.quadraticCurveTo(-44, 42, -36, 24);
-        ctx.quadraticCurveTo(-18, 12, 10, 16);
+        ctx.quadraticCurveTo(-48, -14, -76, 22);
+        ctx.quadraticCurveTo(-90, 48, -72, 84);
+        ctx.quadraticCurveTo(-50, 86, -42, 60);
+        ctx.quadraticCurveTo(-36, 32, -18, 12);
+        ctx.quadraticCurveTo(-2, 10, 10, 16);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
+
+        // 어깨 & 팔 부드러운 하이라이트 (고퀄리티 3D 입체감)
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.28)';
+        ctx.beginPath();
+        ctx.ellipse(-42, 18, 22, 10, -0.6, 0, Math.PI * 2);
+        ctx.fill();
 
         this.drawHatching(ctx, -50, 16, -15, 18, 5, 7, -1.2);
 
@@ -618,19 +620,21 @@ class PeanutsMonkeyHero {
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
 
+        // 동글동글 매끄러운 통통한 오른팔 곡선
         ctx.beginPath();
         ctx.moveTo(-6, -10);
-        ctx.quadraticCurveTo(34, 8, 78, -8);
-        ctx.lineTo(94, 14);
-        // 팔 아래 잔털
-        ctx.lineTo(68, 26);
-        ctx.lineTo(74, 32);
-        ctx.lineTo(48, 34);
-        ctx.lineTo(52, 40);
-        ctx.quadraticCurveTo(18, 36, -10, 18);
+        ctx.quadraticCurveTo(34, 4, 80, -4);
+        ctx.quadraticCurveTo(96, 12, 88, 26);
+        ctx.quadraticCurveTo(46, 36, -10, 18);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
+
+        // 오른팔 3D 하이라이트
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.28)';
+        ctx.beginPath();
+        ctx.ellipse(36, 6, 22, 8, 0.12, 0, Math.PI * 2);
+        ctx.fill();
 
         this.drawHatching(ctx, 18, 22, 65, 18, 6, 7, -1.4);
 
@@ -1318,23 +1322,21 @@ class PeanutsMonkeyHero {
             const colors = this.getSpeciesColors();
             const legColor = this.costumeType === 'gentleman' ? '#1e2229' : (this.costumeType === 'santa' ? '#d62828' : colors.skin);
 
-            // 다리
-            ctx.fillStyle = legColor;
-            ctx.strokeStyle = '#1a1612';
-            ctx.lineWidth = 4;
-            ctx.lineJoin = 'round';
-
+            // 동글동글 통통한 다리 곡선
             ctx.beginPath();
             ctx.moveTo(-18, -6);
-            ctx.lineTo(-24, 24);
-            ctx.lineTo(-18, 28);
-            ctx.lineTo(-22, 58);
-            ctx.lineTo(20, 58);
-            ctx.lineTo(24, 28);
-            ctx.lineTo(18, -6);
+            ctx.quadraticCurveTo(-26, 26, -20, 58);
+            ctx.quadraticCurveTo(0, 64, 20, 58);
+            ctx.quadraticCurveTo(26, 26, 18, -6);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
+
+            // 다리 입체 원기둥 하이라이트
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
+            ctx.beginPath();
+            ctx.ellipse(0, 24, 8, 24, 0, 0, Math.PI * 2);
+            ctx.fill();
 
             // 🐯 호랑이 다리 줄무늬
             if (this.characterType === 'tiger' && this.costumeType === 'none') {
@@ -1524,40 +1526,27 @@ class PeanutsMonkeyHero {
         ctx.fillStyle = backHeadGrad;
 
         ctx.beginPath();
-        ctx.moveTo(-88, -15);
-        ctx.lineTo(-96, -24);
-        ctx.lineTo(-86, -32);
-        ctx.quadraticCurveTo(-78, -72, -42, -92);
-        // 정수리 트레이드마크 삐죽 털 5가닥!
-        ctx.lineTo(-48, -106);
-        ctx.lineTo(-28, -98);
-        ctx.lineTo(-14, -118);
-        ctx.lineTo(2, -104);
-        ctx.lineTo(22, -122);
-        ctx.lineTo(24, -100);
-        ctx.lineTo(48, -108);
-        ctx.lineTo(44, -92);
-        ctx.quadraticCurveTo(82, -74, 90, -20);
-        // 오른쪽 볼 잔털 3가닥
-        ctx.lineTo(94, 38);
-        ctx.lineTo(104, 48);
-        ctx.lineTo(90, 52);
-        ctx.lineTo(96, 64);
-        ctx.lineTo(80, 66);
-        // 목덜미 털 라인 (중간에 귀여운 제비초리 잔털 2가닥)
-        ctx.quadraticCurveTo(35, 92, 12, 86);
-        ctx.lineTo(4, 96);
-        ctx.lineTo(-4, 86);
-        ctx.lineTo(-12, 95);
-        ctx.quadraticCurveTo(-40, 92, -78, 66);
-        // 왼쪽 볼 잔털 3가닥
-        ctx.lineTo(-94, 62);
-        ctx.lineTo(-86, 52);
-        ctx.lineTo(-102, 46);
-        ctx.lineTo(-90, 36);
+        ctx.moveTo(-84, -20);
+        ctx.quadraticCurveTo(-90, -68, -42, -90);
+        // 동글동글 앙증맞은 정수리 털 3가닥
+        ctx.quadraticCurveTo(-26, -114, -14, -98);
+        ctx.quadraticCurveTo(0, -118, 14, -98);
+        ctx.quadraticCurveTo(28, -114, 42, -90);
+        ctx.quadraticCurveTo(90, -68, 84, -20);
+        // 통통하고 둥근 볼살
+        ctx.quadraticCurveTo(96, 32, 78, 66);
+        // 부드러운 목선
+        ctx.quadraticCurveTo(0, 96, -78, 66);
+        ctx.quadraticCurveTo(-96, 32, -84, -20);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
+
+        // 뒤통수 부드러운 3D 하이라이트
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
+        ctx.beginPath();
+        ctx.ellipse(0, -32, 42, 28, 0, 0, Math.PI * 2);
+        ctx.fill();
 
         // 뒤통수 가마(Swirl) 펜선과 피너츠 특유의 털 결 해칭 디테일!
         ctx.strokeStyle = 'rgba(26, 22, 18, 0.55)';
@@ -1622,32 +1611,27 @@ class PeanutsMonkeyHero {
         ctx.fillStyle = headGrad;
 
         ctx.beginPath();
-        ctx.moveTo(-88, -15);
-        ctx.lineTo(-96, -24);
-        ctx.lineTo(-86, -32);
-        ctx.quadraticCurveTo(-78, -72, -42, -92);
-        ctx.lineTo(-48, -106);
-        ctx.lineTo(-28, -98);
-        ctx.lineTo(-14, -118);
-        ctx.lineTo(2, -104);
-        ctx.lineTo(22, -122);
-        ctx.lineTo(24, -100);
-        ctx.lineTo(48, -108);
-        ctx.lineTo(44, -92);
-        ctx.quadraticCurveTo(82, -74, 90, -20);
-        ctx.lineTo(94, 38);
-        ctx.lineTo(104, 48);
-        ctx.lineTo(90, 52);
-        ctx.lineTo(96, 64);
-        ctx.lineTo(80, 66);
-        ctx.quadraticCurveTo(0, 102, -78, 66);
-        ctx.lineTo(-94, 62);
-        ctx.lineTo(-86, 52);
-        ctx.lineTo(-102, 46);
-        ctx.lineTo(-90, 36);
+        ctx.moveTo(-84, -20);
+        ctx.quadraticCurveTo(-90, -68, -42, -90);
+        // 동글동글 앙증맞은 정수리 털 3가닥
+        ctx.quadraticCurveTo(-26, -114, -14, -98);
+        ctx.quadraticCurveTo(0, -118, 14, -98);
+        ctx.quadraticCurveTo(28, -114, 42, -90);
+        ctx.quadraticCurveTo(90, -68, 84, -20);
+        // 통통하고 둥근 볼살
+        ctx.quadraticCurveTo(96, 32, 78, 66);
+        // 부드러운 목선
+        ctx.quadraticCurveTo(0, 96, -78, 66);
+        ctx.quadraticCurveTo(-96, 32, -84, -20);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
+
+        // 3D 하이라이트
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
+        ctx.beginPath();
+        ctx.ellipse(0, -32, 42, 28, 0, 0, Math.PI * 2);
+        ctx.fill();
 
         // M자 이마 + 통통한 양볼 크림베이지 마스크
         const faceGrad = ctx.createRadialGradient(-15, 10, 10, 0, 15, 90);
@@ -3042,12 +3026,12 @@ class PeanutsMonkeyHero {
         ctx.translate(x, y);
         ctx.rotate(angle);
 
-        // 1. 머리 꼭대기 실린더 스터드 (Roblox Stud)
-        ctx.fillStyle = '#a1a8b0';
+        // 1. 머리 꼭대기 실린더 스터드 (동글동글한 캡슐 스터드)
+        ctx.fillStyle = '#b0b7bf';
         ctx.strokeStyle = '#27272a';
         ctx.lineWidth = 3.2;
         ctx.beginPath();
-        ctx.roundRect(-9, -29, 18, 9, 2);
+        ctx.roundRect(-9, -29, 18, 9, 4.5);
         ctx.fill();
         ctx.stroke();
 
@@ -3057,29 +3041,39 @@ class PeanutsMonkeyHero {
         ctx.ellipse(0, -25, 5, 2, 0, 0, Math.PI * 2);
         ctx.stroke();
 
-        // 2. 큐브형 그레이 블록 머리
-        ctx.fillStyle = '#a1a8b0';
+        // 2. 큐브형 그레이 블록 머리 (동글동글 부드러운 코너 14px)
+        const headGrad = ctx.createLinearGradient(0, -20, 0, 22);
+        headGrad.addColorStop(0, '#bdc3c7');
+        headGrad.addColorStop(1, '#95a5a6');
+        ctx.fillStyle = headGrad;
         ctx.strokeStyle = '#27272a';
         ctx.lineWidth = 3.6;
         ctx.beginPath();
-        ctx.roundRect(-24, -20, 48, 42, 4);
+        ctx.roundRect(-24, -20, 48, 42, 14);
         ctx.fill();
         ctx.stroke();
 
-        // 플라스틱 광택 베벨
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.38)';
-        ctx.fillRect(-21, -17, 42, 4);
+        // 둥근 젤리 플라스틱 광택 하이라이트
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+        ctx.beginPath();
+        ctx.roundRect(-19, -16, 38, 6, 3);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(17, -12, 3, 0, Math.PI * 2);
+        ctx.fill();
 
-        // 3. 로블록스 마네킹 표정 (다크 차콜 디테일)
+        // 3. 로블록스 마네킹 표정 (귀엽고 또렷한 카툰 표정)
         ctx.fillStyle = '#27272a';
         ctx.strokeStyle = '#27272a';
 
         if (expression === 'smile') {
-            ctx.fillRect(-12, -7, 5, 8);
-            ctx.fillRect(7, -7, 5, 8);
             ctx.beginPath();
-            ctx.arc(0, 4, 10, 0.2, Math.PI - 0.2);
-            ctx.lineWidth = 3;
+            ctx.ellipse(-10, -3, 3, 4.5, 0, 0, Math.PI * 2);
+            ctx.ellipse(10, -3, 3, 4.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(0, 5, 10, 0.2, Math.PI - 0.2);
+            ctx.lineWidth = 3.2;
             ctx.stroke();
         } else if (expression === 'smug' || expression === 'bad') {
             ctx.lineWidth = 2.8;
@@ -3088,8 +3082,10 @@ class PeanutsMonkeyHero {
             ctx.moveTo(15, -12); ctx.lineTo(6, -7);
             ctx.stroke();
 
-            ctx.fillRect(-12, -6, 5, 7);
-            ctx.fillRect(7, -6, 5, 7);
+            ctx.beginPath();
+            ctx.ellipse(-10, -3, 3, 4.5, 0, 0, Math.PI * 2);
+            ctx.ellipse(10, -3, 3, 4.5, 0, 0, Math.PI * 2);
+            ctx.fill();
 
             ctx.beginPath();
             ctx.moveTo(-6, 7);
@@ -3102,21 +3098,24 @@ class PeanutsMonkeyHero {
             ctx.moveTo(-14, -3); ctx.lineTo(-9, -8); ctx.lineTo(-4, -3);
             ctx.stroke();
 
-            ctx.fillRect(7, -7, 5, 8);
+            ctx.beginPath();
+            ctx.ellipse(10, -3, 3, 4.5, 0, 0, Math.PI * 2);
+            ctx.fill();
 
             ctx.beginPath();
-            ctx.arc(0, 4, 10, 0.2, Math.PI - 0.2);
+            ctx.arc(0, 5, 10, 0.2, Math.PI - 0.2);
             ctx.stroke();
         } else if (expression === 'eyes_side') {
             const look = Math.sin(angle * 14) > 0 ? 3.5 : -3.5;
-            ctx.fillRect(-12 + look, -7, 5, 8);
-            ctx.fillRect(7 + look, -7, 5, 8);
             ctx.beginPath();
-            ctx.arc(0, 4, 9, 0.2, Math.PI - 0.2);
+            ctx.ellipse(-10 + look, -3, 3, 4.5, 0, 0, Math.PI * 2);
+            ctx.ellipse(10 + look, -3, 3, 4.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(0, 5, 9, 0.2, Math.PI - 0.2);
             ctx.lineWidth = 3;
             ctx.stroke();
         } else if (expression === 'relaxed') {
-            // 기지개 켤 때 편안하게 감은 눈 (^_^)
             ctx.lineWidth = 3;
             ctx.beginPath();
             ctx.moveTo(-15, -3); ctx.lineTo(-10, -8); ctx.lineTo(-5, -3);
@@ -3124,7 +3123,7 @@ class PeanutsMonkeyHero {
             ctx.stroke();
 
             ctx.beginPath();
-            ctx.arc(0, 5, 8, 0.2, Math.PI - 0.2);
+            ctx.arc(0, 6, 8, 0.2, Math.PI - 0.2);
             ctx.stroke();
         }
 
@@ -3136,25 +3135,30 @@ class PeanutsMonkeyHero {
         ctx.translate(x, y);
         ctx.rotate(angle);
 
-        // 그레이 마네킹 토르소
-        ctx.fillStyle = color;
+        // 그레이 마네킹 토르소 (동글동글 부드러운 코너 15px)
+        const torsoGrad = ctx.createLinearGradient(0, -32, 0, 32);
+        torsoGrad.addColorStop(0, '#b0b7bf');
+        torsoGrad.addColorStop(1, '#7f8c8d');
+        ctx.fillStyle = torsoGrad;
         ctx.strokeStyle = '#27272a';
         ctx.lineWidth = 3.8;
         ctx.beginPath();
-        ctx.roundRect(-27, -32, 54, 64, 4);
+        ctx.roundRect(-27, -32, 54, 64, 15);
         ctx.fill();
         ctx.stroke();
 
         // 플라스틱 하이라이트 베벨
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
-        ctx.fillRect(-24, -29, 48, 5);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.40)';
+        ctx.beginPath();
+        ctx.roundRect(-22, -28, 44, 6, 3);
+        ctx.fill();
 
-        // 허리 R15 관절 분할 라인
+        // 허리 부드러운 관절 라인
         ctx.strokeStyle = '#52525b';
         ctx.lineWidth = 2.5;
         ctx.beginPath();
-        ctx.moveTo(-25, 14);
-        ctx.lineTo(25, 14);
+        ctx.moveTo(-23, 14);
+        ctx.lineTo(23, 14);
         ctx.stroke();
 
         ctx.restore();
@@ -3165,36 +3169,38 @@ class PeanutsMonkeyHero {
         ctx.translate(shoulderX, shoulderY);
         ctx.rotate(upperAngle);
 
-        ctx.fillStyle = color;
+        ctx.fillStyle = '#b0b7bf';
         ctx.strokeStyle = '#27272a';
         ctx.lineWidth = 3.5;
 
-        // 상완 (Upper Arm)
+        // 상완 (동글동글 둥근 캡슐 팔)
         ctx.beginPath();
-        ctx.roundRect(-8, 0, 16, 26, 3);
+        ctx.roundRect(-8, 0, 16, 26, 8);
         ctx.fill();
         ctx.stroke();
 
         // 관절 링
-        ctx.fillStyle = '#4b5563';
-        ctx.fillRect(-7, 24, 14, 3);
+        ctx.fillStyle = '#52525b';
+        ctx.beginPath();
+        ctx.roundRect(-7, 24, 14, 3, 1.5);
+        ctx.fill();
 
         // 팔꿈치 관절
         ctx.translate(0, 26);
         ctx.rotate(lowerAngle);
 
-        // 하완 (Lower Arm)
-        ctx.fillStyle = color;
+        // 하완 (동글동글)
+        ctx.fillStyle = '#a1a8b0';
         ctx.beginPath();
-        ctx.roundRect(-8, 0, 16, 24, 3);
+        ctx.roundRect(-8, 0, 16, 24, 8);
         ctx.fill();
         ctx.stroke();
 
-        // 로블록스 정통 C자형 컵 손
+        // 로블록스 부드러운 C자형 컵 손
         ctx.translate(0, 24);
-        ctx.fillStyle = '#8e959f';
+        ctx.fillStyle = '#95a5a6';
         ctx.beginPath();
-        ctx.roundRect(-8, 0, 16, 14, 3);
+        ctx.roundRect(-8, 0, 16, 14, 7);
         ctx.fill();
         ctx.stroke();
 
@@ -3211,35 +3217,37 @@ class PeanutsMonkeyHero {
         ctx.translate(hipX, hipY);
         ctx.rotate(upperAngle);
 
-        ctx.fillStyle = color;
+        ctx.fillStyle = '#95a5a6';
         ctx.strokeStyle = '#27272a';
         ctx.lineWidth = 3.6;
 
-        // 허벅지 (Upper Leg)
+        // 허벅지 (동글동글 둥근 캡슐 다리)
         ctx.beginPath();
-        ctx.roundRect(-9, 0, 18, 30, 3);
+        ctx.roundRect(-9, 0, 18, 30, 9);
         ctx.fill();
         ctx.stroke();
 
         // 무릎 관절 링
-        ctx.fillStyle = '#4b5563';
-        ctx.fillRect(-8, 28, 16, 3);
+        ctx.fillStyle = '#52525b';
+        ctx.beginPath();
+        ctx.roundRect(-8, 28, 16, 3, 1.5);
+        ctx.fill();
 
         // 무릎 관절
         ctx.translate(0, 30);
         ctx.rotate(lowerAngle);
 
-        // 종아리 (Lower Leg)
-        ctx.fillStyle = color;
+        // 종아리 (동글동글)
+        ctx.fillStyle = '#8e959f';
         ctx.beginPath();
-        ctx.roundRect(-9, 0, 18, 28, 3);
+        ctx.roundRect(-9, 0, 18, 28, 9);
         ctx.fill();
         ctx.stroke();
 
-        // 발 (Foot / Shoe)
-        ctx.fillStyle = '#6b7280';
+        // 발 (동글동글한 스니커즈 슈즈)
+        ctx.fillStyle = '#52525b';
         ctx.beginPath();
-        ctx.roundRect(-9, 28, 20, 14, 2);
+        ctx.roundRect(-9, 28, 20, 14, 7);
         ctx.fill();
         ctx.stroke();
 

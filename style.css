@@ -15,13 +15,13 @@ body, html {
     background-color: #f3e5cf;
 }
 
-/* 빈티지 코믹북 종이 액자 프레임 */
+/* 빈티지 코믹북 종이 액자 프레임 - 부드럽고 동글동글한 모서리 */
 .comic-frame {
     position: absolute;
     inset: 12px;
     border: 4px solid #1a1612;
-    border-radius: 4px;
-    box-shadow: 0 0 0 16px #f3e5cf, inset 0 0 35px rgba(139, 105, 65, 0.22);
+    border-radius: 28px;
+    box-shadow: 0 0 0 16px #f3e5cf, 0 10px 30px rgba(0, 0, 0, 0.12), inset 0 0 35px rgba(139, 105, 65, 0.18);
     pointer-events: none;
     z-index: 5;
 }
@@ -422,12 +422,12 @@ body.is-playing .concept-badge {
 .modal-card {
     background: #fffcf5;
     border: 4px solid #1a1612;
-    border-radius: 24px;
-    padding: 24px 32px;
+    border-radius: 36px;
+    padding: 26px 34px;
     text-align: center;
     max-width: 520px;
     width: 100%;
-    box-shadow: 8px 8px 0px #1a1612;
+    box-shadow: 0 20px 50px rgba(26, 22, 18, 0.28), 6px 6px 0px #1a1612;
     max-height: 90vh;
     overflow-y: auto;
 }
@@ -449,8 +449,8 @@ body.is-playing .concept-badge {
     margin: 8px 0;
     background: #fdf0d5;
     border: 2.5px solid #1a1612;
-    border-radius: 14px;
-    padding: 8px 12px;
+    border-radius: 22px;
+    padding: 10px 14px;
 }
 
 .selection-title {
@@ -471,21 +471,21 @@ body.is-playing .concept-badge {
     flex: 1;
     background: #fffcf5;
     border: 2.5px solid #1a1612;
-    border-radius: 12px;
-    padding: 6px 4px;
+    border-radius: 20px;
+    padding: 8px 6px;
     cursor: pointer;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 2px;
     font-family: 'Gaegu', cursive;
-    box-shadow: 2px 2px 0px #1a1612;
-    transition: transform 0.1s, background 0.15s, border-color 0.15s;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.06), 2px 2px 0px #1a1612;
+    transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.15s, border-color 0.15s;
 }
 
 .select-btn:hover {
     background: #fff3b0;
-    transform: translateY(-2px);
+    transform: translateY(-3px) scale(1.03);
 }
 
 .select-btn:active {
@@ -497,12 +497,12 @@ body.is-playing .concept-badge {
     background: #ffd166;
     border-color: #d64531;
     border-width: 3px;
-    box-shadow: 3px 3px 0px #d64531;
-    transform: scale(1.04);
+    box-shadow: 0 6px 14px rgba(214, 69, 49, 0.25), 3px 3px 0px #d64531;
+    transform: scale(1.05);
 }
 
 .btn-emoji {
-    font-size: 24px;
+    font-size: 26px;
     line-height: 1.1;
 }
 
@@ -522,12 +522,12 @@ body.is-playing .concept-badge {
 .name-input {
     flex: 1;
     max-width: 260px;
-    padding: 10px 16px;
+    padding: 10px 20px;
     font-family: 'Gaegu', cursive;
     font-size: 22px;
     font-weight: 700;
     border: 3px solid #1a1612;
-    border-radius: 14px;
+    border-radius: 9999px;
     background: #fff;
     color: #1a1612;
     outline: none;
@@ -541,17 +541,22 @@ body.is-playing .concept-badge {
 }
 
 .start-btn, .restart-btn {
-    background: #f5cb42;
+    background: linear-gradient(135deg, #ffe066, #f5cb42);
     border: 3px solid #1a1612;
-    border-radius: 14px;
-    padding: 10px 24px;
+    border-radius: 9999px;
+    padding: 12px 30px;
     font-family: 'Gaegu', cursive;
-    font-size: 22px;
+    font-size: 23px;
     font-weight: 700;
     color: #1a1612;
     cursor: pointer;
-    box-shadow: 4px 4px 0px #1a1612;
-    transition: transform 0.1s;
+    box-shadow: 0 8px 24px rgba(245, 203, 66, 0.4), 4px 4px 0px #1a1612;
+    transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s;
+}
+
+.start-btn:hover, .restart-btn:hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 12px 28px rgba(245, 203, 66, 0.5), 4px 4px 0px #1a1612;
 }
 
 .start-btn:active, .restart-btn:active {
@@ -564,8 +569,8 @@ body.is-playing .concept-badge {
     margin-top: 14px;
     background: #f7ede2;
     border: 3px solid #1a1612;
-    border-radius: 16px;
-    padding: 12px 16px;
+    border-radius: 24px;
+    padding: 14px 18px;
     text-align: left;
 }
 
@@ -582,7 +587,7 @@ body.is-playing .concept-badge {
     list-style: none;
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 6px;
     max-height: 210px;
     overflow-y: auto;
 }
@@ -593,8 +598,8 @@ body.is-playing .concept-badge {
     align-items: center;
     background: #fffcf5;
     border: 2px solid #1a1612;
-    border-radius: 10px;
-    padding: 6px 12px;
+    border-radius: 9999px;
+    padding: 7px 16px;
     font-size: 17px;
     font-weight: 700;
 }
@@ -623,10 +628,10 @@ body.is-playing .concept-badge {
 .rank-roulette-container {
     background: linear-gradient(135deg, #0d1b2a, #1b263b);
     border: 3.5px solid #ffbe0b;
-    border-radius: 20px;
-    padding: 12px 16px;
+    border-radius: 28px;
+    padding: 14px 18px;
     margin: 10px 0 12px;
-    box-shadow: 0 0 20px rgba(255, 190, 11, 0.45), 4px 4px 0 #1a1612;
+    box-shadow: 0 0 24px rgba(255, 190, 11, 0.45), 4px 4px 0 #1a1612;
     text-align: center;
 }
 
@@ -667,8 +672,8 @@ body.is-playing .concept-badge {
     display: inline-block;
     background: rgba(0, 0, 0, 0.55);
     border: 1.5px solid #00f5d4;
-    border-radius: 12px;
-    padding: 4px 14px;
+    border-radius: 9999px;
+    padding: 5px 16px;
     font-size: 15px;
     font-weight: 800;
     color: #fffcf5;
@@ -681,8 +686,8 @@ body.is-playing .concept-badge {
 .oiia-cat-container {
     background: linear-gradient(135deg, #0b0f19 0%, #1e1b4b 50%, #311042 100%);
     border: 3.5px solid #1a1612;
-    border-radius: 18px;
-    padding: 10px;
+    border-radius: 28px;
+    padding: 12px;
     margin: 10px 0;
     box-shadow: 4px 4px 0 #1a1612, 0 0 25px rgba(255, 0, 127, 0.35);
     text-align: center;
@@ -703,8 +708,8 @@ body.is-playing .concept-badge {
     color: #ffffff;
     font-size: 13.5px;
     font-weight: 800;
-    padding: 4px 10px;
-    border-radius: 12px;
+    padding: 4px 12px;
+    border-radius: 9999px;
     border: 1.5px solid #ffffff;
     text-shadow: 1px 1px 0 #1a1612;
     box-shadow: 0 0 10px rgba(255, 0, 127, 0.5);
@@ -722,8 +727,8 @@ body.is-playing .concept-badge {
     color: #ffffff;
     font-size: 11px;
     font-weight: 800;
-    padding: 3px 8px;
-    border-radius: 10px;
+    padding: 3px 10px;
+    border-radius: 9999px;
     border: 1px solid #ffffff;
     text-shadow: 1px 1px 0 #1a1612;
     animation: pulseGlow 1s infinite alternate;
@@ -737,7 +742,7 @@ body.is-playing .concept-badge {
 .oiia-canvas-box {
     position: relative;
     width: 100%;
-    border-radius: 14px;
+    border-radius: 22px;
     border: 2.5px solid #38bdf8;
     background: #000000;
     overflow: hidden;
@@ -785,8 +790,8 @@ body.is-playing .concept-badge {
     border: 2px solid #475569;
     font-size: 13px;
     font-weight: 700;
-    padding: 5px 12px;
-    border-radius: 10px;
+    padding: 6px 14px;
+    border-radius: 9999px;
     cursor: pointer;
     box-shadow: 2px 2px 0 #1a1612;
     transition: all 0.15s ease;
