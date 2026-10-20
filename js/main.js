@@ -90,7 +90,7 @@ let schoolEndingTimer = 0;
 let selectedRoute = null; // 1 | 2 | null
 let isSelectingRoute = false; // 시작 시 갈림길 선택 중 플래그
 let routeScoreMultiplier = 1.0; // 1번 도로는 1.0, 2번 도로는 2.0 (모든 포인트 2배)
-let routeSpeedMultiplier = 1.0; // 1번 도로는 1.0, 2번 도로는 1.30 (속도 +30% 상승)
+let routeSpeedMultiplier = 1.0; // 1번 도로는 1.0, 2번 도로는 1.50 (속도 +50% 상승)
 let survivalTime = 0; // 초 단위 누적 생존 시간
 let timeScoreAccumulator = 0; // 시간에 따른 점수 누적 변수
 let nextTimePopupTimer = 0; // 생존 점수 획득 팝업 주기 타이머
@@ -785,7 +785,7 @@ function updateHUD() {
             hudRoadBadge.innerHTML = '🟢 1번 도로: 안정적인 도로 (점수 1x / 기본 속도)';
             hudRoadBadge.style.borderColor = 'rgba(42, 157, 143, 0.7)';
         } else if (selectedRoute === 2) {
-            hudRoadBadge.innerHTML = '🔥 2번 도로: 위험하지만 보상이 강한 도로 (점수 2x / 속도 +30%)';
+            hudRoadBadge.innerHTML = '🔥 2번 도로: 위험하지만 보상이 강한 도로 (점수 2x / 속도 +50% / 장애물 +20%)';
             hudRoadBadge.style.borderColor = 'rgba(230, 57, 70, 0.7)';
         } else {
             hudRoadBadge.innerHTML = '🛣️ 도로 선택 중... [1] 안정적 / [2] 고위험고보상';
@@ -823,14 +823,14 @@ function selectRoute(routeNum) {
         bubbleKo.textContent = '"[1번 안정적인 도로]를 선택했어! 안전한 속도로 안정적인 완주를 노려봐!"';
     } else {
         routeScoreMultiplier = 2.0; // 모든 포인트 2배!
-        routeSpeedMultiplier = 1.30; // 속도 30% 상승!
+        routeSpeedMultiplier = 1.50; // 속도 대폭 상승 (+50% 가속)!
         sound.playPowerUp();
         track.triggerStageBanner(
             '🔥 2번 도로 : 위험하지만 보상이 강한 도로 선택!',
-            '⚡ 속도 +30% 가속 & 💥 모든 포인트 2배 (x2) 대폭 상승!',
+            '⚡ 속도 +50% 가속 & ⚠️ 장애물 +20% 증가 & 💥 모든 포인트 2배 (x2)!',
             '#e63946'
         );
-        bubbleKo.textContent = '"[2번 위험하지만 보상이 강한 도로] 선택! 속도가 30% 빨라지고 모든 점수가 2배야!"';
+        bubbleKo.textContent = '"[2번 위험하지만 보상이 강한 도로] 선택! 속도가 50% 빨라지고 장애물이 20% 늘어난 대신 모든 점수가 2배야!"';
     }
 
     // 선택 시에는 용이 잡지 않도록 거리 안전하게 100m 유지
@@ -1221,7 +1221,7 @@ function gameLoop(now) {
         }
 
         const stInfo = STAGE_INFO[track.stage] || STAGE_INFO[1];
-        // 2번 도로(위험하지만 보상이 강한 도로) 선택 시 전체 속도 +30% 적용 (routeSpeedMultiplier = 1.30)
+        // 2번 도로(위험하지만 보상이 강한 도로) 선택 시 전체 속도 +50% 적용 (routeSpeedMultiplier = 1.50)
         gameSpeed = (stInfo.speedBase + Math.min(0.14, score / 7000)) * routeSpeedMultiplier;
         // 요청 반영: 점프 길이를 대폭 확장하여 도약 시 시원하게 전방을 돌파 (jumpBoost 1.35x)
         const jumpBoost = hero.isJumping ? 1.35 : 1.0;

@@ -213,14 +213,17 @@ class TrackManager {
             if (p.z > 1.15) p.z -= 1.15;
         });
 
-        // 장애물 출현 빈도: 도로 선택 완료 전에는 대기, 1번 도로는 안전하게, 2번 도로는 고난도 유지
+        // 장애물 출현 빈도: 도로 선택 완료 전에는 대기, 1번 도로는 안전하게, 2번 도로는 장애물 20% 증가!
         if (!mathGateActive && this.stagePauseTimer <= 0 && this.selectedRoute) {
             this.spawnTimer -= dt * gameSpeed * stageSpeedMult;
             if (this.spawnTimer <= 0) {
                 this.spawnObstaclePattern(callbacks);
                 const isSafeRoute = this.selectedRoute === 1;
-                const baseInterval = isSafeRoute ? Math.max(1.15, 1.55 - (this.stage - 1) * 0.1) : Math.max(0.68, 1.02 - (this.stage - 1) * 0.08);
-                this.spawnTimer = baseInterval + Math.random() * 0.24;
+                // 2번 도로는 장애물 출현 빈도를 20% 올리기 위해 스폰 간격을 20% 단축 (x 0.80)
+                const baseInterval = isSafeRoute
+                    ? Math.max(1.15, 1.55 - (this.stage - 1) * 0.1)
+                    : Math.max(0.52, (1.02 - (this.stage - 1) * 0.08) * 0.80);
+                this.spawnTimer = baseInterval + Math.random() * 0.20;
             }
         }
 
@@ -397,12 +400,15 @@ class TrackManager {
             passed: false
         });
 
-        // 2번째 기물 생성: 5개 레인 중 최소 3개 레인은 항상 100% 안전하게 비어 있도록 보장!
+        // 2번째 기물 생성: 2번 도로는 장애물 출현 20% 증가 적용! (최소 3개 레인은 항상 안전 보장)
         const remainingLanes = safeLanes.filter(l => l !== chosenLane);
+        const secondObstacleChance = (this.selectedRoute === 2)
+            ? Math.min(0.85, (0.48 + this.stage * 0.04) * 1.20)
+            : (0.48 + this.stage * 0.04);
         if (
             chosenType !== 'moving_barrier' &&
             remainingLanes.length >= 3 &&
-            Math.random() < 0.48 + this.stage * 0.04
+            Math.random() < secondObstacleChance
         ) {
             const secondLane = remainingLanes[Math.floor(Math.random() * remainingLanes.length)];
             const subTypes = ['log', 'hurdle', 'pillar', 'arch', 'climb_truck', chaserType];
@@ -4136,7 +4142,7 @@ class TrackManager {
 
         ctx.fillStyle = '#fecdd3';
         ctx.font = `700 ${Math.max(9, Math.round(12 * pCenter.scale))}px sans-serif`;
-        ctx.fillText('속도+30% | 🔥 모든 점수 2배!!', 0, 72 * pCenter.scale);
+        ctx.fillText('속도+50% & 장애물+20% | 🔥 모든 점수 2배!!', 0, 72 * pCenter.scale);
         ctx.restore();
 
         // 중앙 분기 화살표

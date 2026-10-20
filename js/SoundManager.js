@@ -283,6 +283,10 @@ class SoundManager {
         });
     }
 
+    playPowerUp() {
+        this.playSpecialItem();
+    }
+
     // 🏍️ 지코 새삥 오토바이 시동 부릉부릉 사운드!
     playMotorcycleRev() {
         if (this.muted) return;
