@@ -134,7 +134,6 @@ class PeanutsMonkeyHero {
         // 톰 골드런 스타일 장애물(경사로/트럭/버스 지붕) 위로 올라가 달리기 높이
         this.platformY = 0;
         this.targetPlatformY = 0;
-
         // 캐릭터 HP 시스템 (기본 체력 100으로 명확하게 설정! 손오공 진화 시 최대 체력 증가!)
         this.maxHp = 100;
         this.hp = 100;
@@ -155,10 +154,9 @@ class PeanutsMonkeyHero {
             this.isSliding = false;
             this.slideTimer = 0;
         }
-        // 착지 직전(y < 48)에도 선입력 점프가 즉시 먹히도록 반응성 대폭 개선!
+        // 착지 직전(y < 48) 또는 지상 점프
         if (!this.isJumping || this.y < 48) {
             this.isJumping = true;
-            // 점프 키를 누른 즉시 높이를 띄우고 긴 체공 시간(중력 0.88)으로 먼 거리를 날아가는 긴 점프력 부여!
             this.y = Math.max(this.y, 48);
             this.vy = this.superJumpTimer > 0 ? 35.0 : 26.5;
             return true;

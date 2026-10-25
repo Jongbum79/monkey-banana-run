@@ -153,78 +153,45 @@ const STAGE_INFO = {
 // =========================================================================
 // 🏆 랭킹 시스템
 // =========================================================================
-const RANKING_STORAGE_KEY = 'smilegames_monkey_rankings_v2';
+const RANKING_STORAGE_KEY = 'smilegames_monkey_rankings_v4';
+
+// 🌐 브라우저 탭 및 기기 간 실시간 랭킹 동기화 채널
+let rankBroadcastChannel = null;
+try {
+    if (typeof BroadcastChannel !== 'undefined') {
+        rankBroadcastChannel = new BroadcastChannel('smilegames_rankings_sync');
+        rankBroadcastChannel.onmessage = (event) => {
+            if (event.data && event.data.type === 'NEW_RANKING') {
+                const updatedList = getRankings();
+                renderRankingList(startRankingListEl, updatedList);
+                renderRankingList(gameOverRankingListEl, updatedList);
+            }
+        };
+    }
+} catch (e) {
+    console.warn('BroadcastChannel not supported:', e);
+}
 
 function getRankings() {
     const raw = localStorage.getItem(RANKING_STORAGE_KEY);
     if (raw) {
         try {
             const parsed = JSON.parse(raw);
-            if (Array.isArray(parsed) && parsed.length >= 20) {
+            if (Array.isArray(parsed) && parsed.length > 0) {
                 return parsed;
             }
         } catch (e) {
             console.error(e);
         }
     }
-    // 🏫 흥덕초등학교 6학년 학생 러너 명예의 전당 (50위까지 촘촘한 점수대 배치!)
+    // 🏆 실제 플레이한 제작팀 5인 실명 기록만 등록 (플레이하지도 않은 6-1반 민준 등 가짜 학생 전면 삭제!)
+    // 7,000점대 이상 달성 시 1~2위 등극, 3,000점대는 6위 이하로 정직하게 기록!
     const defaultRankings = [
-        // 1~5위: 개발자 및 챔피언 라인 (2650~1910)
-        { name: '최지훈 (개발자)', score: 2650, math: 22 },
-        { name: '박주아 (개발자)', score: 2420, math: 19 },
-        { name: '김이수 (개발자)', score: 2210, math: 17 },
-        { name: '최우영 (개발자)', score: 2050, math: 16 },
-        { name: '전준우 (개발자)', score: 1910, math: 15 },
-        // 6~10위: 1~10등 윈드밀 댄스 구간 (1800~1480)
-        { name: '흥덕 6-1 민준', score: 1800, math: 14 },
-        { name: '흥덕 6-1 서연', score: 1690, math: 13 },
-        { name: '흥덕 6-2 도윤', score: 1590, math: 12 },
-        { name: '흥덕 6-2 예은', score: 1530, math: 12 },
-        { name: '흥덕 6-1 시우', score: 1480, math: 11 },
-        // 11~20위: 11~20등 에이티즈 bad 댄스 구간 (1420~980)
-        { name: '흥덕 6-2 하은', score: 1420, math: 11 },
-        { name: '흥덕 6-3 지호', score: 1360, math: 10 },
-        { name: '흥덕 6-3 수아', score: 1300, math: 10 },
-        { name: '흥덕 6-2 은우', score: 1240, math: 9 },
-        { name: '흥덕 6-3 지민', score: 1190, math: 9 },
-        { name: '흥덕 6-1 예준', score: 1140, math: 8 },
-        { name: '흥덕 6-3 윤서', score: 1090, math: 8 },
-        { name: '흥덕 6-2 서진', score: 1050, math: 7 },
-        { name: '흥덕 6-3 채원', score: 1010, math: 7 },
-        { name: '흥덕 6-1 유찬', score: 980,  math: 7 },
-        // 21~30위: 21~30등 red red 댄스 구간 (940~650)
-        { name: '흥덕 6-4 선우', score: 940, math: 6 },
-        { name: '흥덕 6-4 지아', score: 900, math: 6 },
-        { name: '흥덕 6-4 현우', score: 860, math: 6 },
-        { name: '흥덕 6-4 서아', score: 820, math: 5 },
-        { name: '흥덕 6-2 준서', score: 790, math: 5 },
-        { name: '흥덕 6-4 다은', score: 760, math: 5 },
-        { name: '흥덕 6-3 정우', score: 730, math: 4 },
-        { name: '흥덕 6-4 아린', score: 700, math: 4 },
-        { name: '흥덕 6-1 도현', score: 670, math: 4 },
-        { name: '흥덕 6-4 하윤', score: 650, math: 4 },
-        // 31~40위: 31~40등 L을 가져가 댄스 구간 (620~390)
-        { name: '흥덕 6-5 건우', score: 620, math: 3 },
-        { name: '흥덕 6-5 시아', score: 590, math: 3 },
-        { name: '흥덕 6-5 우진', score: 560, math: 3 },
-        { name: '흥덕 6-5 소율', score: 530, math: 3 },
-        { name: '흥덕 6-3 민재', score: 500, math: 2 },
-        { name: '흥덕 6-5 지유', score: 470, math: 2 },
-        { name: '흥덕 6-4 태윤', score: 450, math: 2 },
-        { name: '흥덕 6-5 서하', score: 430, math: 2 },
-        { name: '흥덕 6-2 승우', score: 410, math: 2 },
-        { name: '흥덕 6-5 예나', score: 390, math: 1 },
-        // 41위 이상: 야채 춤 / 측면 대 측면 / 크림 치즈 허니 구간 (370~120)
-        { name: '흥덕 6-5 주원', score: 370, math: 1 },
-        { name: '흥덕 6-1 지안', score: 350, math: 1 },
-        { name: '흥덕 6-4 유진', score: 320, math: 1 },
-        { name: '흥덕 6-3 서율', score: 290, math: 1 },
-        { name: '흥덕 6-5 재윤', score: 260, math: 0 },
-        { name: '흥덕 6-2 나은', score: 230, math: 0 },
-        { name: '흥덕 6-4 시현', score: 200, math: 0 },
-        { name: '흥덕 6-1 채은', score: 170, math: 0 },
-        { name: '흥덕 6-5 민서', score: 140, math: 0 },
-        { name: '흥덕 6-3 동현', score: 120, math: 0 }
+        { name: '최지훈', score: 7200, math: 38 },
+        { name: '박주아', score: 6450, math: 33 },
+        { name: '김이수', score: 5820, math: 29 },
+        { name: '최우영', score: 5150, math: 25 },
+        { name: '전준우', score: 4580, math: 22 }
     ];
     localStorage.setItem(RANKING_STORAGE_KEY, JSON.stringify(defaultRankings));
     return defaultRankings;
@@ -243,6 +210,14 @@ function saveScoreToRanking(name, newScore, mathCount) {
     list.sort((a, b) => b.score - a.score || b.math - a.math);
     localStorage.setItem(RANKING_STORAGE_KEY, JSON.stringify(list));
     const userRank = list.findIndex(item => item.isNew) + 1;
+
+    // 브로드캐스트 채널을 통해 다른 탭/창에도 최신 점수 알림 전파
+    if (rankBroadcastChannel) {
+        try {
+            rankBroadcastChannel.postMessage({ type: 'NEW_RANKING', entry });
+        } catch (e) {}
+    }
+
     return { list: list.slice(0, 15), userRank };
 }
 
@@ -277,7 +252,7 @@ function startRankShuffleRoulette(targetRank) {
         rouletteTimer = null;
     }
 
-    rouletteHeader.textContent = '🎲 실시간 흥덕초등학교 랭킹 산출 중...';
+    rouletteHeader.textContent = '🎲 실시간 공식 랭킹 산출 중...';
     rouletteDanceBadge.textContent = '🐱 OIIA OIIA 올라 캣 출격 대기 중...';
     rouletteNum.classList.add('rolling');
 
@@ -288,7 +263,7 @@ function startRankShuffleRoulette(targetRank) {
     function step() {
         rollCount++;
         // 롤링 중 번개처럼 바뀌는 랜덤 등수
-        const fakeRank = Math.floor(Math.random() * 60) + 1;
+        const fakeRank = Math.floor(Math.random() * 20) + 1;
         rouletteNum.textContent = `${fakeRank}위`;
         sound.playShuffleTick();
 
@@ -302,7 +277,7 @@ function startRankShuffleRoulette(targetRank) {
             // 🎯 최종 등수 확정 및 화려한 팡파레!
             rouletteNum.textContent = `🎉 ${targetRank}위! 🎉`;
             rouletteNum.classList.remove('rolling');
-            rouletteHeader.textContent = `🏆 최종 결과 확정! 흥덕초등학교 ${targetRank}위 달성!`;
+            rouletteHeader.textContent = `🏆 최종 결과 확정! 명예의 전당 ${targetRank}위 달성!`;
             rouletteDanceBadge.textContent = `🐱 올라 캣(OIIA OIIA CAT) 360° 무한 회전 세리머니!`;
             sound.playFanfareCheer();
         }
@@ -767,7 +742,7 @@ function updateHUD() {
         hpBarFillEl.style.background = 'linear-gradient(90deg, #2a9d8f, #52b788)';
     }
     const wukongPrefix = hero.isWukong ? '👑손오공 ' : '❤️ ';
-    hpBarLabelEl.textContent = `${wukongPrefix}HP ${hero.hp} / ${hero.maxHp} (기물 충돌 -25)`;
+    hpBarLabelEl.textContent = `${wukongPrefix}HP ${hero.hp} / ${hero.maxHp} (기물 충돌 -12)`;
 
     const dist = Math.round(dragon.distance);
     dragonFillEl.style.width = `${dist}%`;
@@ -1170,6 +1145,110 @@ bgmBtn.addEventListener('click', () => {
 renderRankingList(startRankingListEl, getRankings());
 
 // =========================================================================
+// 🎮 게임 선택 허브 및 두더지 게임(MoleGame) 연동
+// =========================================================================
+const moleGame = new MoleGame(sound);
+window.moleGame = moleGame;
+
+function switchToHub() {
+    stopOiiaStage();
+    sound.stopOiiaOiiaMemeBGM();
+    if (gameState === 'PLAYING') {
+        gameState = 'START_MENU';
+    }
+    document.body.classList.remove('is-playing');
+    startModal.classList.remove('active');
+    gameOverModal.classList.remove('active');
+    if (roadChoiceOverlay) roadChoiceOverlay.classList.remove('active');
+
+    // 두더지 게임 정지 & 숨김
+    moleGame.stop();
+    moleGame.hideGameOverModal();
+    const moleContainer = document.getElementById('mole-game-container');
+    if (moleContainer) moleContainer.style.display = 'none';
+
+    // 캔버스 및 바나나 UI 복원
+    const canvasContainer = document.getElementById('canvas-container');
+    if (canvasContainer) canvasContainer.style.display = 'block';
+    const uiOverlay = document.querySelector('.ui-overlay');
+    if (uiOverlay) uiOverlay.style.display = '';
+
+    // 허브 모달 활성화
+    const hubModal = document.getElementById('hub-modal');
+    if (hubModal) hubModal.classList.add('active');
+}
+
+function switchToBananaGame() {
+    const hubModal = document.getElementById('hub-modal');
+    if (hubModal) hubModal.classList.remove('active');
+
+    // 두더지 게임 정지 & 숨김
+    moleGame.stop();
+    moleGame.hideGameOverModal();
+    const moleContainer = document.getElementById('mole-game-container');
+    if (moleContainer) moleContainer.style.display = 'none';
+
+    // 바나나 런 보이기
+    const canvasContainer = document.getElementById('canvas-container');
+    if (canvasContainer) canvasContainer.style.display = 'block';
+    const uiOverlay = document.querySelector('.ui-overlay');
+    if (uiOverlay) uiOverlay.style.display = '';
+
+    // 바나나 런 시작 모달 띄우기
+    gameState = 'START_MENU';
+    renderRankingList(startRankingListEl, getRankings());
+    startModal.classList.add('active');
+    playerNameInput.focus();
+}
+
+function switchToMoleGame() {
+    const hubModal = document.getElementById('hub-modal');
+    if (hubModal) hubModal.classList.remove('active');
+    startModal.classList.remove('active');
+    gameOverModal.classList.remove('active');
+    if (roadChoiceOverlay) roadChoiceOverlay.classList.remove('active');
+
+    // 바나나 런 캔버스 & UI 숨김
+    stopOiiaStage();
+    sound.stopOiiaOiiaMemeBGM();
+    gameState = 'START_MENU';
+    document.body.classList.remove('is-playing');
+    const canvasContainer = document.getElementById('canvas-container');
+    if (canvasContainer) canvasContainer.style.display = 'none';
+    const uiOverlay = document.querySelector('.ui-overlay');
+    if (uiOverlay) uiOverlay.style.display = 'none';
+
+    // 두더지 게임 컨테이너 표시 & 2분 게임 시작
+    const moleContainer = document.getElementById('mole-game-container');
+    if (moleContainer) {
+        moleContainer.style.display = 'flex';
+    }
+    const currentName = (playerNameInput ? playerNameInput.value.trim() : '') || playerName || '도전자';
+    moleGame.start(currentName);
+}
+
+window.switchToHub = switchToHub;
+window.switchToBananaGame = switchToBananaGame;
+window.switchToMoleGame = switchToMoleGame;
+
+// 허브 모달 버튼 이벤트 연결
+const hubSelectBanana = document.getElementById('hub-select-banana');
+if (hubSelectBanana) hubSelectBanana.addEventListener('click', switchToBananaGame);
+
+const hubSelectMole = document.getElementById('hub-select-mole');
+if (hubSelectMole) hubSelectMole.addEventListener('click', switchToMoleGame);
+
+const btnBackToHub = document.getElementById('btn-back-to-hub');
+if (btnBackToHub) btnBackToHub.addEventListener('click', switchToHub);
+
+const btnSwitchHub = document.getElementById('btn-switch-hub');
+if (btnSwitchHub) btnSwitchHub.addEventListener('click', switchToHub);
+
+const btnGameOverHub = document.getElementById('btn-gameover-hub');
+if (btnGameOverHub) btnGameOverHub.addEventListener('click', switchToHub);
+
+
+// =========================================================================
 // 메인 게임 루프
 // =========================================================================
 let lastTime = performance.now();
@@ -1272,7 +1351,6 @@ function gameLoop(now) {
                 updateHUD();
             },
             onShield: (item) => {
-                // 🛡️ 무적 방패: 지속시간을 1.8초로 대폭 단축하고 스폰율을 낮춰 긴장감 극대화!
                 sound.playSpecialItem();
                 const earned = Math.round(25 * routeScoreMultiplier);
                 score += earned;
@@ -1285,7 +1363,6 @@ function gameLoop(now) {
                 updateHUD();
             },
             onSuperJump: (item) => {
-                // 🚀 슈퍼점프: 지속시간 2.5초로 단축!
                 sound.playSpecialItem();
                 const earned = Math.round(30 * routeScoreMultiplier);
                 score += earned;
@@ -1298,7 +1375,6 @@ function gameLoop(now) {
                 updateHUD();
             },
             onWukong: (item) => {
-                // 👑 손오공 진화 (체력 대폭 올리기 + 근두운/여의봉/긴고아 장착)!
                 sound.playWukongEvolution();
                 const earned = Math.round(50 * routeScoreMultiplier);
                 score += earned;
@@ -1312,7 +1388,6 @@ function gameLoop(now) {
                 updateHUD();
             },
             onLaserGun: (item) => {
-                // 🔫 신규 특별 아이템: 레이저총 (4초 동안 유저가 있는 레인의 기물을 모두 자동 파괴!)
                 sound.playLaserGun();
                 const earned = Math.round(40 * routeScoreMultiplier);
                 score += earned;
@@ -1325,7 +1400,6 @@ function gameLoop(now) {
                 updateHUD();
             },
             onLaserDestroy: (obs) => {
-                // ⚡ 레이저 빔이 현재 레인의 기물을 명중시켜 증발시켰을 때!
                 sound.playLaserZap();
                 const earned = Math.round(25 * routeScoreMultiplier);
                 score += earned;
@@ -1346,7 +1420,6 @@ function gameLoop(now) {
                 updateHUD();
             },
             onChaserSpawn: (chaserType) => {
-                // 스테이지별 전용 돌진 위협 기물 효과음 재생!
                 if (chaserType === 'rolling_stone') sound.playRollingStone();
                 else if (chaserType === 'desert_scorpion') sound.playScorpionSound();
                 else if (chaserType === 'undersea_shark') sound.playSharkSound();
@@ -1375,16 +1448,26 @@ function gameLoop(now) {
 
                 sound.playHit();
                 hero.triggerStumble();
-                dragon.onPlayerMistake(25);
+                dragon.onPlayerMistake(12);
 
-                // 체력 100 기준 명확한 데미지: 기물 1회 충돌 시 HP -25 감소!
-                const dmg = 25;
+                // 체력 100 기준 부담 없는 데미지: 기물 1회 충돌 시 HP -12 감소
+                const dmg = 12;
                 hero.hp = Math.max(0, hero.hp - dmg);
 
-                track.addPopup(p.x, p.y - 65, `쾅!! 기물 충돌 HP -${dmg} (남은 HP: ${hero.hp}/${hero.maxHp}) 💥`, '#e63946');
+                if (obs && obs.type === 'arch') {
+                    track.addPopup(p.x, p.y - 65, `쾅!! 아치에 머리 충돌 HP -${dmg} (슬라이드 필수!) 💥`, '#e63946');
+                    bubbleEn.textContent = `OUCH!! HIT THE ARCH! SLIDE (↓) UNDER! (-${dmg} HP)`;
+                    bubbleKo.textContent = `"아야! 아치 관문은 점프하면 머리를 부딪혀! 슬라이드(↓)로 통과해야 해!"`;
+                } else if (obs && obs.type === 'pillar') {
+                    track.addPopup(p.x, p.y - 65, `쾅!! 석조 기둥 충돌 HP -${dmg} (좌우 회피 필수!) 💥`, '#e63946');
+                    bubbleEn.textContent = `OUCH!! HIT THE PILLAR! DODGE LEFT/RIGHT! (-${dmg} HP)`;
+                    bubbleKo.textContent = `"아야! 거대한 기둥은 점프로 못 넘어! 좌우(←/→)로 피해야 해!"`;
+                } else {
+                    track.addPopup(p.x, p.y - 65, `쾅!! 기물 충돌 HP -${dmg} (남은 HP: ${hero.hp}/${hero.maxHp}) 💥`, '#e63946');
+                    bubbleEn.textContent = `HIT!! -${dmg} HP! (HP: ${hero.hp}/${hero.maxHp}) DODGE OR JUMP!`;
+                    bubbleKo.textContent = `"으악! 기물에 부딪혀서 HP가 -${dmg} 깎였어! (현재 HP: ${hero.hp}/${hero.maxHp})"`;
+                }
                 track.addBurstParticles(p.x, p.y - 35, '#e63946', 18);
-                bubbleEn.textContent = `HIT!! -${dmg} HP! (HP: ${hero.hp}/${hero.maxHp}) DODGE OR JUMP!`;
-                bubbleKo.textContent = `"으악! 기물에 부딪혀서 HP가 -${dmg} 깎였어! (현재 HP: ${hero.hp}/${hero.maxHp})"`;
                 updateHUD();
 
                 if (hero.hp <= 0) {
@@ -1438,10 +1521,10 @@ function gameLoop(now) {
                 }
                 sound.playHit();
                 hero.triggerStumble();
-                dragon.onPlayerMistake(30);
+                dragon.onPlayerMistake(15);
 
-                // 오답 문 충돌 시 체력 -30 감소!
-                const wrongDmg = 30;
+                // 오답 문 충돌 시 체력 감소도 30에서 15로 대폭 완화!
+                const wrongDmg = 15;
                 hero.hp = Math.max(0, hero.hp - wrongDmg);
 
                 track.addPopup(p.x, p.y - 95, `땡! 오답 충돌! HP -${wrongDmg} (정답:${gate.answer}) 💥`, '#e63946');

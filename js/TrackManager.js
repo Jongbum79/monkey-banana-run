@@ -256,7 +256,7 @@ class TrackManager {
         // 톰 골드런 스타일 경사로(ramp) 또는 멈춰있는 트럭/버스(climb_truck) 지붕 위에 올라가 있는지 판정
         let onRampHeight = 0;
 
-        // 장애물 업데이트 및 충돌 (모든 기물이 누락 없이 확실하게 데미지를 주도록 판정 전면 개선!)
+        // 장애물 업데이트 및 충돌
         for (let i = this.obstacles.length - 1; i >= 0; i--) {
             const obs = this.obstacles[i];
             const isChaser = this.isMovingChaserType(obs.type);
@@ -296,9 +296,6 @@ class TrackManager {
                     }
                 }
             } else if (obs.type === 'climb_truck') {
-                // 2) 멈춘 대형 트럭/버스(climb_truck):
-                // 점프해서 올라타거나(hero.y > 22) 이미 높은 플랫폼 위에 있으면 트럭 지붕 위를 달릴 수 있고,
-                // 점프하지 않고 맨땅에서 트럭 정면에 그대로 부딪히면 다른 장애물과 동일하게 충돌 데미지(-25 HP)가 들어감!
                 if (obs.z > 0.68 && obs.z < 1.05 && Math.abs(hero.laneX - obs.lane) < 0.36) {
                     if (obs.climbing || hero.y > 22 || hero.platformY > 36) {
                         obs.climbing = true;
@@ -313,21 +310,25 @@ class TrackManager {
                     }
                 }
             } else if (!obs.hit) {
-                // 3) 모든 공격형 장애물(통나무, 허들, 아치, 기둥, 이동 기물, 스테이지별 돌진 기물)
-                // 요청 반영: 히트박스를 컴팩트하게 줄여(레인 ±0.32, Z: 0.86 ~ 1.01) 억울한 충돌 방지 및 쾌적한 플레이!
                 if (obs.z > 0.86 && obs.z < 1.01 && Math.abs(hero.laneX - obs.lane) < 0.32) {
                     let avoided = false;
                     const totalHeroHeight = hero.y + hero.platformY;
-
-                    if (
+                    // ⛩️ 슬라이딩 전용 기물(arch): 오직 바닥에서 슬라이딩(hero.isSliding)할 때만 안전하게 아래로 통과!
+                    if (obs.type === 'arch') {
+                        if (hero.isSliding && hero.y < 30 && !hero.isJumping) {
+                            avoided = true;
+                        } else {
+                            avoided = false;
+                        }
+                    } else if (
                         (obs.type === 'log' || obs.type === 'hurdle' || isChaser || obs.type === 'moving_barrier') &&
                         totalHeroHeight > 44
                     ) {
                         avoided = true;
-                    } else if ((obs.type === 'arch' || obs.type === 'pillar') && totalHeroHeight > 130) {
-                        avoided = true;
-                    } else if (obs.type === 'arch' && hero.isSliding) {
-                        avoided = true;
+                    } else if (obs.type === 'pillar') {
+                        if (hero.superJumpTimer > 0 && totalHeroHeight > 240) {
+                            avoided = true;
+                        }
                     }
 
                     if (!avoided) {
@@ -450,12 +451,12 @@ class TrackManager {
             let itemType = 'coin';
             if (i === count - 1) {
                 const r = Math.random();
-                // 특별 아이템 등장 확률 (총 22% 내에 레이저총 포함!)
-                if (r < 0.035) itemType = 'shield';
-                else if (r < 0.080) itemType = 'super_jump';
-                else if (r < 0.125) itemType = 'wukong';
-                else if (r < 0.180) itemType = 'laser_gun'; // 🔫 4초간 유저 레인 기물 자동 파괴 레이저총!
-                else if (r < 0.220) itemType = 'banana';
+                // 특별 아이템 등장 확률 (방패, 슈퍼점프, 손오공, 레이저총)
+                if (r < 0.04) itemType = 'shield';
+                else if (r < 0.09) itemType = 'super_jump';
+                else if (r < 0.14) itemType = 'wukong';
+                else if (r < 0.20) itemType = 'laser_gun'; // 🔫 레이저총
+                else if (r < 0.28) itemType = 'banana';
             }
             this.items.push({
                 lane,
@@ -5041,6 +5042,7 @@ class TrackManager {
 
         ctx.fillStyle = '#ffd166';
         ctx.fillText(scoreText, scX + 18, 42);
+
         ctx.restore();
     }
 }

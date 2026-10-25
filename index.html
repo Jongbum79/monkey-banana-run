@@ -18,9 +18,66 @@
         <div class="bubble-dot-2"></div>
     </div>
 
-    <!-- 메인 게임 캔버스 -->
+    <!-- 메인 게임 캔버스 (바나나 런) -->
     <div id="canvas-container">
         <canvas id="game-canvas"></canvas>
+    </div>
+
+    <!-- 🔨 7구멍 두더지 잡기 게임 컨테이너 -->
+    <div id="mole-game-container" class="mole-container" style="display: none;">
+        <!-- 상단 전용 스코어보드 -->
+        <div class="mole-scoreboard-box">
+            <div class="mole-scoreboard-top">
+                <span class="mole-tag">🔨 SMILE GAMES ARCADE</span>
+                <div class="mole-ctrl-btns">
+                    <button type="button" class="mole-btn" id="btn-mole-restart">🔄 2분 다시 시작</button>
+                    <button type="button" class="mole-btn mole-btn-hub" id="btn-mole-hub">🎮 게임 선택</button>
+                </div>
+            </div>
+            <h2 class="mole-title">🔨 신나는 두더지 잡기!</h2>
+            
+            <div class="mole-stats-grid">
+                <div class="mole-stat-card timer-card">
+                    <span class="stat-label">⏱️ 남은 시간 (2분)</span>
+                    <span class="stat-value" id="mole-time">02:00</span>
+                </div>
+                <div class="mole-stat-card score-card">
+                    <span class="stat-label">🪙 현재 점수</span>
+                    <span class="stat-value" id="mole-score">0</span>
+                </div>
+                <div class="mole-stat-card combo-card">
+                    <span class="stat-label">🔥 연속 콤보</span>
+                    <span class="stat-value" id="mole-combo">0 COMBO</span>
+                </div>
+                <div class="mole-stat-card acc-card">
+                    <span class="stat-label">🎯 적중률</span>
+                    <span class="stat-value" id="mole-accuracy">100% (0/0)</span>
+                </div>
+                <div class="mole-stat-card best-card">
+                    <span class="stat-label">🏆 역대 최고 기록</span>
+                    <span class="stat-value" id="mole-best-score">8,600점 (최지훈)</span>
+                </div>
+            </div>
+
+            <div class="mole-guide-banner">
+                📱 <strong>테블릿 터치:</strong> 구멍을 직접 터치하면 즉시 망치로 타격! &nbsp;|&nbsp; ⌨️ <strong>키보드:</strong> 구멍 상단 번호 <strong>[ 1 ] ~ [ 7 ]</strong> 키를 누르세요!
+            </div>
+        </div>
+
+        <!-- 7개 구멍 필드 (상단 3개: 1~3, 하단 4개: 4~7) -->
+        <div class="mole-playfield">
+            <div class="mole-grid-row" id="mole-grid-top"></div>
+            <div class="mole-grid-row" id="mole-grid-bottom"></div>
+        </div>
+
+        <!-- 두더지 잡기 나무 망치 -->
+        <div class="mole-hammer" id="mole-hammer">
+            <div class="hammer-head">
+                <div class="hammer-ring left"></div>
+                <div class="hammer-ring right"></div>
+            </div>
+            <div class="hammer-handle"></div>
+        </div>
     </div>
 
     <!-- UI 오버레이 -->
@@ -75,6 +132,7 @@
             <img src="assets/images/monkey_snoopy.jpg" alt="스누피 컨셉 아트 원본">
             <span>🐾 스누피 3D 카툰</span>
             <button class="rank-open-btn" id="btn-open-rank">🏆 랭킹 & 이름변경</button>
+            <button class="rank-open-btn" id="btn-switch-hub" style="background:#ffd166; margin-top:4px;">🎮 게임 선택 허브</button>
         </div>
 
         <!-- 하단 컨트롤 바 & 서명 -->
@@ -145,8 +203,54 @@
         </div>
     </div>
 
-    <!-- 1. 시작 화면: 플레이어 이름 입력 & 명예의 전당 랭킹 모달 -->
-    <div class="modal-backdrop active" id="start-modal">
+    <!-- 🎮 0. 게임 선택 허브 모달 (바나나 게임 vs 두더지 게임) -->
+    <div class="modal-backdrop active" id="hub-modal">
+        <div class="modal-card hub-modal-card">
+            <span class="company-tag" style="margin-bottom:8px;">Smile Games Arcade Collection</span>
+            <h2 style="font-size:32px; color:#1a1612; margin-bottom:4px;">🎮 플레이할 게임을 선택하세요!</h2>
+            <p style="font-size:16px; color:#5c4938; margin-bottom:18px;">
+                개발팀: <strong>최지훈, 박주아, 김이수, 최우영, 전준우</strong>
+            </p>
+
+            <div class="hub-cards-container">
+                <!-- 1. 바나나 게임 카드 -->
+                <div class="hub-game-card hub-card-banana" id="hub-select-banana">
+                    <div class="hub-card-badge">인기 No.1 러너</div>
+                    <div class="hub-card-icon">🍌</div>
+                    <h3 class="hub-card-title">원숭이의 바나나 런 3D</h3>
+                    <p class="hub-card-desc">
+                        흥덕초등학교를 향한 5개 스테이지 대질주! 🪨바위와 🦂전갈을 피하고, 6학년 사칙연산 문제를 풀며 드래곤을 따돌리세요!
+                    </p>
+                    <ul class="hub-card-features">
+                        <li>✔️ 3D 무한 질주 & 점프 / 슬라이딩 액션</li>
+                        <li>✔️ 4종 캐릭터 (개구리, 호랑이, 펭귄, 원숭이)</li>
+                        <li>✔️ 갈림길 2종 도로 선택 & 등수 셔플 룰렛</li>
+                    </ul>
+                    <button type="button" class="hub-card-play-btn hub-btn-banana">🍌 바나나 런 시작하기 ▶</button>
+                </div>
+
+                <!-- 2. 두더지 게임 카드 -->
+                <div class="hub-game-card hub-card-mole" id="hub-select-mole">
+                    <div class="hub-card-badge mole-badge">신규 오픈! 두더지 챌린지</div>
+                    <div class="hub-card-icon">🔨</div>
+                    <h3 class="hub-card-title">신나는 두더지 잡기!</h3>
+                    <p class="hub-card-desc">
+                        귀여운 선글라스를 낀 두더지들이 땅속에서 쏙쏙! 7개의 구멍에서 튀어나오는 두더지를 망치로 신나게 잡아보세요!
+                    </p>
+                    <ul class="hub-card-features">
+                        <li>✔️ 정확히 2분(120초) 카운트다운 타이머</li>
+                        <li>✔️ 정확히 7개의 구멍 & 귀여운 선글라스 두더지</li>
+                        <li>✔️ 테블릿 터치 & 키보드 [1]~[7] 완벽 지원</li>
+                        <li>✔️ 황금 두더지(+300) & 폭탄병(-150) 스릴만점!</li>
+                    </ul>
+                    <button type="button" class="hub-card-play-btn hub-btn-mole">🔨 두더지 잡기 시작하기 ▶</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. 시작 화면: 바나나 런 플레이어 이름 입력 & 명예의 전당 랭킹 모달 -->
+    <div class="modal-backdrop" id="start-modal">
         <div class="modal-card">
             <span class="company-tag" style="margin-bottom:8px;">Smile Games Presents</span>
             <h2>🍌 원숭이의 바나나 런</h2>
@@ -202,6 +306,7 @@
             <div class="name-input-group">
                 <input type="text" id="player-name-input" class="name-input" placeholder="6학년 도전자 이름 입력" maxlength="12" />
                 <button class="start-btn" id="btn-start-game">🚀 출발!</button>
+                <button type="button" class="start-btn" id="btn-back-to-hub" style="background:#e0e1dd; font-size:18px; padding:10px 16px;">🎮 게임 선택</button>
             </div>
 
             <div class="ranking-box">
@@ -211,7 +316,7 @@
         </div>
     </div>
 
-    <!-- 2. 게임 오버 / 학교 도착 클리어 & 랭킹 결과 모달 -->
+    <!-- 2. 게임 오버 / 학교 도착 클리어 & 랭킹 결과 모달 (바나나 런) -->
     <div class="modal-backdrop" id="gameover-modal">
         <div class="modal-card">
             <h2 id="gameover-title">🐉 게임 오버!</h2>
@@ -225,7 +330,7 @@
 
             <!-- 🎰 실시간 등수 셔플 룰렛 & 세리머니 박스 -->
             <div class="rank-roulette-container" id="rank-roulette-container">
-                <div class="roulette-header" id="roulette-header">🎲 실시간 흥덕초등학교 랭킹 산출 중...</div>
+                <div class="roulette-header" id="roulette-header">🎲 실시간 공식 랭킹 산출 중...</div>
                 <div class="roulette-display" id="roulette-display">
                     <span class="roulette-num" id="roulette-num">???위</span>
                 </div>
@@ -254,9 +359,40 @@
                 <ul class="ranking-list" id="gameover-ranking-list"></ul>
             </div>
 
-            <div style="display:flex; gap:10px; justify-content:center; margin-top:16px;">
+            <div style="display:flex; gap:10px; justify-content:center; margin-top:16px; flex-wrap:wrap;">
                 <button class="restart-btn" id="btn-restart">🍌 다시 도전하기! (Enter)</button>
                 <button class="restart-btn" id="btn-change-name" style="background:#90e0ef;">✏️ 이름 바꾸기</button>
+                <button class="restart-btn" id="btn-gameover-hub" style="background:#ffd166;">🎮 게임 선택</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔨 3. 두더지 게임 타임오버 / 게임 오버 모달 -->
+    <div class="modal-backdrop" id="mole-gameover-modal">
+        <div class="modal-card mole-gameover-card">
+            <span class="company-tag">⏰ 2분 타임 업! (TIME UP!)</span>
+            <h2 style="font-size:30px; margin-top:4px;">🔨 두더지 잡기 완료!</h2>
+            <p style="font-size:16px; color:#5c4938; margin-bottom:8px;">
+                2분 동안 두더지들을 신나게 잡으셨습니다!
+            </p>
+            <div class="mole-result-banner">
+                <div class="result-score-main">최종 점수: <span id="mole-final-score" style="color:#d64531; font-weight:900;">0점</span></div>
+                <div class="result-sub-stats">
+                    <div>🔥 최대 콤보: <strong id="mole-final-combo">0 연속</strong></div>
+                    <div>🎯 적중률: <strong id="mole-final-accuracy">0%</strong></div>
+                    <div>🐾 잡은 기록: <strong id="mole-final-caught">0마리</strong></div>
+                </div>
+            </div>
+
+            <div class="ranking-box">
+                <h3>🏆 두더지 잡기 명예의 전당 (Top 10)</h3>
+                <ul class="ranking-list" id="mole-gameover-ranking-list"></ul>
+            </div>
+
+            <div style="display:flex; gap:10px; justify-content:center; margin-top:16px; flex-wrap:wrap;">
+                <button class="restart-btn" id="btn-mole-gameover-restart">🔨 2분 다시 도전하기</button>
+                <button class="restart-btn" id="btn-mole-gameover-run" style="background:#bde0fe;">🍌 바나나 런 하러 가기</button>
+                <button class="restart-btn" id="btn-mole-gameover-hub" style="background:#ffd166;">🎮 게임 선택 허브</button>
             </div>
         </div>
     </div>
@@ -267,6 +403,7 @@
     <script src="js/TrackManager.js"></script>
     <script src="js/MathGate.js"></script>
     <script src="js/Dragon.js"></script>
+    <script src="js/MoleGame.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>

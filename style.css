@@ -999,3 +999,756 @@ body.is-playing .concept-badge {
 .road-card-action.danger {
     background: linear-gradient(135deg, #e11d48, #be123c);
 }
+
+/* =========================================================================
+   🎮 0. 게임 허브 모달 (바나나 런 vs 두더지 잡기 게임)
+   ========================================================================= */
+.hub-modal-card {
+    max-width: 900px !important;
+    width: 94% !important;
+    padding: 24px 28px !important;
+    background: #fffdf5 !important;
+    border: 4px solid #1a1612 !important;
+    border-radius: 32px !important;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25), 6px 6px 0px #1a1612 !important;
+}
+
+.hub-cards-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px;
+    margin-top: 10px;
+}
+
+.hub-game-card {
+    background: #ffffff;
+    border: 3.5px solid #1a1612;
+    border-radius: 24px;
+    padding: 20px 22px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    cursor: pointer;
+    box-shadow: 4px 4px 0px #1a1612;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s;
+}
+
+.hub-game-card:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 6px 12px 24px rgba(0, 0, 0, 0.15), 5px 5px 0px #1a1612;
+}
+
+.hub-card-badge {
+    position: absolute;
+    top: -12px;
+    background: #10b981;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 800;
+    padding: 4px 14px;
+    border-radius: 9999px;
+    border: 2px solid #1a1612;
+    box-shadow: 2px 2px 0px #1a1612;
+}
+
+.hub-card-badge.mole-badge {
+    background: #d97706;
+}
+
+.hub-card-icon {
+    font-size: 58px;
+    line-height: 1;
+    margin: 12px 0 8px;
+    filter: drop-shadow(2px 3px 0px rgba(0, 0, 0, 0.15));
+}
+
+.hub-card-title {
+    font-size: 25px;
+    font-weight: 900;
+    color: #1a1612;
+    margin-bottom: 6px;
+}
+
+.hub-card-desc {
+    font-size: 15.5px;
+    font-weight: 600;
+    color: #4b5563;
+    line-height: 1.4;
+    margin-bottom: 12px;
+    flex-grow: 1;
+}
+
+.hub-card-features {
+    list-style: none;
+    text-align: left;
+    width: 100%;
+    font-size: 14px;
+    font-weight: 700;
+    color: #374151;
+    background: #f8fafc;
+    border: 2px dashed #cbd5e1;
+    border-radius: 14px;
+    padding: 10px 14px;
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.hub-card-play-btn {
+    width: 100%;
+    font-family: 'Gaegu', cursive;
+    font-size: 21px;
+    font-weight: 700;
+    padding: 12px 20px;
+    border-radius: 9999px;
+    border: 3px solid #1a1612;
+    cursor: pointer;
+    box-shadow: 3px 3px 0px #1a1612;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.hub-btn-banana {
+    background: linear-gradient(135deg, #facc15, #eab308);
+    color: #1a1612;
+}
+
+.hub-btn-mole {
+    background: linear-gradient(135deg, #fb923c, #ea580c);
+    color: #ffffff;
+}
+
+.hub-card-play-btn:hover {
+    transform: scale(1.03);
+}
+
+.hub-card-play-btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0px #1a1612;
+}
+
+/* =========================================================================
+   🔨 1. 7구멍 두더지 게임 컨테이너 & 스코어보드
+   ========================================================================= */
+.mole-container {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    background: radial-gradient(circle at 50% 25%, #86efac 0%, #4ade80 40%, #15803d 90%, #14532d 100%);
+    overflow: hidden;
+    padding: 18px 24px;
+    user-select: none;
+    box-sizing: border-box;
+}
+
+/* 상단 전용 스코어보드 박스 */
+.mole-scoreboard-box {
+    background: #fffcf5;
+    border: 4px solid #1a1612;
+    border-radius: 26px;
+    padding: 14px 22px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2), 4px 4px 0px #1a1612;
+    max-width: 980px;
+    width: 100%;
+    margin: 0 auto 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 20;
+}
+
+.mole-scoreboard-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.mole-tag {
+    background: #1e293b;
+    color: #f8fafc;
+    font-size: 13px;
+    font-weight: 800;
+    padding: 3px 12px;
+    border-radius: 9999px;
+    letter-spacing: 0.5px;
+}
+
+.mole-ctrl-btns {
+    display: flex;
+    gap: 8px;
+}
+
+.mole-btn {
+    font-family: 'Gaegu', cursive;
+    font-size: 17px;
+    font-weight: 700;
+    padding: 4px 14px;
+    border: 2px solid #1a1612;
+    border-radius: 9999px;
+    background: #f1f5f9;
+    color: #1a1612;
+    cursor: pointer;
+    box-shadow: 2px 2px 0px #1a1612;
+    transition: transform 0.1s, background 0.15s;
+}
+
+.mole-btn:hover {
+    background: #e2e8f0;
+    transform: translateY(-1px);
+}
+
+.mole-btn-hub {
+    background: #fef08a;
+}
+
+.mole-btn-hub:hover {
+    background: #fde047;
+}
+
+.mole-title {
+    font-size: 26px;
+    font-weight: 900;
+    color: #854d0e;
+    text-align: center;
+    margin: 0;
+    letter-spacing: -0.3px;
+    text-shadow: 1px 1px 0px #fef08a;
+}
+
+.mole-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+}
+
+.mole-stat-card {
+    background: #f8fafc;
+    border: 2.5px solid #1a1612;
+    border-radius: 16px;
+    padding: 6px 10px;
+    text-align: center;
+    box-shadow: 2px 2px 0px #1a1612;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.mole-stat-card .stat-label {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #64748b;
+    white-space: nowrap;
+}
+
+.mole-stat-card .stat-value {
+    font-family: 'Comic Neue', 'Gaegu', cursive;
+    font-size: 24px;
+    font-weight: 900;
+    color: #0f172a;
+    line-height: 1.1;
+    margin-top: 2px;
+    white-space: nowrap;
+}
+
+.timer-card {
+    background: #fee2e2;
+}
+
+.timer-card .stat-value {
+    color: #dc2626;
+}
+
+.timer-card .stat-value.urgent-time {
+    animation: urgentPulse 0.45s infinite alternate;
+}
+
+@keyframes urgentPulse {
+    from { color: #dc2626; transform: scale(1); }
+    to { color: #7f1d1d; transform: scale(1.14); }
+}
+
+.score-card {
+    background: #fef3c7;
+}
+
+.score-card .stat-value {
+    color: #b45309;
+}
+
+.combo-card {
+    background: #ffedd5;
+}
+
+.combo-card .stat-value {
+    color: #ea580c;
+}
+
+.combo-boost {
+    animation: comboPop 0.3s ease-out;
+}
+
+@keyframes comboPop {
+    0% { transform: scale(0.9); }
+    50% { transform: scale(1.15); }
+    100% { transform: scale(1); }
+}
+
+.acc-card {
+    background: #e0f2fe;
+}
+
+.acc-card .stat-value {
+    color: #0369a1;
+}
+
+.best-card {
+    background: #f3e8ff;
+}
+
+.best-card .stat-value {
+    color: #7e22ce;
+    font-size: 19px;
+}
+
+.mole-guide-banner {
+    background: #e2e8f0;
+    border: 2px dashed #94a3b8;
+    border-radius: 12px;
+    padding: 5px 12px;
+    font-size: 14.5px;
+    font-weight: 700;
+    color: #334155;
+    text-align: center;
+}
+
+/* =========================================================================
+   🕳️ 2. 정확히 7개의 구멍 배치 & 두더지 필드 (상단 3개, 하단 4개)
+   ========================================================================= */
+.mole-playfield {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    max-width: 1040px;
+    width: 100%;
+    margin: 0 auto;
+    position: relative;
+    z-index: 15;
+}
+
+.mole-grid-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 22px;
+    width: 100%;
+}
+
+.mole-hole-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* 구멍 상단 키보드 숫자 배지 [ 1 ] ~ [ 7 ] */
+.mole-key-badge {
+    background: #facc15;
+    border: 3px solid #1a1612;
+    border-radius: 9999px;
+    padding: 2px 14px;
+    margin-bottom: 6px;
+    box-shadow: 2px 2px 0px #1a1612;
+    transition: transform 0.1s, background 0.1s;
+    pointer-events: none;
+}
+
+.mole-key-badge .badge-num {
+    font-family: 'Comic Neue', 'Gaegu', cursive;
+    font-size: 20px;
+    font-weight: 900;
+    color: #1a1612;
+}
+
+.mole-key-badge.badge-active {
+    background: #f97316;
+    transform: scale(1.25) translateY(-3px);
+}
+
+/* 3D 흙더미 구멍 */
+.mole-mound {
+    width: 130px;
+    height: 110px;
+    position: relative;
+    background: radial-gradient(ellipse at 50% 40%, #1c1917 0%, #292524 55%, #44403c 85%, #57534e 100%);
+    border: 4px solid #1a1612;
+    border-radius: 50% / 40%;
+    box-shadow: inset 0 10px 18px rgba(0, 0, 0, 0.85), 0 10px 20px rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+}
+
+/* 두더지 캐릭터 액터 */
+.mole-actor {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%) translateY(120%);
+    width: 100px;
+    height: 110px;
+    transition: transform 0.16s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    pointer-events: none;
+}
+
+.mole-actor.mole-visible {
+    transform: translateX(-50%) translateY(4%);
+}
+
+.mole-actor.mole-hiding {
+    transform: translateX(-50%) translateY(120%);
+    transition: transform 0.22s ease-in;
+}
+
+.mole-actor.mole-bonked {
+    animation: moleBonkSquash 0.55s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes moleBonkSquash {
+    0% {
+        transform: translateX(-50%) translateY(16%) scale(1.48, 0.38);
+        filter: brightness(1.9) drop-shadow(0 0 18px #facc15);
+    }
+    18% {
+        transform: translateX(-50%) translateY(-10%) scale(0.85, 1.3) rotate(-14deg);
+        filter: brightness(1.2);
+    }
+    40% {
+        transform: translateX(-50%) translateY(2%) scale(1.15, 0.9) rotate(10deg);
+    }
+    65% {
+        transform: translateX(-50%) translateY(8%) scale(0.95, 1.05) rotate(-6deg);
+    }
+    85% {
+        transform: translateX(-50%) translateY(18%) scale(0.9);
+        opacity: 0.9;
+    }
+    100% {
+        transform: translateX(-50%) translateY(120%) scale(0.85);
+        opacity: 0;
+    }
+}
+
+.mole-actor.bomb-exploded {
+    animation: bombExplodeShake 0.4s ease-out;
+}
+
+@keyframes bombExplodeShake {
+    0% { transform: translateX(-50%) translateY(4%) scale(1.3); filter: brightness(2) drop-shadow(0 0 20px #ef4444); }
+    50% { transform: translateX(-50%) translateY(-10%) scale(0.7) rotate(20deg); filter: grayscale(1); }
+    100% { transform: translateX(-50%) translateY(120%); opacity: 0; }
+}
+
+/* 구멍 앞 흙/잔디 마스크 립 */
+.mole-mound-lip {
+    position: absolute;
+    bottom: -6px;
+    left: -4px;
+    right: -4px;
+    height: 38px;
+    background: radial-gradient(ellipse at 50% 10%, #78350f 0%, #572207 60%, #3e1603 100%);
+    border-top: 3.5px solid #1a1612;
+    border-radius: 50% / 70% 70% 30% 30%;
+    pointer-events: none;
+    box-shadow: 0 -3px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* 두더지 SVG 내부 세부 애니메이션 */
+.fuse-spark {
+    animation: sparkFlicker 0.15s infinite alternate;
+}
+
+@keyframes sparkFlicker {
+    from { r: 5; fill: #ef4444; }
+    to { r: 8; fill: #fbbf24; }
+}
+
+.gold-sparkle {
+    animation: starRotate 0.6s infinite linear;
+    transform-origin: 50px 24px;
+}
+
+@keyframes starRotate {
+    from { transform: rotate(0deg) scale(0.8); }
+    to { transform: rotate(180deg) scale(1.2); }
+}
+
+/* 타격 시 팝업 버블 (쾅!, +100, 헛스윙 등) */
+.mole-hit-popup {
+    position: absolute;
+    top: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    pointer-events: none;
+    z-index: 40;
+}
+
+.popup-bubble {
+    font-family: 'Comic Neue', 'Gaegu', cursive;
+    font-size: 24px;
+    font-weight: 900;
+    padding: 4px 14px;
+    border-radius: 9999px;
+    border: 3px solid #1a1612;
+    white-space: nowrap;
+    box-shadow: 3px 3px 0px #1a1612;
+    animation: popupFly 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.popup-bubble.hit-normal {
+    background: #facc15;
+    color: #1a1612;
+}
+
+.popup-bubble.hit-gold {
+    background: linear-gradient(135deg, #fef08a, #eab308);
+    color: #78350f;
+    font-size: 26px;
+    border-color: #78350f;
+}
+
+.popup-bubble.hit-bomb {
+    background: #ef4444;
+    color: #ffffff;
+    font-size: 26px;
+}
+
+.popup-bubble.hit-miss {
+    background: #e2e8f0;
+    color: #64748b;
+    font-size: 18px;
+}
+
+@keyframes popupFly {
+    0% { transform: translateY(0) scale(0.6); opacity: 0; }
+    20% { transform: translateY(-16px) scale(1.2); opacity: 1; }
+    80% { transform: translateY(-36px) scale(1.0); opacity: 1; }
+    100% { transform: translateY(-48px) scale(0.85); opacity: 0; }
+}
+
+/* =========================================================================
+   🔨 3. 나무 망치 (Hammer) 스타일 & 쾅! 타격 애니메이션
+   ========================================================================= */
+.mole-hammer {
+    position: fixed;
+    width: 90px;
+    height: 100px;
+    pointer-events: none;
+    z-index: 999;
+    transform: translate(-30%, -70%) rotate(-25deg);
+    transition: transform 0.05s ease-out;
+    transform-origin: 30% 80%;
+}
+
+.hammer-head {
+    width: 65px;
+    height: 42px;
+    background: linear-gradient(180deg, #92400e 0%, #78350f 50%, #451a03 100%);
+    border: 3.5px solid #1a1612;
+    border-radius: 10px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    box-shadow: inset 0 4px 6px rgba(255, 255, 255, 0.25), 3px 3px 0px rgba(0, 0, 0, 0.4);
+}
+
+.hammer-ring {
+    position: absolute;
+    width: 8px;
+    height: 42px;
+    background: #94a3b8;
+    border-left: 2px solid #1a1612;
+    border-right: 2px solid #1a1612;
+    top: -3.5px;
+}
+
+.hammer-ring.left { left: 8px; }
+.hammer-ring.right { right: 8px; }
+
+.hammer-handle {
+    width: 14px;
+    height: 75px;
+    background: linear-gradient(90deg, #fef08a 0%, #eab308 50%, #ca8a04 100%);
+    border: 3px solid #1a1612;
+    border-radius: 6px;
+    position: absolute;
+    top: 36px;
+    left: 24px;
+    box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.35);
+}
+
+/* 망치 쾅! 스윙 애니메이션 */
+.mole-hammer.swinging {
+    animation: hammerSwingSmash 0.18s cubic-bezier(0.12, 0.8, 0.32, 1) forwards;
+}
+
+@keyframes hammerSwingSmash {
+    0% { transform: translate(-30%, -70%) rotate(-45deg) scale(1.15); }
+    40% { transform: translate(-30%, -50%) rotate(25deg) scale(1.25); }
+    70% { transform: translate(-30%, -55%) rotate(15deg) scale(1.1); }
+    100% { transform: translate(-30%, -70%) rotate(-25deg) scale(1); }
+}
+
+/* 망치 타격 충격파 */
+.hammer-impact-shockwave {
+    position: fixed;
+    width: 80px;
+    height: 40px;
+    border: 4px solid #facc15;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 998;
+    animation: shockwaveExpand 0.35s ease-out forwards;
+}
+
+@keyframes shockwaveExpand {
+    0% { transform: translate(-50%, -50%) scale(0.2); opacity: 1; border-color: #fef08a; }
+    60% { border-color: #f59e0b; }
+    100% { transform: translate(-50%, -50%) scale(2.2); opacity: 0; }
+}
+
+.shake-screen {
+    animation: screenShake 0.28s ease-in-out;
+}
+
+@keyframes screenShake {
+    0%, 100% { transform: translate(0, 0); }
+    20% { transform: translate(-8px, 6px); }
+    40% { transform: translate(7px, -6px); }
+    60% { transform: translate(-5px, 3px); }
+    80% { transform: translate(4px, -2px); }
+}
+
+/* 💥 망치 타격 코믹 버스트 효과 (쾅! / 대박!) */
+.comic-smash-burst {
+    position: fixed;
+    transform: translate(-50%, -50%) scale(0.5);
+    font-family: 'Comic Neue', 'Gaegu', cursive;
+    font-size: 34px;
+    font-weight: 900;
+    color: #ffffff;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    -webkit-text-stroke: 1.5px #1a1612;
+    padding: 6px 20px;
+    border-radius: 9999px;
+    border: 3.5px solid #1a1612;
+    box-shadow: 0 0 25px rgba(239, 68, 68, 0.7), 3px 3px 0px #1a1612;
+    pointer-events: none;
+    z-index: 1000;
+    animation: smashBurstPop 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.comic-smash-burst.burst-gold {
+    background: linear-gradient(135deg, #facc15, #eab308);
+    color: #78350f;
+    -webkit-text-stroke: 1.5px #78350f;
+    box-shadow: 0 0 30px rgba(250, 204, 21, 0.9), 3px 3px 0px #1a1612;
+}
+
+@keyframes smashBurstPop {
+    0% { transform: translate(-50%, -50%) scale(0.4) rotate(-15deg); opacity: 0; }
+    35% { transform: translate(-50%, -60%) scale(1.3) rotate(8deg); opacity: 1; }
+    70% { transform: translate(-50%, -65%) scale(1.05) rotate(-3deg); opacity: 1; }
+    100% { transform: translate(-50%, -75%) scale(0.8) rotate(0deg); opacity: 0; }
+}
+
+/* 🌟 망치 타격 시 사방으로 튀는 별빛 파티클 */
+.smash-star-particle {
+    position: fixed;
+    transform: translate(-50%, -50%);
+    font-size: 26px;
+    pointer-events: none;
+    z-index: 999;
+    animation: starFlyOut 0.4s ease-out forwards;
+}
+
+@keyframes starFlyOut {
+    0% { transform: translate(-50%, -50%) scale(0.4) rotate(0deg); opacity: 1; }
+    100% { transform: translate(calc(-50% + var(--dest-x)), calc(-50% + var(--dest-y))) scale(1.25) rotate(180deg); opacity: 0; }
+}
+
+/* 🕳️ 망치로 강타당한 구멍 흙더미 충격 바운스 */
+.mole-mound.mound-smash {
+    animation: moundSmashJolt 0.2s ease-out;
+}
+
+@keyframes moundSmashJolt {
+    0% { transform: scale(1.08, 0.88) translateY(6px); }
+    40% { transform: scale(0.96, 1.04) translateY(-2px); }
+    100% { transform: scale(1) translateY(0); }
+}
+
+/* =========================================================================
+   📱 4. 테블릿 및 모바일 반응형 최적화 (iPad, Galaxy Tab, Phone)
+   ========================================================================= */
+@media (max-width: 900px) {
+    .mole-stats-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    .best-card {
+        grid-column: span 2;
+    }
+    .mole-mound {
+        width: 105px;
+        height: 90px;
+    }
+    .mole-actor {
+        width: 85px;
+        height: 95px;
+    }
+    .mole-grid-row {
+        gap: 14px;
+    }
+}
+
+@media (max-width: 640px) {
+    .mole-container {
+        padding: 10px 12px;
+    }
+    .mole-scoreboard-box {
+        padding: 10px 14px;
+    }
+    .mole-title {
+        font-size: 21px;
+    }
+    .mole-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+    }
+    .best-card {
+        grid-column: span 2;
+    }
+    .mole-mound {
+        width: 82px;
+        height: 72px;
+    }
+    .mole-actor {
+        width: 68px;
+        height: 76px;
+    }
+    .mole-grid-row {
+        gap: 8px;
+    }
+    .mole-key-badge .badge-num {
+        font-size: 16px;
+    }
+}
+

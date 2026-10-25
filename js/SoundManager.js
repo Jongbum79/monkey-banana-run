@@ -286,27 +286,6 @@ class SoundManager {
     playPowerUp() {
         this.playSpecialItem();
     }
-
-    // 🏍️ 지코 새삥 오토바이 시동 부릉부릉 사운드!
-    playMotorcycleRev() {
-        if (this.muted) return;
-        this.init();
-        if (!this.ctx) return;
-        const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(65, now);
-        osc.frequency.exponentialRampToValueAtTime(190, now + 0.18);
-        osc.frequency.exponentialRampToValueAtTime(115, now + 0.35);
-        gain.gain.setValueAtTime(0.12, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.36);
-    }
-
     // 👑 손오공 진화 전용 각성 사운드 (번개 + 금빛 여의봉 공명음!)
     playWukongEvolution() {
         if (this.muted) return;
