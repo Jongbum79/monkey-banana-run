@@ -1012,7 +1012,7 @@ body.is-playing .concept-badge {
    🎮 0. 게임 허브 모달 (바나나 런 vs 두더지 잡기 게임)
    ========================================================================= */
 .hub-modal-card {
-    max-width: 1100px !important;
+    max-width: 1320px !important;
     width: 95% !important;
     padding: 24px 28px !important;
     background: #fffdf5 !important;
@@ -1134,6 +1134,15 @@ body.is-playing .concept-badge {
 
 .hub-btn-space {
     background: linear-gradient(135deg, #38bdf8, #0284c7);
+    color: #ffffff;
+}
+
+.hub-card-badge.baseball-badge {
+    background: #ea580c;
+}
+
+.hub-btn-baseball {
+    background: linear-gradient(135deg, #f97316, #ea580c);
     color: #ffffff;
 }
 
@@ -2350,5 +2359,319 @@ body.is-playing .concept-badge {
         display: none;
     }
 }
+
+/* =========================================================================
+   ⚾ 4. 스마일 홈런 더비 3D (Baseball Home Run Derby) 스타일링
+   ========================================================================= */
+.baseball-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: #0284c7;
+    z-index: 10;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+#baseball-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.baseball-hud-box {
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 94%;
+    max-width: 900px;
+    background: rgba(15, 23, 42, 0.88);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 3.5px solid #ea580c;
+    border-radius: 20px;
+    padding: 10px 18px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), inset 0 0 15px rgba(234, 88, 12, 0.2);
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.baseball-hud-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.baseball-tag {
+    font-family: 'Comic Neue', monospace;
+    font-size: 13.5px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    color: #fed7aa;
+    background: #9a3412;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    border: 1.5px solid #ea580c;
+}
+
+.baseball-ctrl-btns {
+    display: flex;
+    gap: 6px;
+}
+
+.baseball-btn {
+    font-family: 'Gaegu', cursive;
+    font-size: 16px;
+    font-weight: 700;
+    padding: 5px 12px;
+    border-radius: 12px;
+    border: 2px solid #ea580c;
+    background: #1e293b;
+    color: #f8fafc;
+    cursor: pointer;
+    box-shadow: 2px 2px 0px #0f172a;
+    transition: all 0.15s ease;
+}
+
+.baseball-btn:hover {
+    background: #ea580c;
+    color: #ffffff;
+    transform: translateY(-2px);
+}
+
+.baseball-btn-batter {
+    background: #c2410c !important;
+    border-color: #f97316 !important;
+    color: #ffffff !important;
+}
+
+.baseball-btn-hub {
+    background: #334155;
+    border-color: #64748b;
+}
+
+.baseball-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+}
+
+.baseball-stat-card {
+    background: rgba(30, 41, 59, 0.9);
+    border: 2px solid #475569;
+    border-radius: 14px;
+    padding: 6px 8px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.baseball-stat-card .stat-label {
+    font-size: 12.5px;
+    font-weight: 800;
+    color: #cbd5e1;
+}
+
+.baseball-stat-card .stat-value {
+    font-family: 'Comic Neue', monospace;
+    font-size: 20px;
+    font-weight: 900;
+    color: #ffffff;
+    margin-top: 2px;
+}
+
+.baseball-pitch-badge {
+    background: linear-gradient(135deg, #ea580c, #c2410c);
+    color: #ffffff;
+    font-size: 14.5px;
+    font-weight: 800;
+    padding: 4px 14px;
+    border-radius: 9999px;
+    border: 1.5px solid #fed7aa;
+    text-align: center;
+    box-shadow: 0 0 12px rgba(234, 88, 12, 0.5);
+    margin: 2px auto 0;
+    display: inline-block;
+    animation: pitchBadgePulse 1s ease-in-out infinite alternate;
+}
+
+@keyframes pitchBadgePulse {
+    0% { transform: scale(0.98); }
+    100% { transform: scale(1.02); }
+}
+
+.baseball-guide-banner {
+    font-size: 13.5px;
+    color: #cbd5e1;
+    text-align: center;
+    background: rgba(30, 41, 59, 0.7);
+    padding: 3px 8px;
+    border-radius: 8px;
+    border: 1px dashed #64748b;
+}
+
+/* 태블릿 / 모바일 대형 스윙 버튼 */
+.baseball-touch-controls {
+    position: absolute;
+    bottom: 24px;
+    right: 28px;
+    z-index: 25;
+}
+
+.baseball-swing-btn {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f97316, #ea580c);
+    border: 4px solid #ffffff;
+    box-shadow: 0 0 24px rgba(234, 88, 12, 0.6), 4px 4px 0px #1a1612;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-family: 'Gaegu', cursive;
+    transition: transform 0.1s, box-shadow 0.1s;
+    touch-action: manipulation;
+}
+
+.baseball-swing-btn:hover {
+    transform: scale(1.06);
+    box-shadow: 0 0 30px rgba(234, 88, 12, 0.8), 5px 5px 0px #1a1612;
+}
+
+.baseball-swing-btn:active {
+    transform: scale(0.94);
+    box-shadow: 0 0 12px rgba(234, 88, 12, 0.4), 2px 2px 0px #1a1612;
+}
+
+.baseball-swing-btn .swing-icon {
+    font-size: 34px;
+    line-height: 1;
+}
+
+.baseball-swing-btn .swing-text {
+    font-size: 16px;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+}
+
+/* ⚾ 야구 모달 공통 카드 */
+.baseball-modal-card {
+    border-color: #ea580c !important;
+    background: #fffdf5 !important;
+    max-width: 620px !important;
+}
+
+.baseball-selection-box {
+    background: #f8fafc;
+    border: 2px solid #ea580c !important;
+    margin: 10px 0 !important;
+}
+
+.baseball-preview-card {
+    background: #ffedd5;
+    border: 2.5px solid #ea580c;
+    border-radius: 18px;
+    padding: 12px 18px;
+    margin: 12px 0;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: inset 0 0 15px rgba(234, 88, 12, 0.15);
+}
+
+.baseball-preview-avatar {
+    font-size: 46px;
+    width: 68px;
+    height: 68px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+    border: 2.5px solid #ea580c;
+    border-radius: 50%;
+    box-shadow: 0 0 12px rgba(234, 88, 12, 0.3);
+    flex-shrink: 0;
+}
+
+.baseball-preview-info {
+    text-align: left;
+    flex: 1;
+}
+
+.baseball-preview-name {
+    font-size: 19px;
+    font-weight: 900;
+    color: #1a1612;
+}
+
+.baseball-preview-stats {
+    font-size: 14.5px;
+    font-weight: 800;
+    color: #ea580c;
+    margin-top: 2px;
+}
+
+.baseball-preview-desc {
+    font-size: 13.5px;
+    color: #4b5563;
+    margin-top: 4px;
+    line-height: 1.35;
+}
+
+.baseball-final-badge {
+    font-size: 20px;
+    font-weight: 900;
+    color: #1a1612;
+    background: #facc15;
+    border: 2.5px solid #1a1612;
+    padding: 8px 18px;
+    border-radius: 9999px;
+    display: inline-block;
+    margin: 6px auto 10px;
+    box-shadow: 3px 3px 0px #1a1612;
+}
+
+.baseball-result-banner {
+    background: #ffedd5;
+    border: 2.5px solid #ea580c;
+    border-radius: 18px;
+    padding: 14px;
+    margin: 12px 0;
+    text-align: center;
+}
+
+@media (max-width: 800px) {
+    .baseball-stats-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+    }
+    .baseball-hud-box {
+        padding: 8px 12px;
+    }
+    .baseball-guide-banner {
+        display: none;
+    }
+    .baseball-swing-btn {
+        width: 82px;
+        height: 82px;
+    }
+}
+
 
 

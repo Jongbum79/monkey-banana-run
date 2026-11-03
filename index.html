@@ -148,6 +148,72 @@
         </div>
     </div>
 
+    <!-- ⚾ 4. 스마일 홈런 더비 3D (Baseball: Home Run Derby 3D) 컨테이너 -->
+    <div id="baseball-game-container" class="baseball-container" style="display: none;">
+        <canvas id="baseball-canvas"></canvas>
+
+        <!-- 상단 야구 전용 HUD 헤더 -->
+        <div class="baseball-hud-box">
+            <div class="baseball-hud-top">
+                <span class="baseball-tag">⚾ SMILE GAMES × 3D HOME RUN DERBY</span>
+                <div class="baseball-ctrl-btns">
+                    <button type="button" class="baseball-btn baseball-btn-batter" id="btn-baseball-batter">🧑‍💼 <span id="baseball-hud-batter-name">🐯 호걸이</span></button>
+                    <button type="button" class="baseball-btn" id="btn-baseball-restart">🔄 10구 다시 시작</button>
+                    <button type="button" class="baseball-btn baseball-btn-hub" id="btn-baseball-hub">🎮 게임 선택</button>
+                </div>
+            </div>
+
+            <div class="baseball-stats-grid">
+                <!-- ⚾ 투구 카운트 (10구 중 진행도) -->
+                <div class="baseball-stat-card pitch-card">
+                    <span class="stat-label">⚾ 잔여 투구</span>
+                    <span class="stat-value" id="baseball-stat-pitch">0 / 10구</span>
+                </div>
+
+                <!-- 💥 홈런 개수 -->
+                <div class="baseball-stat-card hr-card">
+                    <span class="stat-label">💥 홈런 (HR)</span>
+                    <span class="stat-value" id="baseball-stat-hr" style="color: #facc15;">0개</span>
+                </div>
+
+                <!-- 🎯 안타 개수 -->
+                <div class="baseball-stat-card hit-card">
+                    <span class="stat-label">🎯 안타 (HITS)</span>
+                    <span class="stat-value" id="baseball-stat-hit" style="color: #38bdf8;">0개</span>
+                </div>
+
+                <!-- 📏 최장 비거리 -->
+                <div class="baseball-stat-card dist-card">
+                    <span class="stat-label">📏 최장 비거리</span>
+                    <span class="stat-value" id="baseball-stat-dist" style="color: #4ade80;">0m</span>
+                </div>
+
+                <!-- 🪙 획득 점수 -->
+                <div class="baseball-stat-card score-card">
+                    <span class="stat-label">🪙 획득 점수</span>
+                    <span class="stat-value" id="baseball-stat-score">0점</span>
+                </div>
+            </div>
+
+            <!-- 투구 구종 실시간 알림 배지 -->
+            <div class="baseball-pitch-badge" id="baseball-pitch-badge" style="display: none;">
+                ⚡ 광속 직구 (152 km/h)
+            </div>
+
+            <div class="baseball-guide-banner">
+                ⌨️ <strong>키보드:</strong> [ Space ] 또는 [ Enter ] 키로 호쾌한 풀스윙! &nbsp;|&nbsp; 📱 <strong>터치/마우스:</strong> 화면을 터치하거나 우측 하단 [SWING] 버튼 클릭!
+            </div>
+        </div>
+
+        <!-- 태블릿 / 모바일 전용 대형 스윙 버튼 -->
+        <div class="baseball-touch-controls">
+            <button type="button" class="baseball-swing-btn" id="btn-baseball-swing">
+                <span class="swing-icon">⚾</span>
+                <span class="swing-text">SWING!</span>
+            </button>
+        </div>
+    </div>
+
     <!-- UI 오버레이 -->
     <div class="ui-overlay">
         <!-- 좌측 상단 Smile Games 헤더 & 실시간 HUD -->
@@ -316,7 +382,7 @@
 
                 <!-- 3. 스페이스 워즈 (3D 레트로 우주선 슈팅) 카드 -->
                 <div class="hub-game-card hub-card-space" id="hub-select-space">
-                    <div class="hub-card-badge space-badge">신규 오픈! 3D 레트로 우주 슈팅</div>
+                    <div class="hub-card-badge space-badge">인기 추천! 3D 레트로 우주 슈팅</div>
                     <div class="hub-card-icon">🚀</div>
                     <h3 class="hub-card-title">스페이스 워즈: 레트로 우주선</h3>
                     <p class="hub-card-desc">
@@ -324,13 +390,27 @@
                     </p>
                     <ul class="hub-card-features">
                         <li>✔️ Math Playground X-Tech Run 스타일 3D 네온 트렌치 질주</li>
-                        <li>✔️ 레트로 픽셀 아트 우주선 & 과녁(조준선) 없는 깔끔한 뷰</li>
-                        <li>✔️ [ Space ] 단일 레이저 발사 & 적기 1기 격추 시 1포인트</li>
-                        <li>✔️ 🛡️ 레이저가 튕겨나가는 방어막 기체(안 맞는 우주선) 회피!</li>
-                        <li>✔️ 14포인트마다 거대 제국 보스 출현 & 체력바 레이저 결전</li>
-                        <li>✔️ 태블릿 터치 스티어링 & 키보드 완벽 지원</li>
+                        <li>✔️ 7컬러 레이저 팔레트 & 15 HP 제국 보스 격침 엔딩 씬</li>
+                        <li>✔️ 점프 게임 4종 파일럿 & 비행복 스킨 완벽 장착</li>
                     </ul>
                     <button type="button" class="hub-card-play-btn hub-btn-space">🚀 우주선 슈팅 시작하기 ▶</button>
+                </div>
+
+                <!-- 4. 스마일 홈런 더비 3D (야구 대작전) 카드 -->
+                <div class="hub-game-card hub-card-baseball" id="hub-select-baseball">
+                    <div class="hub-card-badge baseball-badge">🔥 초대형 신작! 3D 야구 대작전</div>
+                    <div class="hub-card-icon">⚾</div>
+                    <h3 class="hub-card-title">스마일 홈런 더비 3D</h3>
+                    <p class="hub-card-desc">
+                        천연 잔디 다이아몬드 야구장에서 펼쳐지는 10구 홈런 더비 챌린지! "깡-!!" 소리와 함께 외야 펜스를 넘기는 150m 초대형 장외 홈런을 터뜨려보세요!
+                    </p>
+                    <ul class="hub-card-features">
+                        <li>✔️ 🐯호걸이(파워형), 🐵원숭이(컨택형), 🐸개구리, 🐧펭귄 타자</li>
+                        <li>✔️ 4가지 구종 (광속 직구, 커브볼, 체인지업, 황금 불꽃볼)</li>
+                        <li>✔️ 호쾌한 타격감 & 장외 홈런 폭죽 & 실시간 비거리(m) 측정</li>
+                        <li>✔️ 키보드 [ Space ] 또는 화면 터치로 원터치 풀스윙!</li>
+                    </ul>
+                    <button type="button" class="hub-card-play-btn hub-btn-baseball">⚾ 홈런 더비 시작하기 ▶</button>
                 </div>
             </div>
         </div>
@@ -639,6 +719,93 @@
         </div>
     </div>
 
+    <!-- ⚾ 5. 스마일 홈런 더비 타자 & 배트 선택 모달 -->
+    <div class="modal-backdrop" id="baseball-batter-modal">
+        <div class="modal-card baseball-modal-card">
+            <span class="company-tag" style="background:#ea580c; color:#ffffff;">⚾ SMILE BASEBALL DUGOUT</span>
+            <h2 style="font-size:29px; margin-top:4px; color:#ea580c;">🧑‍💼 홈런 더비 대표 타자 선택</h2>
+            <p style="font-size:15px; color:#5c4938; margin-bottom:10px;">
+                타자마다 고유한 파워와 컨택 특성이 있습니다! 원하는 타자를 골라 홈런을 터뜨려보세요.
+            </p>
+
+            <!-- 🐾 1. 타자 캐릭터 선택 -->
+            <div class="selection-box baseball-selection-box">
+                <div class="selection-title">🐾 출전 타자 선택</div>
+                <div class="char-selector" id="baseball-batter-selector">
+                    <button type="button" class="select-btn active" data-batter="tiger">
+                        <span class="btn-emoji">🐯</span>
+                        <span class="btn-text">호걸이</span>
+                    </button>
+                    <button type="button" class="select-btn" data-batter="monkey">
+                        <span class="btn-emoji">🐵</span>
+                        <span class="btn-text">원숭이</span>
+                    </button>
+                    <button type="button" class="select-btn" data-batter="frog">
+                        <span class="btn-emoji">🐸</span>
+                        <span class="btn-text">개구리</span>
+                    </button>
+                    <button type="button" class="select-btn" data-batter="penguin">
+                        <span class="btn-emoji">🐧</span>
+                        <span class="btn-text">펭귄</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 🌟 2. 타자 상세 프리뷰 카드 -->
+            <div class="baseball-preview-card" id="baseball-preview-card">
+                <div class="baseball-preview-avatar" id="baseball-preview-avatar">🐯</div>
+                <div class="baseball-preview-info">
+                    <div class="baseball-preview-name" id="baseball-preview-name">호걸이 (KIA 출신 4번 거포)</div>
+                    <div class="baseball-preview-stats" id="baseball-preview-stats">⚡ 파워 98 | 🎯 컨택 85</div>
+                    <div class="baseball-preview-desc" id="baseball-preview-desc">압도적인 배트 스피드와 파워! 장외 홈런 비거리 +20m 보너스!</div>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:10px; justify-content:center; margin-top:16px; flex-wrap:wrap;">
+                <button type="button" class="restart-btn" id="btn-baseball-batter-launch" style="background:#ea580c; color:#ffffff; font-size:18px; font-weight:900; padding:10px 24px;">⚾ 타석에 들어서기 (경기 시작) ▶</button>
+                <button type="button" class="restart-btn" id="btn-baseball-batter-hub" style="background:#ffd166; font-size:16px;">🎮 게임 선택 허브</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ⚾ 6. 스마일 홈런 더비 10구 종료 / 결과 모달 -->
+    <div class="modal-backdrop" id="baseball-gameover-modal">
+        <div class="modal-card baseball-modal-card">
+            <span class="company-tag" style="background:#ea580c; color:#ffffff;">⚾ 10 PITCHES FINISHED!</span>
+            <h2 style="font-size:30px; margin-top:4px; color:#ea580c;">⚾ 홈런 더비 경기 종료!</h2>
+            <p style="font-size:16px; color:#5c4938; margin-bottom:8px;">
+                10번의 투구를 상대로 화끈한 타격 쇼를 마쳤습니다!
+            </p>
+
+            <!-- 🏅 MVP 등급 배지 -->
+            <div class="baseball-final-badge" id="baseball-final-badge">
+                👑 은하계 레전드 홈런왕 MVP!
+            </div>
+
+            <!-- 📊 최종 기록 배너 -->
+            <div class="baseball-result-banner">
+                <div class="result-score-main">최종 득점: <span id="baseball-final-score" style="color:#ea580c; font-weight:900;">0점</span></div>
+                <div class="result-sub-stats" style="margin-top:10px;">
+                    <div>💥 기록한 홈런: <strong id="baseball-final-hr" style="color:#f59e0b;">0개</strong></div>
+                    <div>🎯 날카로운 안타: <strong id="baseball-final-hit" style="color:#0284c7;">0개</strong></div>
+                    <div>📏 최장 장외 비거리: <strong id="baseball-final-dist" style="color:#16a34a;">0m</strong></div>
+                </div>
+            </div>
+
+            <div class="ranking-box">
+                <h3 style="color:#ea580c;">🏆 홈런 더비 명예의 전당 (Top 10)</h3>
+                <ul class="ranking-list" id="baseball-gameover-ranking-list"></ul>
+            </div>
+
+            <div style="display:flex; gap:10px; justify-content:center; margin-top:16px; flex-wrap:wrap;">
+                <button class="restart-btn" id="btn-baseball-go-restart" style="background:#ea580c; color:#ffffff;">🔄 10구 다시 도전하기</button>
+                <button class="restart-btn" id="btn-baseball-go-banana" style="background:#ffd166;">🍌 바나나 런</button>
+                <button class="restart-btn" id="btn-baseball-go-space" style="background:#38bdf8; color:#021526;">🚀 스페이스 워즈</button>
+                <button class="restart-btn" id="btn-baseball-go-hub" style="background:#e0e1dd;">🎮 게임 허브</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 게임 스크립트 모듈 로드 -->
     <script src="js/SoundManager.js"></script>
     <script src="js/Character.js"></script>
@@ -647,6 +814,7 @@
     <script src="js/Dragon.js"></script>
     <script src="js/MoleGame.js"></script>
     <script src="js/SpaceGame.js"></script>
+    <script src="js/BaseballGame.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>
