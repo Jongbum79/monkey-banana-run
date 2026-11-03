@@ -1145,10 +1145,13 @@ bgmBtn.addEventListener('click', () => {
 renderRankingList(startRankingListEl, getRankings());
 
 // =========================================================================
-// 🎮 게임 선택 허브 및 두더지 게임(MoleGame) 연동
+// 🎮 게임 선택 허브 및 두더지 게임(MoleGame) / 스페이스 워즈(SpaceGame) 연동
 // =========================================================================
 const moleGame = new MoleGame(sound);
 window.moleGame = moleGame;
+
+const spaceGame = new SpaceGame(sound);
+window.spaceGame = spaceGame;
 
 function switchToHub() {
     stopOiiaStage();
@@ -1161,11 +1164,25 @@ function switchToHub() {
     gameOverModal.classList.remove('active');
     if (roadChoiceOverlay) roadChoiceOverlay.classList.remove('active');
 
+    // 생각 그림(말풍선) 및 코믹 프레임 숨김
+    const speechBubble = document.querySelector('.peanuts-speech-bubble');
+    if (speechBubble) speechBubble.style.display = 'none';
+    const comicFrame = document.querySelector('.comic-frame');
+    if (comicFrame) comicFrame.style.display = 'none';
+
     // 두더지 게임 정지 & 숨김
     moleGame.stop();
     moleGame.hideGameOverModal();
     const moleContainer = document.getElementById('mole-game-container');
     if (moleContainer) moleContainer.style.display = 'none';
+
+    // 스페이스 워즈 정지 & 숨김
+    spaceGame.stop();
+    spaceGame.hideGameOverModal();
+    spaceGame.hidePilotModal();
+    spaceGame.hideVictoryModal();
+    const spaceContainer = document.getElementById('space-game-container');
+    if (spaceContainer) spaceContainer.style.display = 'none';
 
     // 캔버스 및 바나나 UI 복원
     const canvasContainer = document.getElementById('canvas-container');
@@ -1182,11 +1199,25 @@ function switchToBananaGame() {
     const hubModal = document.getElementById('hub-modal');
     if (hubModal) hubModal.classList.remove('active');
 
+    // 생각 그림(말풍선) 및 코믹 프레임 복원 (바나나 런 전용)
+    const speechBubble = document.querySelector('.peanuts-speech-bubble');
+    if (speechBubble) speechBubble.style.display = '';
+    const comicFrame = document.querySelector('.comic-frame');
+    if (comicFrame) comicFrame.style.display = '';
+
     // 두더지 게임 정지 & 숨김
     moleGame.stop();
     moleGame.hideGameOverModal();
     const moleContainer = document.getElementById('mole-game-container');
     if (moleContainer) moleContainer.style.display = 'none';
+
+    // 스페이스 워즈 정지 & 숨김
+    spaceGame.stop();
+    spaceGame.hideGameOverModal();
+    spaceGame.hidePilotModal();
+    spaceGame.hideVictoryModal();
+    const spaceContainer = document.getElementById('space-game-container');
+    if (spaceContainer) spaceContainer.style.display = 'none';
 
     // 바나나 런 보이기
     const canvasContainer = document.getElementById('canvas-container');
@@ -1208,6 +1239,20 @@ function switchToMoleGame() {
     gameOverModal.classList.remove('active');
     if (roadChoiceOverlay) roadChoiceOverlay.classList.remove('active');
 
+    // 생각 그림(말풍선) 및 코믹 프레임 완전 숨김
+    const speechBubble = document.querySelector('.peanuts-speech-bubble');
+    if (speechBubble) speechBubble.style.display = 'none';
+    const comicFrame = document.querySelector('.comic-frame');
+    if (comicFrame) comicFrame.style.display = 'none';
+
+    // 스페이스 워즈 정지 & 숨김
+    spaceGame.stop();
+    spaceGame.hideGameOverModal();
+    spaceGame.hidePilotModal();
+    spaceGame.hideVictoryModal();
+    const spaceContainer = document.getElementById('space-game-container');
+    if (spaceContainer) spaceContainer.style.display = 'none';
+
     // 바나나 런 캔버스 & UI 숨김
     stopOiiaStage();
     sound.stopOiiaOiiaMemeBGM();
@@ -1227,9 +1272,49 @@ function switchToMoleGame() {
     moleGame.start(currentName);
 }
 
+function switchToSpaceGame() {
+    const hubModal = document.getElementById('hub-modal');
+    if (hubModal) hubModal.classList.remove('active');
+    startModal.classList.remove('active');
+    gameOverModal.classList.remove('active');
+    if (roadChoiceOverlay) roadChoiceOverlay.classList.remove('active');
+
+    // 🚨 생각 그림(말풍선) 및 코믹 프레임 완전 숨김 (스페이스 워즈 깔끔 뷰)
+    const speechBubble = document.querySelector('.peanuts-speech-bubble');
+    if (speechBubble) speechBubble.style.display = 'none';
+    const comicFrame = document.querySelector('.comic-frame');
+    if (comicFrame) comicFrame.style.display = 'none';
+
+    // 두더지 게임 정지 & 숨김
+    moleGame.stop();
+    moleGame.hideGameOverModal();
+    const moleContainer = document.getElementById('mole-game-container');
+    if (moleContainer) moleContainer.style.display = 'none';
+
+    // 바나나 런 캔버스 & UI 숨김
+    stopOiiaStage();
+    sound.stopOiiaOiiaMemeBGM();
+    gameState = 'START_MENU';
+    document.body.classList.remove('is-playing');
+    const canvasContainer = document.getElementById('canvas-container');
+    if (canvasContainer) canvasContainer.style.display = 'none';
+    const uiOverlay = document.querySelector('.ui-overlay');
+    if (uiOverlay) uiOverlay.style.display = 'none';
+
+    // 스페이스 워즈 컨테이너 표시 & 파일럿 및 스킨 선택 화면 노출!
+    const spaceContainer = document.getElementById('space-game-container');
+    if (spaceContainer) {
+        spaceContainer.style.display = 'block';
+    }
+    const currentName = (playerNameInput ? playerNameInput.value.trim() : '') || playerName || '스카이워커';
+    spaceGame.init();
+    spaceGame.showPilotModal();
+}
+
 window.switchToHub = switchToHub;
 window.switchToBananaGame = switchToBananaGame;
 window.switchToMoleGame = switchToMoleGame;
+window.switchToSpaceGame = switchToSpaceGame;
 
 // 허브 모달 버튼 이벤트 연결
 const hubSelectBanana = document.getElementById('hub-select-banana');
@@ -1237,6 +1322,9 @@ if (hubSelectBanana) hubSelectBanana.addEventListener('click', switchToBananaGam
 
 const hubSelectMole = document.getElementById('hub-select-mole');
 if (hubSelectMole) hubSelectMole.addEventListener('click', switchToMoleGame);
+
+const hubSelectSpace = document.getElementById('hub-select-space');
+if (hubSelectSpace) hubSelectSpace.addEventListener('click', switchToSpaceGame);
 
 const btnBackToHub = document.getElementById('btn-back-to-hub');
 if (btnBackToHub) btnBackToHub.addEventListener('click', switchToHub);

@@ -415,10 +415,10 @@ class MoleGame {
         if (!this.isRunning) return;
 
         if (delay === null) {
-            // 시간이 지날수록 출현 주기가 빨라짐 (120초 -> 점점 난이도 상승!)
+            // 두더지 출현 빈도 완화: 너무 자주 나오지 않고 여유 있고 쾌적한 아케이드 템포 (1.1초 ~ 2.2초)
             const progress = (120 - this.timer) / 120; // 0.0 ~ 1.0
-            const minDelay = 400;
-            const maxDelay = 1100 - (progress * 600); // 1100ms -> 500ms
+            const minDelay = 1100;
+            const maxDelay = 2200 - (progress * 600); // 2200ms -> 1600ms
             delay = Math.random() * (maxDelay - minDelay) + minDelay;
         }
 
@@ -434,11 +434,10 @@ class MoleGame {
         const emptyHoles = this.holes.filter(h => h.state === 'empty');
         if (emptyHoles.length === 0) return;
 
-        // 시간에 따라 한 번에 1~3마리까지 등장!
+        // 과도한 동시 다발 출현 방지: 기본 1마리씩 등장, 60초 이후에만 간헐적 2마리 등장
         const elapsed = 120 - this.timer;
         let count = 1;
-        if (elapsed > 30 && Math.random() < 0.45) count = 2;
-        if (elapsed > 70 && Math.random() < 0.60) count = Math.random() < 0.5 ? 2 : 3;
+        if (elapsed > 60 && Math.random() < 0.25) count = 2;
 
         // 셔플 후 선택
         const shuffled = [...emptyHoles].sort(() => Math.random() - 0.5);
@@ -465,9 +464,9 @@ class MoleGame {
         hole.moleEl.innerHTML = this.getMoleSVG(type);
         hole.moleEl.className = `mole-actor mole-visible mole-${type}`;
 
-        // 머무는 시간 계산 (난이도에 따라 0.7초 ~ 1.4초)
+        // 머무는 시간 계산 (충분히 보고 칠 수 있도록 0.9초 ~ 1.6초 제공)
         const progress = (120 - this.timer) / 120;
-        const stayTime = Math.max(650, 1400 - (progress * 650) + (Math.random() * 200));
+        const stayTime = Math.max(900, 1600 - (progress * 450) + (Math.random() * 250));
 
         // 팝 사운드
         this.playPopSound();

@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smile Games - 원숭이의 바나나 런 (6학년 5단계 에디션)</title>
+    <title>smile games.com</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <!-- 빈티지 코믹북 종이 액자 프레임 -->
     <div class="comic-frame"></div>
 
-    <!-- 상단 피너츠 구름 말풍선 -->
-    <div class="peanuts-speech-bubble">
+    <!-- 상단 피너츠 구름 말풍선 (바나나 런 인게임 전용) -->
+    <div class="peanuts-speech-bubble" style="display: none;">
         <p id="bubble-en">HEHE! STOLE THE GOLDEN BANANA FROM HEUNGDEOK ELEMENTARY SCHOOL!</p>
         <div class="sub-ko" id="bubble-ko">"헤헤! 흥덕초등학교에서 드래곤의 황금 바나나를 뺏어서 도망가자!"</div>
         <div class="bubble-dot-1"></div>
@@ -28,7 +28,7 @@
         <!-- 상단 전용 스코어보드 -->
         <div class="mole-scoreboard-box">
             <div class="mole-scoreboard-top">
-                <span class="mole-tag">🔨 SMILE GAMES ARCADE</span>
+                <span class="mole-tag">🔨 smile games.com ARCADE</span>
                 <div class="mole-ctrl-btns">
                     <button type="button" class="mole-btn" id="btn-mole-restart">🔄 2분 다시 시작</button>
                     <button type="button" class="mole-btn mole-btn-hub" id="btn-mole-hub">🎮 게임 선택</button>
@@ -77,6 +77,74 @@
                 <div class="hammer-ring right"></div>
             </div>
             <div class="hammer-handle"></div>
+        </div>
+    </div>
+
+    <!-- 🚀 3. 스페이스 워즈 (Space Wars: Retro 3D Shooter) 컨테이너 -->
+    <div id="space-game-container" class="space-container" style="display: none;">
+        <canvas id="space-canvas"></canvas>
+
+        <!-- 상단 레트로 HUD 헤더 -->
+        <div class="space-hud-box">
+            <div class="space-hud-top">
+                <span class="space-tag">🚀 SMILE GAMES × RETRO SPACE WARS</span>
+                <div class="space-ctrl-btns">
+                    <button type="button" class="space-btn space-btn-pilot" id="btn-space-pilot">🧑‍🚀 <span id="space-hud-pilot-name">🐸 개구리 대위</span></button>
+                    <button type="button" class="space-btn space-btn-laser" id="btn-space-laser">⚡ <span id="space-hud-laser-name">🔴 스타워즈 레드</span></button>
+                    <button type="button" class="space-btn" id="btn-space-restart">🔄 다시 시작</button>
+                    <button type="button" class="space-btn space-btn-hub" id="btn-space-hub">🎮 게임 선택</button>
+                </div>
+            </div>
+
+            <div class="space-stats-grid">
+                <!-- 🎯 적기 격추 스코어 (1기당 1포인트) -->
+                <div class="space-stat-card score-card">
+                    <span class="stat-label">🎯 적기 격추 포인트</span>
+                    <span class="stat-value"><span id="space-score">0</span> <small style="font-size:16px;">PTS</small></span>
+                </div>
+
+                <!-- ❤️ 우주선 실드/체력 게이지 -->
+                <div class="space-stat-card hp-card">
+                    <span class="stat-label" id="space-hp-label">❤️ 실드 100 / 100</span>
+                    <div class="space-hp-bar">
+                        <div class="space-hp-fill" id="space-hp-bar-fill" style="width: 100%;"></div>
+                    </div>
+                </div>
+
+                <!-- 👾 보스 출현 목표 카운트 (14포인트마다!) -->
+                <div class="space-stat-card boss-prog-card">
+                    <span class="stat-label">👾 보스 워프 현황</span>
+                    <span class="stat-value-sub" id="space-boss-prog">보스 출현까지: 앞으로 14기 격추</span>
+                </div>
+
+                <!-- 🏆 역대 최고 기록 -->
+                <div class="space-stat-card best-card">
+                    <span class="stat-label">🏆 최고 기록</span>
+                    <span class="stat-value-sub" id="space-best-score">42점 (최지훈)</span>
+                </div>
+            </div>
+
+            <!-- 거대 보스 출현 시 상단에 등장하는 대형 보스 체력바 -->
+            <div class="space-boss-bar-wrap" id="space-boss-bar-wrap" style="display: none;">
+                <div class="space-boss-label" id="space-boss-label">👾 제국 전함 보스 HP: 15 / 15</div>
+                <div class="space-boss-bar-track">
+                    <div class="space-boss-bar-fill" id="space-boss-bar-fill" style="width: 100%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 태블릿 / 모바일 전용 터치 조작 인터페이스 -->
+        <div class="space-touch-controls">
+            <!-- 좌측 터치 스티어링 존 -->
+            <div class="space-touch-zone" id="space-touch-zone"></div>
+
+            <!-- 우측 대형 레이저 발사 버튼 -->
+            <div class="space-fire-btn-wrap">
+                <button type="button" class="space-fire-btn" id="btn-space-fire">
+                    <span class="fire-icon">⚡</span>
+                    <span class="fire-text">FIRE</span>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -245,6 +313,25 @@
                     </ul>
                     <button type="button" class="hub-card-play-btn hub-btn-mole">🔨 두더지 잡기 시작하기 ▶</button>
                 </div>
+
+                <!-- 3. 스페이스 워즈 (3D 레트로 우주선 슈팅) 카드 -->
+                <div class="hub-game-card hub-card-space" id="hub-select-space">
+                    <div class="hub-card-badge space-badge">신규 오픈! 3D 레트로 우주 슈팅</div>
+                    <div class="hub-card-icon">🚀</div>
+                    <h3 class="hub-card-title">스페이스 워즈: 레트로 우주선</h3>
+                    <p class="hub-card-desc">
+                        Math Playground X-Tech Run 스타일의 3D 네온 트렌치를 질주하는 레트로 픽셀 우주 슈팅! 단일 레이저로 적 전투기를 격파하고, 레이저를 튕겨내는 방어막 장애물 기체를 피하며 14포인트마다 출현하는 거대 보스를 정복하세요!
+                    </p>
+                    <ul class="hub-card-features">
+                        <li>✔️ Math Playground X-Tech Run 스타일 3D 네온 트렌치 질주</li>
+                        <li>✔️ 레트로 픽셀 아트 우주선 & 과녁(조준선) 없는 깔끔한 뷰</li>
+                        <li>✔️ [ Space ] 단일 레이저 발사 & 적기 1기 격추 시 1포인트</li>
+                        <li>✔️ 🛡️ 레이저가 튕겨나가는 방어막 기체(안 맞는 우주선) 회피!</li>
+                        <li>✔️ 14포인트마다 거대 제국 보스 출현 & 체력바 레이저 결전</li>
+                        <li>✔️ 태블릿 터치 스티어링 & 키보드 완벽 지원</li>
+                    </ul>
+                    <button type="button" class="hub-card-play-btn hub-btn-space">🚀 우주선 슈팅 시작하기 ▶</button>
+                </div>
             </div>
         </div>
     </div>
@@ -397,6 +484,161 @@
         </div>
     </div>
 
+    <!-- 🧑‍🚀 4. 스페이스 워즈 파일럿 & 스킨 선택 모달 -->
+    <div class="modal-backdrop" id="space-pilot-modal">
+        <div class="modal-card space-pilot-card">
+            <span class="company-tag" style="background:#0284c7; color:#ffffff;">🚀 STAR WARS PILOT HANGAR</span>
+            <h2 style="font-size:28px; margin-top:4px; color:#38bdf8;">🧑‍🚀 은하계 반란군 파일럿 선택</h2>
+            <p style="font-size:15px; color:#94a3b8; margin-bottom:10px;">
+                점프 게임의 영웅들이 반란군 에이스 파일럿으로 참전합니다! 파일럿과 전용 비행복 스킨을 골라보세요.
+            </p>
+
+            <!-- 🐾 1. 파일럿 캐릭터 선택 (점프 게임 4종 캐릭터) -->
+            <div class="selection-box space-selection-box">
+                <div class="selection-title">🐾 파일럿 캐릭터 선택</div>
+                <div class="char-selector" id="space-pilot-char-selector">
+                    <button type="button" class="select-btn active" data-pilot="frog">
+                        <span class="btn-emoji">🐸</span>
+                        <span class="btn-text">개구리</span>
+                    </button>
+                    <button type="button" class="select-btn" data-pilot="tiger">
+                        <span class="btn-emoji">🐯</span>
+                        <span class="btn-text">호랑이</span>
+                    </button>
+                    <button type="button" class="select-btn" data-pilot="penguin">
+                        <span class="btn-emoji">🐧</span>
+                        <span class="btn-text">펭귄</span>
+                    </button>
+                    <button type="button" class="select-btn" data-pilot="monkey">
+                        <span class="btn-emoji">🐵</span>
+                        <span class="btn-text">원숭이</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 👔 2. 캐릭터 전용 파일럿 스킨 선택 (선택된 캐릭터에 따라 동적 변경) -->
+            <div class="selection-box space-selection-box">
+                <div class="selection-title" id="space-skin-title">👔 캐릭터 전용 비행복 스킨</div>
+                <div class="costume-selector" id="space-pilot-skin-selector">
+                    <!-- 동적 생성 -->
+                </div>
+            </div>
+
+            <!-- ⚡ 3. 레이저 광선 색상 선택 (7컬러 팔레트) -->
+            <div class="selection-box space-selection-box">
+                <div class="selection-title">⚡ 레이저 광선 색상 선택 (7컬러)</div>
+                <div class="costume-selector" id="space-pilot-laser-selector">
+                    <!-- 동적 생성 -->
+                </div>
+            </div>
+
+            <!-- 🌟 4. 선택된 파일럿 프리뷰 카드 -->
+            <div class="space-pilot-preview-card" id="space-pilot-preview-card">
+                <div class="pilot-preview-badge" id="pilot-preview-avatar">🐸</div>
+                <div class="pilot-preview-info">
+                    <div class="pilot-preview-name" id="pilot-preview-name">개구리 대위</div>
+                    <div class="pilot-preview-skin" id="pilot-preview-skin">스킨: 🟠 반란군 오렌지 슈트</div>
+                    <div class="pilot-preview-laser" id="pilot-preview-laser" style="font-size:14px; font-weight:700; color:#f87171; margin-top:2px;">광선포: 🔴 스타워즈 레드</div>
+                    <div class="pilot-preview-desc" id="pilot-preview-desc">늪지대 행성 최고의 기동성 파일럿! 침착하고 유연한 회피 비행이 특기.</div>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:10px; justify-content:center; margin-top:16px; flex-wrap:wrap;">
+                <button type="button" class="restart-btn" id="btn-space-pilot-launch" style="background:#38bdf8; color:#021526; font-size:18px; font-weight:900; padding:10px 24px;">🚀 이 세팅으로 출격하기 ▶</button>
+                <button type="button" class="restart-btn" id="btn-space-pilot-hub" style="background:#ffd166; font-size:16px;">🎮 게임 선택 허브</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🌟 5. 스페이스 워즈 미션 컴플리트 승리 엔딩 모달 (보스 격파 엔딩!) -->
+    <div class="modal-backdrop" id="space-victory-modal">
+        <div class="modal-card space-victory-card">
+            <span class="company-tag" style="background:#f59e0b; color:#1a1612; font-weight:900;">👑 GALACTIC VICTORY! MISSION ACCOMPLISHED</span>
+            <h2 style="font-size:32px; margin-top:6px; color:#fbbf24; text-shadow:0 0 16px rgba(251, 191, 36, 0.7);">
+                🌟 은하계 구출 대승리!
+            </h2>
+            <p style="font-size:16px; color:#cbd5e1; margin-bottom:12px;">
+                15 HP의 거대 제국 전함 보스를 격침시키고 은하계의 평화를 되찾았습니다!
+            </p>
+
+            <!-- 🏅 은하계 최고 영웅 훈장 수여식 카드 -->
+            <div class="space-victory-medal-card">
+                <div class="victory-medal-badge">
+                    <span class="victory-medal-icon">🏅</span>
+                    <span class="victory-pilot-avatar" id="victory-pilot-avatar">🐸</span>
+                </div>
+                <div class="victory-medal-details">
+                    <div class="victory-medal-title">🌟 은하계 수호 1등 무공훈장 수여!</div>
+                    <div class="victory-pilot-name" id="victory-pilot-name">개구리 대위 (반란군 오렌지)</div>
+                    <p class="victory-pilot-speech" id="victory-pilot-speech">
+                        "포스가 우리와 함께했다! 전함의 주 반응로를 완벽하게 명중시켰어!"
+                    </p>
+                </div>
+            </div>
+
+            <!-- 📊 작전 완료 리포트 -->
+            <div class="space-result-banner space-victory-banner">
+                <div class="result-score-main" style="color:#fbbf24;">
+                    최종 격추 스코어: <span id="space-victory-score">0</span> <small style="font-size:18px;">PTS</small>
+                    <div style="font-size:15px; color:#4ade80; margin-top:4px;">✨ 보스 격파 특별 보너스 +50 PTS 지급 완료!</div>
+                </div>
+                <div class="result-sub-stats" style="margin-top:10px;">
+                    <div>👾 격파한 제국 보스: <strong id="space-victory-boss" style="color:#fbbf24;">1회 완파</strong></div>
+                    <div>🛡️ 우주선 잔여 실드: <strong id="space-victory-shield" style="color:#38bdf8;">100%</strong></div>
+                    <div>⚡ 사용 레이저: <strong id="space-victory-laser" style="color:#f87171;">🔴 스타워즈 레드</strong></div>
+                </div>
+            </div>
+
+            <!-- 🏆 명예의 전당 -->
+            <div class="ranking-box space-ranking-box">
+                <h3 style="color:#fbbf24;">🏆 스페이스 워즈 전설의 전당 (Top 10)</h3>
+                <ul class="ranking-list" id="space-victory-ranking-list"></ul>
+            </div>
+
+            <!-- 액션 버튼들 -->
+            <div style="display:flex; gap:10px; justify-content:center; margin-top:16px; flex-wrap:wrap;">
+                <button type="button" class="restart-btn" id="btn-space-victory-continue" style="background:#fbbf24; color:#0f172a; font-weight:900; font-size:18px; padding:12px 24px; box-shadow:0 0 20px rgba(251, 191, 36, 0.6);">
+                    🚀 다음 행성 구출 작전 출격! (실드 100% 회복) ▶
+                </button>
+                <button type="button" class="restart-btn" id="btn-space-victory-banana" style="background:#ffd166; font-size:16px;">
+                    🍌 바나나 런 하러 가기
+                </button>
+                <button type="button" class="restart-btn" id="btn-space-victory-hub" style="background:#bde0fe; font-size:16px;">
+                    🎮 게임 선택 허브
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🚀 4. 스페이스 워즈 게임 오버 모달 -->
+    <div class="modal-backdrop" id="space-gameover-modal">
+        <div class="modal-card space-gameover-card">
+            <span class="company-tag" style="background:#0284c7; color:#ffffff;">🚀 MISSION ACCOMPLISHED</span>
+            <h2 style="font-size:30px; margin-top:4px; color:#0284c7;">🚀 스페이스 워즈 작전 종료!</h2>
+            <p style="font-size:16px; color:#5c4938; margin-bottom:8px;">
+                은하계를 위협하는 적 전투기들과 제국 전함을 상대로 용감히 싸웠습니다!
+            </p>
+            <div class="space-result-banner">
+                <div class="result-score-main">최종 격추 포인트: <span id="space-final-score" style="color:#0284c7; font-weight:900;">0점</span></div>
+                <div class="result-sub-stats">
+                    <div>👾 격파한 거대 보스: <strong id="space-final-boss">0회</strong></div>
+                    <div>🎯 규칙: 적기 1기 격추 = 1포인트 / 14포인트마다 보스 출현!</div>
+                </div>
+            </div>
+
+            <div class="ranking-box">
+                <h3>🏆 스페이스 워즈 명예의 전당 (Top 10)</h3>
+                <ul class="ranking-list" id="space-gameover-ranking-list"></ul>
+            </div>
+
+            <div style="display:flex; gap:10px; justify-content:center; margin-top:16px; flex-wrap:wrap;">
+                <button class="restart-btn" id="btn-space-gameover-restart" style="background:#38bdf8; color:#021526;">🚀 다시 출격하기</button>
+                <button class="restart-btn" id="btn-space-gameover-banana" style="background:#ffd166;">🍌 바나나 런 하러 가기</button>
+                <button class="restart-btn" id="btn-space-gameover-hub" style="background:#e0aaff;">🎮 게임 선택 허브</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 게임 스크립트 모듈 로드 -->
     <script src="js/SoundManager.js"></script>
     <script src="js/Character.js"></script>
@@ -404,6 +646,7 @@
     <script src="js/MathGate.js"></script>
     <script src="js/Dragon.js"></script>
     <script src="js/MoleGame.js"></script>
+    <script src="js/SpaceGame.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>
