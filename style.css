@@ -2463,7 +2463,7 @@ body.is-playing .concept-badge {
 
 .baseball-stats-grid {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 8px;
 }
 
@@ -2479,8 +2479,18 @@ body.is-playing .concept-badge {
     align-items: center;
 }
 
+.baseball-stat-card.p1-card {
+    border-color: #0284c7;
+    background: rgba(2, 132, 199, 0.15);
+}
+
+.baseball-stat-card.p2-card {
+    border-color: #ea580c;
+    background: rgba(234, 88, 12, 0.15);
+}
+
 .baseball-stat-card .stat-label {
-    font-size: 12.5px;
+    font-size: 12px;
     font-weight: 800;
     color: #cbd5e1;
 }
@@ -2491,6 +2501,151 @@ body.is-playing .concept-badge {
     font-weight: 900;
     color: #ffffff;
     margin-top: 2px;
+}
+
+/* 맞대결 정보 바 */
+.baseball-matchup-bar {
+    background: rgba(15, 23, 42, 0.95);
+    border: 2px solid #334155;
+    border-radius: 12px;
+    padding: 5px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    font-size: 13.5px;
+    font-weight: 800;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.4);
+}
+
+/* 1P 투수 5대 구종 선택 팔레트 */
+.baseball-pitch-palette {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    background: rgba(30, 41, 59, 0.95);
+    padding: 6px 10px;
+    border-radius: 14px;
+    border: 2px solid #ea580c;
+}
+
+.pitch-palette-label {
+    font-size: 13px;
+    font-weight: 800;
+    color: #fed7aa;
+    margin-right: 4px;
+}
+
+.pitch-select-btn {
+    font-family: 'Gaegu', cursive;
+    font-size: 14.5px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 10px;
+    border: 2px solid #475569;
+    background: #1e293b;
+    color: #f1f5f9;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.pitch-select-btn:hover {
+    background: #334155;
+    border-color: #38bdf8;
+    color: #ffffff;
+}
+
+.pitch-select-btn.active {
+    background: #0284c7;
+    border-color: #38bdf8;
+    color: #ffffff;
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
+    transform: scale(1.05);
+}
+
+.pitch-select-btn.fireball.active {
+    background: #ea580c;
+    border-color: #facc15;
+    box-shadow: 0 0 12px rgba(234, 88, 12, 0.8);
+}
+
+.pitch-throw-action-btn {
+    font-family: 'Gaegu', cursive;
+    font-size: 16px;
+    font-weight: 900;
+    padding: 5px 14px;
+    border-radius: 12px;
+    border: 2px solid #ffffff;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: #ffffff;
+    cursor: pointer;
+    box-shadow: 0 0 14px rgba(239, 68, 68, 0.6);
+    animation: throwBtnPulse 1.2s infinite alternate;
+}
+
+@keyframes throwBtnPulse {
+    0% { transform: scale(0.97); }
+    100% { transform: scale(1.05); }
+}
+
+.baseball-btn-mode {
+    background: #0f766e !important;
+    border-color: #2dd4bf !important;
+    color: #ffffff !important;
+}
+
+/* 2인용 팀 및 스킨 선택 그리드 */
+.baseball-team-selection-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin: 12px 0;
+}
+
+.baseball-team-box {
+    background: #f8fafc;
+    border: 2.5px solid #cbd5e1;
+    border-radius: 18px;
+    padding: 12px;
+}
+
+.baseball-team-box.p1-team-box {
+    border-color: #0284c7;
+    background: #f0f9ff;
+}
+
+.baseball-team-box.p2-team-box {
+    border-color: #ea580c;
+    background: #fff7ed;
+}
+
+.baseball-team-preview-text {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #0f172a;
+    margin-top: 8px;
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 8px;
+    border: 1px dashed #94a3b8;
+}
+
+.baseball-char-guide-cards {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+    margin: 10px 0;
+}
+
+.char-guide-item {
+    font-size: 12.5px;
+    background: #f1f5f9;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 6px 10px;
+    color: #334155;
+    text-align: left;
 }
 
 .baseball-pitch-badge {
@@ -2574,7 +2729,7 @@ body.is-playing .concept-badge {
 .baseball-modal-card {
     border-color: #ea580c !important;
     background: #fffdf5 !important;
-    max-width: 620px !important;
+    max-width: 740px !important;
 }
 
 .baseball-selection-box {
