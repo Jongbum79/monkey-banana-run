@@ -183,12 +183,36 @@
                 <span id="mlb-bug-role-text">⚾ 나의 역할: [타자]</span> &nbsp;|&nbsp;
                 <span id="mlb-bug-matchup-text">🐯 호걸이 vs 🐵 원숭이</span>
             </div>
+
+            <!-- 🏏 타순 및 현재 타자 특징 배지 (1~4번 타선) -->
+            <div class="bug-batter-lineup-info" id="mlb-bug-lineup-info">
+                <span class="lineup-order-badge" id="mlb-lineup-badge">4번 타자</span>
+                <span class="lineup-player-name" id="mlb-lineup-name">🐯 호걸이</span>
+                <span class="lineup-perk-badge" id="mlb-lineup-perk">💥 거포 (파워 99)</span>
+            </div>
         </div>
 
         <!-- ⚡ [MLB 26 Radar Gun] 실시간 투구 구속 & 구종 전광판 팝업 -->
         <div class="mlb-radar-popup" id="mlb-radar-popup" style="display:none;">
-            <div class="radar-speed" id="mlb-radar-speed">161 KM/H</div>
+            <div class="radar-speed" id="mlb-radar-speed">150 KM/H</div>
             <div class="radar-pitch-name" id="mlb-radar-pitch">4-SEAM FASTBALL</div>
+        </div>
+
+        <!-- 🎯 [MLB Pitch Tracker & Zone Overlay] 투수/타자 실시간 스트라이크 존 판정 박스 -->
+        <div class="mlb-pitch-tracker-card" id="mlb-pitch-tracker" style="display:none;">
+            <div class="tracker-header">
+                <span id="mlb-tracker-call-badge" class="tracker-call-badge strike">⚡ STRIKE</span>
+                <span id="mlb-tracker-speed" class="tracker-speed-text">150 KM/H</span>
+            </div>
+            <div class="tracker-grid-wrap">
+                <div class="tracker-zone-box">
+                    <div class="tracker-cell"></div><div class="tracker-cell"></div><div class="tracker-cell"></div>
+                    <div class="tracker-cell"></div><div class="tracker-cell"></div><div class="tracker-cell"></div>
+                    <div class="tracker-cell"></div><div class="tracker-cell"></div><div class="tracker-cell"></div>
+                    <div class="tracker-ball-dot" id="mlb-tracker-dot"></div>
+                </div>
+            </div>
+            <div class="tracker-sub-info" id="mlb-tracker-desc">4-SEAM 직구 • 스트라이크 존 공략</div>
         </div>
 
         <!-- 🎮 상단 우측 미니 제어 버튼들 (화면을 가리지 않는 컴팩트 바) -->
@@ -205,8 +229,8 @@
             <button type="button" class="mlb-pitch-btn active" data-pitch="fastball">[ 1 ] ⚡직구</button>
             <button type="button" class="mlb-pitch-btn" data-pitch="curve">[ 2 ] 🌀커브</button>
             <button type="button" class="mlb-pitch-btn" data-pitch="slider">[ 3 ] 🌪️슬라이더</button>
-            <button type="button" class="mlb-pitch-btn" data-pitch="changeup">[ 4 ] 🐢체인지업</button>
-            <button type="button" class="mlb-pitch-btn fireball" data-pitch="fireball">[ 5 ] 🔥불꽃마구</button>
+            <button type="button" class="mlb-pitch-btn changeup" data-pitch="changeup">[ 4 ] 🐢체인지업</button>
+            <button type="button" class="mlb-pitch-btn knuckleball" data-pitch="knuckleball">[ 5 ] 🌀너클볼(마구)</button>
             <button type="button" class="mlb-throw-btn" id="btn-pitch-throw">⚾ 투구 (Space/F)</button>
         </div>
 
