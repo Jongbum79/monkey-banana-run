@@ -223,15 +223,38 @@
             <button type="button" class="mlb-ctrl-btn mlb-btn-hub" id="btn-baseball-hub" title="게임 선택 허브">🎮 허브</button>
         </div>
 
-        <!-- ⚾ [투수 전용 조작부] 하단 컴팩트 5대 구종 선택 바 -->
+        <!-- ⚾ [투수 전용 조작부] 하단 투수 컨트롤 콘솔 (구종 + 볼/스트라이크 코스 선택기) -->
         <div class="mlb-pitcher-bar" id="mlb-pitcher-bar" style="display:none;">
-            <span class="pitcher-bar-label">⚾ 구종 [1~5]:</span>
-            <button type="button" class="mlb-pitch-btn active" data-pitch="fastball">[ 1 ] ⚡직구</button>
-            <button type="button" class="mlb-pitch-btn" data-pitch="curve">[ 2 ] 🌀커브</button>
-            <button type="button" class="mlb-pitch-btn" data-pitch="slider">[ 3 ] 🌪️슬라이더</button>
-            <button type="button" class="mlb-pitch-btn changeup" data-pitch="changeup">[ 4 ] 🐢체인지업</button>
-            <button type="button" class="mlb-pitch-btn knuckleball" data-pitch="knuckleball">[ 5 ] 🌀너클볼(마구)</button>
-            <button type="button" class="mlb-throw-btn" id="btn-pitch-throw">⚾ 투구 (Space/F)</button>
+            <!-- [1] 볼 / 스트라이크 판정 & 투구 위치 빠른 선택기 -->
+            <div class="pitcher-zone-selector-wrap">
+                <div class="pitcher-zone-header">
+                    <span class="pitcher-zone-title">🎯 투구 위치 & 볼/스트라이크 선택:</span>
+                    <span class="pitcher-current-call-badge strike" id="mlb-pitcher-call-badge">🎯 스트라이크 [한가운데]</span>
+                </div>
+                <div class="pitcher-zone-buttons-row">
+                    <!-- 스트라이크 존 코스들 -->
+                    <button type="button" class="mlb-zone-quick-btn strike active" data-zone="center">🎯 한가운데</button>
+                    <button type="button" class="mlb-zone-quick-btn strike" data-zone="corner-strike">🎯 외곽 코너워크</button>
+                    <button type="button" class="mlb-zone-quick-btn strike" data-zone="low-strike">🎯 무릎 보더라인</button>
+                    <button type="button" class="mlb-zone-quick-btn strike" data-zone="high-strike">🎯 높은 존</button>
+                    <!-- 볼 / 유인구 코스들 -->
+                    <button type="button" class="mlb-zone-quick-btn ball" data-zone="outside-ball">⚪ 바깥쪽 유인구(볼)</button>
+                    <button type="button" class="mlb-zone-quick-btn ball" data-zone="dirt-ball">⚪ 원바운드 볼(흙)</button>
+                    <button type="button" class="mlb-zone-quick-btn ball" data-zone="high-ball">⚪ 높은 하이볼</button>
+                    <button type="button" class="mlb-zone-quick-btn ball" data-zone="inside-ball">⚪ 몸쪽 위협구</button>
+                </div>
+            </div>
+
+            <!-- [2] 5대 구종 선택 바 및 지금 투구 버튼 -->
+            <div class="pitcher-types-row">
+                <span class="pitcher-bar-label">⚾ 구종 [1~5]:</span>
+                <button type="button" class="mlb-pitch-btn active" data-pitch="fastball">[ 1 ] ⚡직구</button>
+                <button type="button" class="mlb-pitch-btn" data-pitch="curve">[ 2 ] 🌀커브</button>
+                <button type="button" class="mlb-pitch-btn" data-pitch="slider">[ 3 ] 🌪️슬라이더</button>
+                <button type="button" class="mlb-pitch-btn changeup" data-pitch="changeup">[ 4 ] 🐢체인지업</button>
+                <button type="button" class="mlb-pitch-btn knuckleball" data-pitch="knuckleball">[ 5 ] 🌀너클볼</button>
+                <button type="button" class="mlb-throw-btn" id="btn-pitch-throw">⚾ 지금 투구하기 (Space/F)</button>
+            </div>
         </div>
 
         <!-- 🏏 [타자 전용 조작부] 하단 우측 원클릭 배트 스윙 버튼 -->

@@ -471,10 +471,12 @@ class BaseballGame {
                 if (e.key === '5') this.selectPitchType('knuckleball');
 
                 // WASD 및 방향키 코스 정밀 조준
-                if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') this.pitchAimX = Math.max(-34, this.pitchAimX - 5);
-                if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') this.pitchAimX = Math.min(34, this.pitchAimX + 5);
-                if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') this.pitchAimY = Math.min(74, this.pitchAimY + 5);
-                if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') this.pitchAimY = Math.max(14, this.pitchAimY - 5);
+                let moved = false;
+                if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') { this.pitchAimX = Math.max(-34, this.pitchAimX - 5); moved = true; }
+                if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') { this.pitchAimX = Math.min(34, this.pitchAimX + 5); moved = true; }
+                if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') { this.pitchAimY = Math.min(74, this.pitchAimY + 5); moved = true; }
+                if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') { this.pitchAimY = Math.max(14, this.pitchAimY - 5); moved = true; }
+                if (moved) this.setPitchAim(this.pitchAimX, this.pitchAimY);
 
                 // 투구 발사 (F 키 또는 Space)
                 if (e.code === 'KeyF' || e.code === 'Space') {
@@ -492,18 +494,56 @@ class BaseballGame {
             }
         });
 
-        // 캔버스 클릭 시
+        // 🖱️ 캔버스 마우스 클릭 / 터치 드래그로 직접 투구 위치 & 볼/스트라이크 코스 조준!
         if (this.canvas) {
+            let isAimDragging = false;
+
+            const handlePointerPitchAim = (e) => {
+                if (this.userRole !== 'pitcher' || this.gameState !== 'aiming') return;
+                const rect = this.canvas.getBoundingClientRect();
+                const px = e.clientX - rect.left;
+                const py = e.clientY - rect.top;
+                // 투수 카메라 역투영 (z=380 홈플레이트 평면 기준)
+                const scale = this.camera.fov / (380 - this.camera.z);
+                const aimX = this.camera.x + (px - this.width / 2) / scale;
+                const aimY = this.camera.y - (py - this.height * 0.54) / scale;
+                this.setPitchAim(Math.round(aimX), Math.round(aimY));
+            };
+
             this.canvas.addEventListener('pointerdown', (e) => {
                 if (!this.isRunning) return;
                 this.ensureAudio();
-                if (this.userRole === 'pitcher' && this.gameState === 'aiming') {
-                    this.startPitchWindup();
+                if (this.userRole === 'pitcher') {
+                    if (this.gameState === 'aiming') {
+                        isAimDragging = true;
+                        handlePointerPitchAim(e);
+                    }
                 } else {
                     this.triggerBatterSwing();
                 }
             });
+
+            this.canvas.addEventListener('pointermove', (e) => {
+                if (isAimDragging && this.userRole === 'pitcher' && this.gameState === 'aiming') {
+                    handlePointerPitchAim(e);
+                }
+            });
+
+            window.addEventListener('pointerup', () => {
+                isAimDragging = false;
+            });
         }
+
+        // 🎯 볼 / 스트라이크 판정 및 코스 빠른 선택 버튼들
+        const zoneBtns = document.querySelectorAll('.mlb-zone-quick-btn');
+        zoneBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.ensureAudio();
+                const zoneKey = btn.getAttribute('data-zone');
+                if (zoneKey) this.applyPitchZonePreset(zoneKey);
+            });
+        });
 
         // 타자 스윙 원클릭 버튼
         const swingBtn = document.getElementById('btn-baseball-swing');
@@ -765,7 +805,7 @@ class BaseballGame {
         this.updateHUD();
         this.showResultBanner(
             (this.userRole === 'batter') ? '🏏 타자 모드 (포수 뒤 시점) ON' : '⚾ 투수 모드 (마운드 뒤 시점) ON',
-            (this.userRole === 'batter') ? '공이 정면으로 날아옵니다! [Enter]로 타격!' : '[WASD]로 코스를 노리고 [Space]로 투구!',
+            (this.userRole === 'batter') ? '공이 정면으로 날아옵니다! [Enter/클릭]으로 타격!' : '[클릭/버튼/WASD]로 볼/스트라이크 결정 후 [Space]로 투구!',
             '#38bdf8'
         );
         this.prepareNextPitch(0.6);
@@ -863,10 +903,11 @@ class BaseballGame {
             this.camera.z = 480;
             this.camera.fov = 360;
         } else {
-            // ⚾ 투수 시점: 투수 마운드 뒤에서 홈플레이트를 향해 바라봄
-            this.camera.x = 0;
-            this.camera.y = 74;
-            this.camera.z = -75;
+            // ⚾ 투수 시점: MLB The Show 방송 중계형 오프셋 투수 카메라
+            // 투수(x:0, z:80)의 어깨 너머로 홈플레이트와 스트라이크존, 타자를 100% 한눈에 선명하게 바라봄!
+            this.camera.x = 36;
+            this.camera.y = 70;
+            this.camera.z = -25;
             this.camera.fov = 360;
         }
         this.camera.shake = 0;
@@ -963,9 +1004,30 @@ class BaseballGame {
         if (pType === 'knuckleball') baseSpeed = 102; // 너클볼: 99~105km/h의 느린 마구!
 
         const finalSpeed = Math.round(baseSpeed + (Math.random() - 0.5) * 6);
-        const spread = (pType === 'knuckleball') ? 16 : pitcherChar.controlSpread;
-        const actualTargetX = this.pitchAimX + (Math.random() - 0.5) * spread;
-        const actualTargetY = this.pitchAimY + (Math.random() - 0.5) * spread;
+
+        // 🎯 [유저 직접 제구 & 볼/스트라이크 판정 100% 결정권]
+        let actualTargetX = this.pitchAimX;
+        let actualTargetY = this.pitchAimY;
+
+        if (this.userRole === 'pitcher') {
+            const inZoneAim = (Math.abs(this.pitchAimX) <= 24 && this.pitchAimY >= 22 && this.pitchAimY <= 66);
+            if (inZoneAim) {
+                // 스트라이크 의도: 100% 스트라이크 존 안쪽으로 정밀 안착 보장!
+                actualTargetX = Math.max(-21, Math.min(21, this.pitchAimX + (Math.random() - 0.5) * 3));
+                actualTargetY = Math.max(25, Math.min(63, this.pitchAimY + (Math.random() - 0.5) * 3));
+            } else {
+                // 볼/유인구 의도: 100% 스트라이크 존 바깥(볼)으로 확정 제구!
+                actualTargetX = this.pitchAimX + (Math.random() - 0.5) * 3;
+                actualTargetY = this.pitchAimY + (Math.random() - 0.5) * 3;
+                if (Math.abs(actualTargetX) < 26 && actualTargetY > 20 && actualTargetY < 68) {
+                    actualTargetX = (actualTargetX >= 0) ? 28 : -28;
+                }
+            }
+        } else {
+            const spread = (pType === 'knuckleball') ? 16 : pitcherChar.controlSpread;
+            actualTargetX = this.pitchAimX + (Math.random() - 0.5) * spread;
+            actualTargetY = this.pitchAimY + (Math.random() - 0.5) * spread;
+        }
 
         // ⚾ 구종별 리얼 비행 시간 (너클볼은 1.18초로 슬로우하게 날아와 궤적과 움직임을 즐길 수 있음!)
         let flightDuration = (148 / finalSpeed) * 0.88;
@@ -1020,14 +1082,19 @@ class BaseballGame {
         };
         this.showRadarGun(finalSpeed, pNameMap[pType] || 'FASTBALL');
 
-        // 투수 모드일 때: 상대 컴퓨터(AI 타자)가 타이밍 맞춰 스윙!
+        // 투수 모드일 때: 상대 컴퓨터(AI 타자)가 스트라이크인지 볼인지 선구안으로 판별!
         if (this.userRole === 'pitcher') {
-            const aiSwingDelay = flightDuration * (0.86 + (Math.random() - 0.5) * 0.24);
-            setTimeout(() => {
-                if (this.isRunning && this.gameState === 'in_flight') {
-                    this.triggerBatterSwing();
-                }
-            }, aiSwingDelay * 1000);
+            const isStrikePitch = (Math.abs(actualTargetX) <= 24 && actualTargetY >= 22 && actualTargetY <= 66);
+            // 스트라이크면 85% 확률로 타격 시도, 볼이면 25% 확률로만 헛스윙(유인구 낚임), 75%는 침착하게 볼 판정!
+            const shouldAISwing = isStrikePitch ? (Math.random() < 0.85) : (Math.random() < 0.25);
+            if (shouldAISwing) {
+                const aiSwingDelay = flightDuration * (0.86 + (Math.random() - 0.5) * 0.22);
+                setTimeout(() => {
+                    if (this.isRunning && this.gameState === 'in_flight') {
+                        this.triggerBatterSwing();
+                    }
+                }, aiSwingDelay * 1000);
+            }
         }
     }
 
@@ -1529,8 +1596,8 @@ class BaseballGame {
             this.stateTimer -= dt;
 
             // 카메라 부드러운 센터 복귀
-            const targetX = 0;
-            const targetY = (this.userRole === 'batter') ? 56 : 74;
+            const targetX = (this.userRole === 'batter') ? 0 : 36;
+            const targetY = (this.userRole === 'batter') ? 56 : 70;
             this.camera.x += (targetX - this.camera.x) * 4 * dt;
             this.camera.y += (targetY - this.camera.y) * 4 * dt;
 
@@ -2028,6 +2095,14 @@ class BaseballGame {
         const fieldingSkin = fieldingCharObj.skins ? fieldingCharObj.skins.classic : { jersey: '#1d4ed8', cap: '#1e3a8a' };
 
         sorted.forEach(f => {
+            // 🚫 [투수 시점 뷰 클리어링]
+            // 투수 시점에서는 홈플레이트를 향해 바라보므로 카메라 앞이나 시야 정중앙을 가리는
+            // 외야수(CF, LF, RF) 및 중앙 내야수는 절대 화면을 가리지 않도록 렌더링 제외!
+            if (this.userRole === 'pitcher') {
+                if (f.role === 'CF' || f.role === 'LF' || f.role === 'RF') return;
+                if (Math.abs(f.x) < 80) return; // 투수-홈플레이트 중앙 통로 100% 확보
+            }
+
             const p = this.project(f.x, f.y, f.z);
             if (!p || p.scale <= 0) return;
             const s = p.scale;
@@ -2435,7 +2510,7 @@ class BaseballGame {
                 // 조작 안내 미니 배지
                 ctx.font = `800 ${Math.max(8, Math.round(9 * s))}px monospace`;
                 ctx.fillStyle = '#ffffff';
-                ctx.fillText('[WASD 조준] [Space 투구]', 0, 24 * s);
+                ctx.fillText('[클릭/버튼/WASD 조준] [Space 투구]', 0, 24 * s);
 
                 ctx.restore();
             }
@@ -3234,6 +3309,7 @@ class BaseballGame {
         if (this.userRole === 'pitcher') {
             if (pitcherBar) pitcherBar.style.display = 'flex';
             if (batterBar) batterBar.style.display = 'none';
+            this.setPitchAim(this.pitchAimX, this.pitchAimY);
         } else {
             if (pitcherBar) pitcherBar.style.display = 'none';
             if (batterBar) batterBar.style.display = 'block';
@@ -3301,6 +3377,62 @@ class BaseballGame {
         this.selectedPitchType = type;
         this.updateHUD();
         this.playUmpireWhistle(800, 0.08);
+    }
+
+    /**
+     * 🎯 투수 조준 위치 & 볼/스트라이크 판정 실시간 갱신
+     */
+    setPitchAim(aimX, aimY, customLabel = null) {
+        this.pitchAimX = Math.max(-36, Math.min(36, aimX));
+        this.pitchAimY = Math.max(10, Math.min(76, aimY));
+
+        const inZone = (Math.abs(this.pitchAimX) <= 24 && this.pitchAimY >= 22 && this.pitchAimY <= 66);
+        const callBadge = document.getElementById('mlb-pitcher-call-badge');
+        if (callBadge) {
+            if (inZone) {
+                callBadge.className = 'pitcher-current-call-badge strike';
+                callBadge.textContent = customLabel || '🎯 스트라이크 존 [포수 미트]';
+            } else {
+                callBadge.className = 'pitcher-current-call-badge ball';
+                callBadge.textContent = customLabel || '⚪ 볼 / 유인구 코스';
+            }
+        }
+    }
+
+    /**
+     * 🎯 볼 / 스트라이크 코스 프리셋 적용
+     */
+    applyPitchZonePreset(zoneKey) {
+        let x = 0;
+        let y = 44;
+        let label = '🎯 스트라이크 [한가운데]';
+
+        if (zoneKey === 'center') {
+            x = 0; y = 44; label = '🎯 스트라이크 [한가운데]';
+        } else if (zoneKey === 'corner-strike') {
+            x = 18; y = 28; label = '🎯 스트라이크 [외곽 코너워크]';
+        } else if (zoneKey === 'low-strike') {
+            x = 0; y = 26; label = '🎯 스트라이크 [무릎 보더라인]';
+        } else if (zoneKey === 'high-strike') {
+            x = 0; y = 60; label = '🎯 스트라이크 [높은 존]';
+        } else if (zoneKey === 'outside-ball') {
+            x = 34; y = 38; label = '⚪ 유인구 [바깥쪽 빠지는 볼]';
+        } else if (zoneKey === 'dirt-ball') {
+            x = 0; y = 12; label = '⚪ 유인구 [원바운드 낮은 볼]';
+        } else if (zoneKey === 'high-ball') {
+            x = 0; y = 74; label = '⚪ 유인구 [높은 하이볼]';
+        } else if (zoneKey === 'inside-ball') {
+            x = -34; y = 40; label = '⚪ 유인구 [몸쪽 위협구]';
+        }
+
+        this.setPitchAim(x, y, label);
+
+        document.querySelectorAll('.mlb-zone-quick-btn').forEach(btn => {
+            if (btn.getAttribute('data-zone') === zoneKey) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+
+        this.playUmpireWhistle(900, 0.06);
     }
 
     showCharModal() {
