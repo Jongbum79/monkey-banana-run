@@ -997,11 +997,12 @@ class BaseballGame {
         const pType = this.selectedPitchType;
 
         // ⚾ 현실적인 KBO/MLB 프로 구속 계산 (직구 147~153, 너클볼 99~105)
-        let baseSpeed = pitcherChar.fastballSpeed || 150;
-        if (pType === 'curve') baseSpeed = 122;
-        if (pType === 'slider') baseSpeed = 138;
-        if (pType === 'changeup') baseSpeed = 128;
-        if (pType === 'knuckleball') baseSpeed = 102; // 너클볼: 99~105km/h의 느린 마구!
+        // ⚾ 현실적인 KBO/MLB 프로 구속 계산 (직구 150~156km/h, 체인지업 124~128km/h)
+        let baseSpeed = pitcherChar.fastballSpeed || 152;
+        if (pType === 'curve') baseSpeed = 121;
+        if (pType === 'slider') baseSpeed = 139;
+        if (pType === 'changeup') baseSpeed = 125;
+        if (pType === 'knuckleball') baseSpeed = 101; // 너클볼: 98~104km/h의 느린 마구!
 
         const finalSpeed = Math.round(baseSpeed + (Math.random() - 0.5) * 6);
 
@@ -1029,42 +1030,42 @@ class BaseballGame {
             actualTargetY = this.pitchAimY + (Math.random() - 0.5) * spread;
         }
 
-        // ⚾ 구종별 리얼 비행 시간 (너클볼은 1.18초로 슬로우하게 날아와 궤적과 움직임을 즐길 수 있음!)
-        let flightDuration = (148 / finalSpeed) * 0.88;
-        if (pType === 'curve') flightDuration = 1.02;
-        if (pType === 'slider') flightDuration = 0.94;
-        if (pType === 'changeup') flightDuration = 1.05;
-        if (pType === 'knuckleball') flightDuration = 1.18;
+        // ⚾ [구종별 리얼 프로 체감 비행 시간]
+        // 직구는 0.50초로 벼락같이 꽂히며, 체인지업은 0.69초로 0.19초의 치명적 타이밍 격차 발생!
+        let flightDuration = 0.50;
+        if (pType === 'fastball') flightDuration = (152 / finalSpeed) * 0.50;
+        else if (pType === 'slider') flightDuration = 0.59;
+        else if (pType === 'changeup') flightDuration = 0.69;
+        else if (pType === 'curve') flightDuration = 0.75;
+        else if (pType === 'knuckleball') flightDuration = 0.90;
 
         const releaseX = 0;
         const releaseY = 46;
         const releaseZ = 85;
         const targetZ = 380;
 
-        const vz = (targetZ - releaseZ) / flightDuration;
-        const vx = (actualTargetX - releaseX) / flightDuration;
-        const vy = (actualTargetY - releaseY) / flightDuration;
-
         this.ball = {
             active: true,
             speedKm: finalSpeed,
             flightDuration: flightDuration,
+            startX: releaseX,
+            startY: releaseY,
+            startZ: releaseZ,
             x: releaseX,
             y: releaseY,
             z: releaseZ,
-            vx: vx,
-            vy: vy,
-            vz: vz,
+            targetX: actualTargetX,
+            targetY: actualTargetY,
+            targetZ: targetZ,
             radius: 8.5,
             rot: 0,
             type: pType,
             speedKmh: finalSpeed,
-            targetX: actualTargetX,
-            targetY: actualTargetY,
             isHit: false,
             hitType: null,
             flightTimer: 0,
-            hitDist: 0
+            hitDist: 0,
+            trail: []
         };
 
         this.pitcher.phase = 'release';
@@ -1072,28 +1073,57 @@ class BaseballGame {
         this.playPitchThrowSound(pType);
         this.createReleaseSparks(releaseX, releaseY, releaseZ);
 
-        // 스피드건 레이더 팝업 표시
+        // 스피드건 레이더 팝업 표시 (구종별 무브먼트 특성 포함)
         const pNameMap = {
-            fastball: '⚡ 4-SEAM FASTBALL',
-            curve: '🌀 12-6 POWER CURVE',
-            slider: '🌪️ SHARP SLIDER',
-            changeup: '🐢 CIRCLE CHANGEUP',
-            knuckleball: '🌀 MYSTIC KNUCKLEBALL (너클볼)'
+            fastball: '⚡ 4-SEAM FASTBALL • 라이징 홉 +38cm Hop',
+            curve: '🌀 12-6 POWER CURVE • 폭포수 종낙차 -42cm Drop',
+            slider: '🌪️ SHARP SLIDER • 횡 브레이크 -28cm Wipeout',
+            changeup: '🐢 CIRCLE CHANGEUP • 급감속 브레이킹 -26km/h Sink',
+            knuckleball: '🔮 MYSTIC KNUCKLEBALL • 무회전 플러터 0.2 RPM'
         };
         this.showRadarGun(finalSpeed, pNameMap[pType] || 'FASTBALL');
 
-        // 투수 모드일 때: 상대 컴퓨터(AI 타자)가 스트라이크인지 볼인지 선구안으로 판별!
+        // 투수 모드일 때: 상대 AI 타자가 피치 터널링과 완급조절에 "진짜 속아서" 헛스윙하도록 지능형 로직 적용!
         if (this.userRole === 'pitcher') {
             const isStrikePitch = (Math.abs(actualTargetX) <= 24 && actualTargetY >= 22 && actualTargetY <= 66);
-            // 스트라이크면 85% 확률로 타격 시도, 볼이면 25% 확률로만 헛스윙(유인구 낚임), 75%는 침착하게 볼 판정!
-            const shouldAISwing = isStrikePitch ? (Math.random() < 0.85) : (Math.random() < 0.25);
-            if (shouldAISwing) {
-                const aiSwingDelay = flightDuration * (0.86 + (Math.random() - 0.5) * 0.22);
+            let aiWillSwing = false;
+            let aiSwingTimingOffset = 0; // 초 단위 타이밍 오차 (음수: 이른 헛스윙, 양수: 늦은 헛스윙)
+
+            if (pType === 'fastball') {
+                if (isStrikePitch) {
+                    aiWillSwing = Math.random() < 0.88;
+                    // 직구의 압도적인 구속에 배트가 밀림
+                    aiSwingTimingOffset = (finalSpeed >= 152) ? 0.05 + Math.random() * 0.05 : (Math.random() - 0.5) * 0.03;
+                } else {
+                    // 높은 하이볼 유인구에 속음
+                    aiWillSwing = (actualTargetY > 66 && Math.random() < 0.45);
+                    aiSwingTimingOffset = 0.06;
+                }
+            } else if (pType === 'changeup') {
+                // 체인지업: 타자가 직구 터널인 줄 알고 직구 타이밍(0.50초)으로 스윙을 앞서 나감!
+                aiWillSwing = isStrikePitch ? (Math.random() < 0.85) : (Math.random() < 0.55);
+                aiSwingTimingOffset = -0.17 + (Math.random() - 0.5) * 0.04; // 체인지업에 완전히 낚여 이른 헛스윙!
+            } else if (pType === 'slider') {
+                // 슬라이더: 가운데 직구 터널인 줄 알고 휘두르다가 바깥쪽으로 도망가서 헛스윙!
+                aiWillSwing = isStrikePitch ? (Math.random() < 0.84) : (Math.random() < 0.70); // 바깥쪽 유인구에 특히 잘 낚임!
+                aiSwingTimingOffset = (Math.random() - 0.5) * 0.03;
+            } else if (pType === 'curve') {
+                // 커브: 높은 공으로 착각하거나 느린 낙차에 타이밍 뺏김
+                aiWillSwing = isStrikePitch ? (Math.random() < 0.80) : (actualTargetY < 24 && Math.random() < 0.55);
+                aiSwingTimingOffset = -0.12 + (Math.random() - 0.5) * 0.05;
+            } else if (pType === 'knuckleball') {
+                // 너클볼: 카오스 무회전 비행에 스윙 타이밍 예측 불가
+                aiWillSwing = Math.random() < 0.65;
+                aiSwingTimingOffset = -0.16 + (Math.random() - 0.5) * 0.12;
+            }
+
+            if (aiWillSwing) {
+                const swingDelay = Math.max(0.18, (flightDuration * 0.90) + aiSwingTimingOffset);
                 setTimeout(() => {
-                    if (this.isRunning && this.gameState === 'in_flight') {
+                    if (this.isRunning && this.gameState === 'in_flight' && !this.ball.isHit) {
                         this.triggerBatterSwing();
                     }
-                }, aiSwingDelay * 1000);
+                }, swingDelay * 1000);
             }
         }
     }
@@ -1129,11 +1159,11 @@ class BaseballGame {
         dot.style.left = `${percentX.toFixed(1)}%`;
         dot.style.top = `${percentY.toFixed(1)}%`;
 
-        let pitchName = '4-SEAM 직구';
-        if (pType === 'curve') pitchName = '12-6 파워 커브';
-        else if (pType === 'slider') pitchName = '슬라이더';
-        else if (pType === 'changeup') pitchName = '서클 체인지업';
-        else if (pType === 'knuckleball') pitchName = '🌀 무회전 너클볼';
+        let pitchName = '⚡ 4-SEAM 직구 (라이징 백스핀 +38cm)';
+        if (pType === 'curve') pitchName = '🌀 12-6 파워 커브 (폭포수 종낙차 -42cm)';
+        else if (pType === 'slider') pitchName = '🌪️ 샤프 슬라이더 (횡 브레이크 -28cm)';
+        else if (pType === 'changeup') pitchName = '🐢 서클 체인지업 (급감속 싱커 -26km/h)';
+        else if (pType === 'knuckleball') pitchName = '🔮 무회전 너클볼 (카오스 플러터 0.2 RPM)';
 
         const locationDesc = isStrike ? '스트라이크 존 공략' : '존을 벗어난 유인구';
         descEl.textContent = `${pitchName} • ${locationDesc}`;
@@ -1199,105 +1229,183 @@ class BaseballGame {
         const batterChar = this.getCurrentBatter();
         const lineupItem = this.getCurrentBatterLineup();
 
-        // 🐾 타자별 고유 장점(Perk) 적용:
-        // 1번 개구리 컨택트 99 (+35% 판정 윈도우 확대)
-        const baseWindow = 44;
-        const contactRange = Math.round(baseWindow * (lineupItem.contactBonus || batterChar.contactWindowBonus || 1.0));
         const sweetSpotZ = 380;
-        const diffZ = Math.abs(z - sweetSpotZ);
+        const diffZ = z - sweetSpotZ; // 음수: 공이 아직 덜 옴(이른 스윙), 양수: 공이 이미 지남(늦은 스윙)
 
-        if (diffZ <= contactRange + 10) {
-            b.isHit = true;
-            this.gameState = 'hit_flight';
+        // 1. ⚠️ 타이밍 판정 (Z축 거리 오차 - 너무 이르거나 늦은 헛스윙)
+        if (diffZ < -42) {
+            // 체인지업 / 커브에 속아 너무 일찍 나간 헛스윙!
+            this.handleDeceptiveSwingMiss('early', b.type, diffZ);
+            return;
+        } else if (diffZ > 36) {
+            // 154km/h 광속구에 배트가 밀려 늦은 헛스윙!
+            this.handleDeceptiveSwingMiss('late', b.type, diffZ);
+            return;
+        }
 
-            // 이전 베이스 주자 상태 복사 (주루 애니메이션용)
-            const prevBases = { ...this.bases };
+        // 2. ⚠️ 2D 로케이션 판정 (X, Y축 오차 - 슬라이더 횡 변화 등 유인구 낚임 판정)
+        const dx = b.x;
+        const dy = (b.y - 44) * 0.85;
+        const distXY = Math.sqrt(dx * dx + dy * dy);
 
-            // 1. 💥 PERFECT CONTACT: 초대형 홈런! (오차 18 이하)
-            if (diffZ <= 18) {
-                b.hitType = 'homerun';
-                let dist = Math.round(124 + (lineupItem.powerBonus || 0) + (batterChar.powerBonus || 0) + Math.random() * 22);
-                if (b.type === 'knuckleball') dist += 8;
+        if (distXY > 33) {
+            // 스트라이크 존 밖으로 예리하게 도망간 유인구에 낚인 헛스윙!
+            this.handleDeceptiveSwingMiss('chase', b.type, distXY);
+            return;
+        }
 
-                b.hitDist = dist;
-                if (dist > this.maxDistance) this.maxDistance = dist;
+        // 3. 💥 정타 판정 및 타구 비행 시작!
+        b.isHit = true;
+        this.gameState = 'hit_flight';
 
-                // 💎 주자 전원 득점 계산 및 3D 베이스 러닝 트리거
-                const scoredRuns = this.advanceRunnersOnHit('homerun');
-                this.spawnBaseRunners('homerun', prevBases);
-                this.addScore(scoredRuns, 'homerun');
-                this.resetAtBatCount(true); // 타석 종료 -> 볼/스트라이크 초기화 & 다음 타순!
+        const prevBases = { ...this.bases };
+        const absDiffZ = Math.abs(diffZ);
 
-                b.vz = -560 - Math.random() * 80;
-                b.vy = 330 + Math.random() * 60;
-                b.vx = (Math.random() - 0.5) * 140;
+        // [1] 💥 PERFECT CONTACT: 초특대형 홈런! (타이밍 오차 16 이하 & 코스 오차 16 이하)
+        if (absDiffZ <= 16 && distXY <= 16) {
+            b.hitType = 'homerun';
+            let dist = Math.round(126 + (lineupItem.powerBonus || 0) + (batterChar.powerBonus || 0) + Math.random() * 24);
+            if (b.type === 'knuckleball') dist += 8;
 
-                this.camera.shake = 22;
-                this.playBatHitSound('homerun');
-                this.triggerHomeRunCelebration(dist, scoredRuns);
-            }
-            // 2. 🎯 GREAT CONTACT: 2루타 / 3루타 / 1루타 (오차 19 ~ 38)
-            else if (diffZ <= 38) {
-                // 3루타 및 2루타 확률 (3번 펭귄은 2루타 확률 2배)
-                const isTriple = (Math.random() < 0.12 * (lineupItem.contactBonus || 1.0));
-                const isDouble = !isTriple && (Math.random() < 0.42 * (lineupItem.doubleBonus || batterChar.doubleBonus || 1.0));
-                const hitType = isTriple ? 'triple' : (isDouble ? 'double' : 'single');
-                b.hitType = hitType;
+            b.hitDist = dist;
+            if (dist > this.maxDistance) this.maxDistance = dist;
 
-                const dist = isTriple ? Math.round(106 + Math.random() * 15) : (isDouble ? Math.round(90 + Math.random() * 24) : Math.round(64 + Math.random() * 22));
-                b.hitDist = dist;
-                if (dist > this.maxDistance) this.maxDistance = dist;
+            const scoredRuns = this.advanceRunnersOnHit('homerun');
+            this.spawnBaseRunners('homerun', prevBases);
+            this.addScore(scoredRuns, 'homerun');
+            this.resetAtBatCount(true);
 
-                const scoredRuns = this.advanceRunnersOnHit(hitType);
-                this.spawnBaseRunners(hitType, prevBases);
-                this.addScore(scoredRuns, hitType);
-                this.resetAtBatCount(true); // 타석 종료 -> 볼/스트라이크 초기화 & 다음 타순!
+            b.vz = -570 - Math.random() * 80;
+            b.vy = 340 + Math.random() * 60;
+            b.vx = (b.x * 2.2) + (Math.random() - 0.5) * 120;
 
-                b.vz = -410 - Math.random() * 50;
-                b.vy = 125 + Math.random() * 35;
-                b.vx = (Math.random() - 0.5) * 200;
+            this.camera.shake = 22;
+            this.playBatHitSound('homerun');
+            this.triggerHomeRunCelebration(dist, scoredRuns);
+        }
+        // [2] 🎯 GREAT CONTACT: 2루타 / 3루타 / 1루타 (타이밍 오차 28 이하 & 코스 오차 25 이하)
+        else if (absDiffZ <= 28 && distXY <= 25) {
+            const isTriple = (Math.random() < 0.12 * (lineupItem.contactBonus || 1.0));
+            const isDouble = !isTriple && (Math.random() < 0.42 * (lineupItem.doubleBonus || batterChar.doubleBonus || 1.0));
+            const hitType = isTriple ? 'triple' : (isDouble ? 'double' : 'single');
+            b.hitType = hitType;
 
-                this.camera.shake = 10;
-                this.playBatHitSound('hit');
-                let titleText = '⚾ 1루타 클린 안타 성공!';
-                if (hitType === 'triple') titleText = '⚡ 3루타! 우중간을 완전히 가르는 벼락 3루타!';
-                else if (hitType === 'double') titleText = '🌪️ 2루타! 외야를 가르는 총알 라인드라이브!';
+            const dist = isTriple ? Math.round(108 + Math.random() * 15) : (isDouble ? Math.round(92 + Math.random() * 24) : Math.round(66 + Math.random() * 22));
+            b.hitDist = dist;
+            if (dist > this.maxDistance) this.maxDistance = dist;
 
-                const subText = (scoredRuns > 0) ? `주자 홈인! (+${scoredRuns}점 득점)` : `주자 전원 진루 (비거리 ${dist}m)`;
-                this.showResultBanner(titleText, subText, '#38bdf8');
-            }
-            // 3. 🛡️ 수비수 정면 땅볼 / 외야 플라이 아웃 (오차 39 ~ 50 빗맞은 타구)
-            else if (diffZ <= 50) {
-                b.hitType = 'out';
-                b.vz = -240 - Math.random() * 45;
-                b.vy = 85 + Math.random() * 30;
-                b.vx = (Math.random() - 0.5) * 140;
-                this.playBatHitSound('hit');
+            const scoredRuns = this.advanceRunnersOnHit(hitType);
+            this.spawnBaseRunners(hitType, prevBases);
+            this.addScore(scoredRuns, hitType);
+            this.resetAtBatCount(true);
 
-                let outPos = '유격수 땅볼';
-                if (b.vx > 35) outPos = '1루수 땅볼';
-                else if (b.vx < -35) outPos = '3루수 땅볼';
-                else if (Math.random() < 0.45) outPos = '중견수 플라이';
+            b.vz = -420 - Math.random() * 50;
+            b.vy = 130 + Math.random() * 35;
+            b.vx = (b.x * 2.0) + (Math.random() - 0.5) * 160;
 
-                setTimeout(() => {
-                    this.recordOut(`🛡️ 수비 성공! ${outPos} 아웃!`);
-                }, 850);
-            }
-            // 4. ⚠️ 관중석 파울볼 (오차 51 이상)
-            else {
-                b.hitType = 'foul';
-                b.vz = -110;
-                b.vy = 240;
-                b.vx = (z > sweetSpotZ) ? -320 : 320;
+            this.camera.shake = 10;
+            this.playBatHitSound('hit');
+            let titleText = '⚾ 1루타 클린 안타 성공!';
+            if (hitType === 'triple') titleText = '⚡ 3루타! 우중간을 완전히 가르는 벼락 3루타!';
+            else if (hitType === 'double') titleText = '🌪️ 2루타! 외야를 가르는 총알 라인드라이브!';
 
-                if (this.strikes < 2) this.strikes++;
-                this.playBatHitSound('foul');
-                this.showResultBanner('⚠️ 관중석 파울볼!', '2스트라이크 이전 파울 (+1 스트라이크)', '#f59e0b');
-            }
+            const subText = (scoredRuns > 0) ? `주자 홈인! (+${scoredRuns}점 득점)` : `주자 전원 진루 (비거리 ${dist}m)`;
+            this.showResultBanner(titleText, subText, '#38bdf8');
+        }
+        // [3] 🛡️ 빗맞은 내야 땅볼 / 외야 플라이 아웃
+        else if (absDiffZ <= 38 && distXY <= 31) {
+            b.hitType = 'out';
+            b.vz = -240 - Math.random() * 45;
+            b.vy = 85 + Math.random() * 30;
+            b.vx = (b.x * 2.0) + (Math.random() - 0.5) * 140;
+            this.playBatHitSound('hit');
 
-            this.createHitSparks(b.x, b.y, b.z);
+            let outPos = '유격수 땅볼';
+            if (b.vx > 35) outPos = '1루수 땅볼';
+            else if (b.vx < -35) outPos = '3루수 땅볼';
+            else if (Math.random() < 0.45) outPos = '중견수 플라이';
+
+            setTimeout(() => {
+                this.recordOut(`🛡️ 빗맞은 타구! ${outPos} 아웃!`);
+            }, 850);
+        }
+        // [4] ⚠️ 빗맞은 관중석 파울볼
+        else {
+            b.hitType = 'foul';
+            b.vz = -110;
+            b.vy = 240;
+            b.vx = (diffZ > 0) ? -320 : 320;
+
+            if (this.strikes < 2) this.strikes++;
+            this.playBatHitSound('foul');
+            this.showResultBanner('⚠️ 빗맞은 파울볼!', '2스트라이크 이전 파울 (+1 스트라이크)', '#f59e0b');
             this.updateHUD();
         }
+
+        this.createHitSparks(b.x, b.y, b.z);
+        this.updateHUD();
+    }
+
+    /**
+     * 💨 구종 및 궤적에 속아 발생한 헛스윙 처리 (Deceptive Swing-and-Miss)
+     */
+    handleDeceptiveSwingMiss(reason, pitchType, offsetVal) {
+        this.strikes++;
+        this.playCatchSound();
+        this.playUmpireWhistle(1400, 0.2);
+
+        let title = '💨 헛스윙! (SWING AND MISS)';
+        let desc = '완벽하게 타이밍을 뺏겼습니다!';
+
+        if (reason === 'early') {
+            if (pitchType === 'changeup') {
+                title = '🐢 [TOO EARLY] 125km/h 체인지업에 낚임!';
+                desc = '직구인 줄 알고 배트를 너무 일찍 돌렸습니다!';
+            } else if (pitchType === 'curve') {
+                title = '🌀 [TOO EARLY] 12-6 파워 커브에 앞선 헛스윙!';
+                desc = '느린 폭포수 낙차를 기다리지 못하고 헛스윙!';
+            } else if (pitchType === 'knuckleball') {
+                title = '🔮 [TOO EARLY] 무회전 너클볼에 헛스윙!';
+                desc = '초슬로우 마구의 타이밍에 완전히 속았습니다!';
+            } else {
+                title = '⚠️ [TOO EARLY] 스윙 타이밍이 너무 빠릅니다!';
+                desc = '투수의 완급조절에 속아 이른 헛스윙!';
+            }
+        } else if (reason === 'late') {
+            if (pitchType === 'fastball') {
+                title = '⚡ [TOO LATE] 154km/h 불꽃 강속구에 배트 밀림!';
+                desc = '광속구의 압도적인 구속을 따라가지 못했습니다!';
+            } else {
+                title = '⚠️ [TOO LATE] 타이밍이 늦었습니다!';
+                desc = '공이 이미 포수 미트에 꽂힌 후 헛스윙!';
+            }
+        } else if (reason === 'chase') {
+            if (pitchType === 'slider') {
+                title = '🌪️ [CHASE] 날카로운 슬라이더에 낚여 헛스윙!';
+                desc = '가운데 직구인 줄 알고 돌렸으나 바깥쪽으로 예리하게 도망침!';
+            } else if (pitchType === 'curve') {
+                title = '🌀 [CHASE] 원바운드 폭포수 커브에 헛스윙!';
+                desc = '존 밑으로 떨어지는 유인구에 배트가 딸려 나갔습니다!';
+            } else if (this.ball && this.ball.y < 22) {
+                title = '⚪ [CHASE] 흙먼지 원바운드 볼에 헛스윙!';
+                desc = '낮게 가라앉는 유인구에 속았습니다!';
+            } else if (this.ball && this.ball.y > 66) {
+                title = '⚪ [CHASE] 높은 하이볼 유인구에 헛스윙!';
+                desc = '눈높이로 솟아오르는 하이볼에 배트 헛손질!';
+            } else {
+                title = '⚪ [CHASE] 유인구에 속아 헛스윙!';
+                desc = '스트라이크 존을 벗어난 공에 낚였습니다!';
+            }
+        }
+
+        if (this.strikes >= 3) {
+            this.recordOut('💨 3구 헛스윙 삼진 아웃! (STRIKE OUT!)');
+        } else {
+            this.showResultBanner(title, `${desc} (카운트: ${this.balls}B - ${this.strikes}S)`, '#facc15');
+            this.gameState = 'result_pause';
+            this.stateTimer = 1.3;
+        }
+        this.updateHUD();
     }
 
     /**
@@ -1506,49 +1614,90 @@ class BaseballGame {
         } else if (this.gameState === 'in_flight') {
             const b = this.ball;
             b.flightTimer += dt;
+            const rawProg = Math.min(1.0, b.flightTimer / b.flightDuration);
 
-            // 🌀 리얼 물리 역학 (구종별 궤적 반영)
-            if (b.type === 'curve') {
-                // 파워 커브: 12-6 급낙차
-                const cMult = pitcherChar.curveBonus || 1.8;
-                b.vy -= 68 * cMult * dt;
-                b.vx += Math.sin(b.flightTimer * 12) * 16 * dt;
-                b.rot += dt * 38;
-            } else if (b.type === 'slider') {
-                // 슬라이더: 횡으로 날카롭게 꺾임
-                const sMult = pitcherChar.sliderBonus || 2.0;
-                b.vx -= 64 * sMult * dt;
-                b.vy -= 18 * dt;
-                b.rot += dt * 36;
-            } else if (b.type === 'changeup') {
-                // 체인지업: 홈플레이트 앞 급감속 & 싱킹
-                if (b.z > 220) {
-                    b.vz *= 0.975;
-                    b.vy -= 30 * dt;
-                }
-                b.rot += dt * 26;
+            // 1. Z축 전진 (체인지업의 종속 급감속 & 너클볼의 플러터)
+            let zProg = rawProg;
+            if (b.type === 'changeup') {
+                // 체인지업: 초반 45% 구간은 직구 속도로 빠르게 날아오다가, 후반에 공기저항을 맞아 뚝 감속!
+                zProg = (rawProg < 0.45) ? (rawProg * 1.25) : (0.45 * 1.25 + (rawProg - 0.45) * 0.795);
             } else if (b.type === 'knuckleball') {
-                // 🌀 너클볼 마구: 99~105km/h 초슬로우 피치, 무회전, 나비처럼 좌우상하 요동치는 카오스 궤적 & 종속 급낙차!
-                const flutterX = Math.sin(b.flightTimer * 15.5) * Math.cos(b.flightTimer * 21.0);
-                const flutterY = Math.cos(b.flightTimer * 13.0) * Math.sin(b.flightTimer * 18.0);
-                b.vx += flutterX * 26 * dt;
-                b.vy += flutterY * 18 * dt;
-                if (b.z > 240) {
-                    b.vy -= 44 * dt; // 홈플레이트 앞 뚝 떨어지는 심한 낙차!
-                    b.vz *= 0.985;
+                zProg = rawProg + Math.sin(rawProg * Math.PI * 4) * 0.012;
+            }
+            b.z = b.startZ + (b.targetZ - b.startZ) * Math.min(1.0, zProg);
+
+            // 2. 궤적 진행률 (0.0 ~ 1.0)
+            const p = Math.max(0, Math.min(1.0, (b.z - b.startZ) / (b.targetZ - b.startZ)));
+            const xBase = b.startX + (b.targetX - b.startX) * p;
+            const yBase = b.startY + (b.targetY - b.startY) * p;
+
+            let offsetX = 0;
+            let offsetY = 0;
+            let trailColor = '#38bdf8';
+
+            if (b.type === 'fastball') {
+                // ⚡ 4-SEAM FASTBALL: 강력한 백스핀에 의한 라이징 홉(Hop) 효과!
+                offsetY = Math.sin(p * Math.PI) * 9.5;
+                b.rot += dt * 54;
+                trailColor = '#38bdf8';
+                if (Math.random() < 0.35) this.createFastballSparks(b.x, b.y, b.z);
+            } else if (b.type === 'curve') {
+                // 🌀 12-6 POWER CURVE: 초기 솟구치는 Hump -> 60% 지점 이후 폭포수 12-6 급낙차!
+                if (p < 0.42) {
+                    offsetY = Math.sin((p / 0.42) * Math.PI) * 16.0;
+                } else {
+                    const u = (p - 0.42) / 0.58;
+                    offsetY = -34.0 * Math.sin(u * Math.PI) * Math.pow(u, 0.85);
                 }
-                b.rot += dt * 0.4; // 거의 회전하지 않는 무회전 시각 효과!
+                offsetX = Math.sin(p * Math.PI) * 5.0;
+                b.rot += dt * 40;
+                trailColor = '#34d399';
+                if (Math.random() < 0.35) this.createCurveTrail(b.x, b.y, b.z);
+            } else if (b.type === 'slider') {
+                // 🌪️ SHARP SLIDER: 60% 지점까지 한가운데 직구 터널 -> 홈플레이트 앞 날카로운 횡 브레이크(Wipeout)!
+                if (p < 0.60) {
+                    offsetX = (0 - b.targetX) * Math.sin((p / 0.60) * (Math.PI * 0.5)) * (1.0 - p);
+                } else {
+                    const u = (p - 0.60) / 0.40;
+                    offsetX = (b.targetX >= 0 ? 1 : -1) * 22.0 * Math.sin(u * Math.PI);
+                    offsetY = -12.0 * Math.sin(u * Math.PI);
+                }
+                b.rot += dt * 46;
+                trailColor = '#c084fc';
+                if (Math.random() < 0.35) this.createSliderTrail(b.x, b.y, b.z);
+            } else if (b.type === 'changeup') {
+                // 🐢 CIRCLE CHANGEUP: 직구 터널 높이 위장 -> 홈플레이트 앞 싱킹(Sink/Fade)!
+                if (p < 0.62) {
+                    offsetY = Math.sin((p / 0.62) * (Math.PI * 0.5)) * 14.0;
+                } else {
+                    const u = (p - 0.62) / 0.38;
+                    offsetY = -24.0 * Math.sin(u * Math.PI);
+                    offsetX = 7.0 * Math.sin(u * Math.PI);
+                }
+                b.rot += dt * 20;
+                trailColor = '#fbbf24';
+                if (Math.random() < 0.35) this.createChangeupSmoke(b.x, b.y, b.z);
+            } else if (b.type === 'knuckleball') {
+                // 🔮 MYSTIC KNUCKLEBALL: 거의 0에 가까운 무회전, 좌우/상하 카오스 요동 (Flutter)
+                const flutterX = Math.sin(b.flightTimer * 24.0) * Math.cos(b.flightTimer * 18.0);
+                const flutterY = Math.cos(b.flightTimer * 20.0) * Math.sin(b.flightTimer * 15.0);
+                offsetX = flutterX * 13.0 * Math.sin(p * Math.PI);
+                offsetY = flutterY * 11.0 * Math.sin(p * Math.PI) - 8.0 * Math.sin(p * Math.PI);
+                b.rot += dt * 0.25;
+                trailColor = '#f472b6';
                 this.createKnuckleballVortex(b.x, b.y, b.z);
-            } else {
-                b.rot += dt * 34;
             }
 
-            b.x += b.vx * dt;
-            b.y += b.vy * dt;
-            b.z += b.vz * dt;
+            b.x = xBase + offsetX;
+            b.y = yBase + offsetY;
 
-            // 포수 미트 포구 (미타격 시)
-            if (b.z >= 405 && !b.isHit) {
+            // 3. 3D Statcast 트래일 히스토리 기록
+            if (!b.trail) b.trail = [];
+            b.trail.push({ x: b.x, y: b.y, z: b.z, color: trailColor });
+            if (b.trail.length > 22) b.trail.shift();
+
+            // 4. 포수 미트 포구 (홈플레이트 z=380 통과 후 미타격 시)
+            if (rawProg >= 1.0 && !b.isHit) {
                 b.active = false;
                 this.handlePitchMissResult(b.targetX, b.targetY);
             }
@@ -3037,7 +3186,29 @@ class BaseballGame {
     renderBall(ctx) {
         const b = this.ball;
         const p = this.project(b.x, b.y, b.z);
+        if (!p) return;
         const r = Math.max(5, b.radius * p.scale);
+
+        // [0] 🌟 3D Statcast 궤적 리본 트레이서 (Pitch Trajectory Tracer)
+        if (b.trail && b.trail.length > 1) {
+            ctx.save();
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            for (let i = 0; i < b.trail.length - 1; i++) {
+                const pt1 = this.project(b.trail[i].x, b.trail[i].y, b.trail[i].z);
+                const pt2 = this.project(b.trail[i + 1].x, b.trail[i + 1].y, b.trail[i + 1].z);
+                if (!pt1 || !pt2) continue;
+                const alpha = (i / b.trail.length) * 0.75;
+                ctx.strokeStyle = b.trail[i].color || '#38bdf8';
+                ctx.globalAlpha = alpha;
+                ctx.lineWidth = Math.max(1.8, 5.0 * pt1.scale * (i / b.trail.length));
+                ctx.beginPath();
+                ctx.moveTo(pt1.x, pt1.y);
+                ctx.lineTo(pt2.x, pt2.y);
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
 
         // [1] 3D 지면 그림자 (공의 높이에 따라 자연스럽게 번지고 축소되는 동적 그림자)
         const shadowPt = this.project(b.x, 0, b.z);
@@ -3061,11 +3232,23 @@ class BaseballGame {
         ctx.translate(p.x, p.y);
         ctx.rotate(b.rot);
 
-        // 🌀 너클볼 마구 보라빛 신비로운 아우라
-        if (b.type === 'knuckleball' || b.type === 'fireball') {
-            ctx.shadowColor = '#a855f7';
+        // 🌟 구종별 다이내믹 글로우 아우라
+        if (b.type === 'fastball') {
+            ctx.shadowColor = '#38bdf8';
+            ctx.shadowBlur = 12;
+        } else if (b.type === 'slider') {
+            ctx.shadowColor = '#c084fc';
+            ctx.shadowBlur = 14;
+        } else if (b.type === 'curve') {
+            ctx.shadowColor = '#34d399';
+            ctx.shadowBlur = 14;
+        } else if (b.type === 'changeup') {
+            ctx.shadowColor = '#fbbf24';
+            ctx.shadowBlur = 14;
+        } else if (b.type === 'knuckleball') {
+            ctx.shadowColor = '#f472b6';
             ctx.shadowBlur = 18;
-            ctx.fillStyle = 'rgba(168, 85, 247, 0.25)';
+            ctx.fillStyle = 'rgba(244, 114, 182, 0.25)';
             ctx.beginPath();
             ctx.arc(0, 0, r * 1.35, 0, Math.PI * 2);
             ctx.fill();
@@ -3116,6 +3299,70 @@ class BaseballGame {
         ctx.restore();
     }
 
+    createFastballSparks(x, y, z) {
+        for (let i = 0; i < 2; i++) {
+            this.particles.push({
+                x: x + (Math.random() - 0.5) * 4,
+                y: y + (Math.random() - 0.5) * 4,
+                z: z - 4,
+                vx: (Math.random() - 0.5) * 16,
+                vy: (Math.random() - 0.5) * 16,
+                vz: -20,
+                color: Math.random() < 0.6 ? '#38bdf8' : '#93c5fd',
+                size: 3 + Math.random() * 3,
+                life: 0.25
+            });
+        }
+    }
+
+    createSliderTrail(x, y, z) {
+        for (let i = 0; i < 2; i++) {
+            this.particles.push({
+                x: x + (Math.random() - 0.5) * 5,
+                y: y + (Math.random() - 0.5) * 5,
+                z: z - 5,
+                vx: (Math.random() - 0.5) * 20,
+                vy: (Math.random() - 0.5) * 14,
+                vz: -16,
+                color: Math.random() < 0.6 ? '#c084fc' : '#a855f7',
+                size: 3 + Math.random() * 3,
+                life: 0.28
+            });
+        }
+    }
+
+    createCurveTrail(x, y, z) {
+        for (let i = 0; i < 2; i++) {
+            this.particles.push({
+                x: x + (Math.random() - 0.5) * 4,
+                y: y + (Math.random() - 0.5) * 4,
+                z: z - 4,
+                vx: (Math.random() - 0.5) * 12,
+                vy: (Math.random() - 0.5) * 12 - 8,
+                vz: -14,
+                color: Math.random() < 0.6 ? '#34d399' : '#10b981',
+                size: 3.5 + Math.random() * 3.5,
+                life: 0.3
+            });
+        }
+    }
+
+    createChangeupSmoke(x, y, z) {
+        for (let i = 0; i < 2; i++) {
+            this.particles.push({
+                x: x + (Math.random() - 0.5) * 6,
+                y: y + (Math.random() - 0.5) * 6,
+                z: z - 6,
+                vx: (Math.random() - 0.5) * 10,
+                vy: (Math.random() - 0.5) * 10 - 4,
+                vz: -10,
+                color: Math.random() < 0.6 ? '#fbbf24' : '#f59e0b',
+                size: 4 + Math.random() * 4,
+                life: 0.35
+            });
+        }
+    }
+
     createKnuckleballVortex(x, y, z) {
         for (let i = 0; i < 2; i++) {
             this.particles.push({
@@ -3125,7 +3372,7 @@ class BaseballGame {
                 vx: (Math.random() - 0.5) * 14,
                 vy: (Math.random() - 0.5) * 14,
                 vz: -15,
-                color: Math.random() < 0.5 ? '#a855f7' : '#c084fc',
+                color: Math.random() < 0.5 ? '#f472b6' : '#ec4899',
                 size: 4 + Math.random() * 4,
                 life: 0.32
             });
@@ -3555,15 +3802,64 @@ class BaseballGame {
             const now = ctx.currentTime;
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
-            osc.type = (type === 'knuckleball' || type === 'fireball') ? 'sine' : 'triangle';
-            osc.frequency.setValueAtTime((type === 'knuckleball' || type === 'fireball') ? 280 : 380, now);
-            osc.frequency.exponentialRampToValueAtTime(120, now + 0.22);
-            gain.gain.setValueAtTime(0.2, now);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.22);
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.start(now);
-            osc.stop(now + 0.22);
+
+            if (type === 'fastball') {
+                // ⚡ 직구: 날카롭고 빠른 채찍 바람소리
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(560, now);
+                osc.frequency.exponentialRampToValueAtTime(160, now + 0.16);
+                gain.gain.setValueAtTime(0.26, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.16);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.16);
+            } else if (type === 'slider') {
+                // 🌪️ 슬라이더: 날카롭게 꺾이는 스윙 사운드
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(440, now);
+                osc.frequency.exponentialRampToValueAtTime(140, now + 0.20);
+                gain.gain.setValueAtTime(0.18, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.20);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.20);
+            } else if (type === 'curve') {
+                // 🌀 커브: 묵직하게 가라앉는 깊은 울림
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(320, now);
+                osc.frequency.exponentialRampToValueAtTime(90, now + 0.28);
+                gain.gain.setValueAtTime(0.24, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.28);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.28);
+            } else if (type === 'changeup') {
+                // 🐢 체인지업: 부드럽게 감속되는 조용한 바람
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(260, now);
+                osc.frequency.exponentialRampToValueAtTime(110, now + 0.26);
+                gain.gain.setValueAtTime(0.16, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.26);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.26);
+            } else {
+                // 🔮 너클볼: 신비로운 미스티 사운드
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.exponentialRampToValueAtTime(340, now + 0.15);
+                osc.frequency.exponentialRampToValueAtTime(130, now + 0.32);
+                gain.gain.setValueAtTime(0.20, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.32);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.32);
+            }
         } catch (e) {}
     }
 
