@@ -280,6 +280,7 @@ class BaseballGame {
         this.strikes = 0;
         this.balls = 0;
         this.maxDistance = 0;
+        this.difficulty = 'easy'; // 'easy' (초보자) | 'normal' (보통) | 'pro' (프로)
 
         // 🌐 서버 매칭 상태 머신
         this.isMatching = false;
@@ -387,6 +388,9 @@ class BaseballGame {
 
         this.bindEvents();
         this.setupBroadcastChannel();
+        const savedDiff = safeGetStorage('smilegames_bb_difficulty');
+        this.difficulty = (savedDiff && ['easy', 'normal', 'pro'].includes(savedDiff)) ? savedDiff : 'easy';
+        this.updateDifficultyUI();
         this.updateHUD();
         this.isInitialized = true;
         this.render(); // 초기 캔버스 즉시 렌더링
@@ -578,6 +582,15 @@ class BaseballGame {
                 }
             });
         });
+
+        // 난이도 조절 버튼 (쉬움 / 보통 / 프로)
+        const diffBtn = document.getElementById('btn-baseball-difficulty');
+        if (diffBtn) {
+            diffBtn.addEventListener('click', () => {
+                this.ensureAudio();
+                this.toggleDifficulty();
+            });
+        }
 
         // 역할 변경 버튼 (투수 <-> 타자)
         const roleToggleBtn = document.getElementById('btn-baseball-role-toggle');
@@ -819,6 +832,45 @@ class BaseballGame {
         this.setUserRole((this.userRole === 'batter') ? 'pitcher' : 'batter');
     }
 
+    setDifficulty(diff) {
+        if (!['easy', 'normal', 'pro'].includes(diff)) return;
+        this.difficulty = diff;
+        safeSetStorage('smilegames_bb_difficulty', this.difficulty);
+        this.updateDifficultyUI();
+        const diffNames = {
+            easy: '⭐ 쉬움 (초보자)',
+            normal: '🔥 보통 (일반)',
+            pro: '💀 프로 (MLB)'
+        };
+        const diffDescs = {
+            easy: '비행 시간이 여유로워지고 타격 판정 및 홈런 범위가 대폭 넓어집니다!',
+            normal: '균형 잡힌 표준 난이도입니다.',
+            pro: '실제 메이저리그급 리얼 타이밍과 정밀 제구가 요구됩니다.'
+        };
+        this.showResultBanner(`난이도 변경: ${diffNames[this.difficulty]}`, diffDescs[this.difficulty], '#38bdf8');
+    }
+
+    toggleDifficulty() {
+        if (this.difficulty === 'easy') this.setDifficulty('normal');
+        else if (this.difficulty === 'normal') this.setDifficulty('pro');
+        else this.setDifficulty('easy');
+    }
+
+    updateDifficultyUI() {
+        const btn = document.getElementById('btn-baseball-difficulty');
+        if (!btn) return;
+        btn.classList.remove('normal', 'pro');
+        if (this.difficulty === 'easy') {
+            btn.textContent = '⭐ 쉬움 (초보자)';
+        } else if (this.difficulty === 'normal') {
+            btn.classList.add('normal');
+            btn.textContent = '🔥 보통 (일반)';
+        } else {
+            btn.classList.add('pro');
+            btn.textContent = '💀 프로 (MLB)';
+        }
+    }
+
     start() {
         this.init();
         this.resize();
@@ -854,6 +906,7 @@ class BaseballGame {
         this.strikes = 0;
         this.balls = 0;
         this.maxDistance = 0;
+        this.difficulty = 'easy'; // 'easy' (초보자) | 'normal' (보통) | 'pro' (프로)
 
         this.particles = [];
         this.fireworks = [];
@@ -1030,14 +1083,18 @@ class BaseballGame {
             actualTargetY = this.pitchAimY + (Math.random() - 0.5) * spread;
         }
 
-        // ⚾ [구종별 리얼 프로 체감 비행 시간]
-        // 직구는 0.50초로 벼락같이 꽂히며, 체인지업은 0.69초로 0.19초의 치명적 타이밍 격차 발생!
-        let flightDuration = 0.50;
-        if (pType === 'fastball') flightDuration = (152 / finalSpeed) * 0.50;
-        else if (pType === 'slider') flightDuration = 0.59;
-        else if (pType === 'changeup') flightDuration = 0.69;
-        else if (pType === 'curve') flightDuration = 0.75;
-        else if (pType === 'knuckleball') flightDuration = 0.90;
+        // ⚾ [구종별 비행 시간 - 난이도 연동]
+        // 쉬움(Easy): 누구나 여유 있게 공을 보고 시원하게 타격할 수 있는 쾌적한 비행 시간 (직구 ~0.80초)
+        let diffFactor = 1.62;
+        if (this.difficulty === 'normal') diffFactor = 1.35;
+        else if (this.difficulty === 'pro') diffFactor = 1.10;
+
+        let flightDuration = 0.50 * diffFactor;
+        if (pType === 'fastball') flightDuration = (152 / finalSpeed) * 0.50 * diffFactor;
+        else if (pType === 'slider') flightDuration = 0.56 * diffFactor;
+        else if (pType === 'changeup') flightDuration = 0.68 * diffFactor;
+        else if (pType === 'curve') flightDuration = 0.73 * diffFactor;
+        else if (pType === 'knuckleball') flightDuration = 0.82 * diffFactor;
 
         const releaseX = 0;
         const releaseY = 46;
@@ -1083,42 +1140,37 @@ class BaseballGame {
         };
         this.showRadarGun(finalSpeed, pNameMap[pType] || 'FASTBALL');
 
-        // 투수 모드일 때: 상대 AI 타자가 피치 터널링과 완급조절에 "진짜 속아서" 헛스윙하도록 지능형 로직 적용!
+        // 투수 모드일 때: 상대 AI 타자의 선구안 및 스윙 (난이도 연동)
         if (this.userRole === 'pitcher') {
             const isStrikePitch = (Math.abs(actualTargetX) <= 24 && actualTargetY >= 22 && actualTargetY <= 66);
             let aiWillSwing = false;
-            let aiSwingTimingOffset = 0; // 초 단위 타이밍 오차 (음수: 이른 헛스윙, 양수: 늦은 헛스윙)
+            let aiSwingTimingOffset = 0; // 초 단위 타이밍 오차
 
+            const isEasy = (this.difficulty === 'easy');
             if (pType === 'fastball') {
                 if (isStrikePitch) {
-                    aiWillSwing = Math.random() < 0.88;
-                    // 직구의 압도적인 구속에 배트가 밀림
-                    aiSwingTimingOffset = (finalSpeed >= 152) ? 0.05 + Math.random() * 0.05 : (Math.random() - 0.5) * 0.03;
+                    aiWillSwing = isEasy ? (Math.random() < 0.65) : (Math.random() < 0.88);
+                    aiSwingTimingOffset = (finalSpeed >= 152) ? 0.08 + Math.random() * 0.06 : (Math.random() - 0.5) * 0.04;
                 } else {
-                    // 높은 하이볼 유인구에 속음
-                    aiWillSwing = (actualTargetY > 66 && Math.random() < 0.45);
-                    aiSwingTimingOffset = 0.06;
+                    aiWillSwing = (actualTargetY > 66 && Math.random() < (isEasy ? 0.60 : 0.45));
+                    aiSwingTimingOffset = 0.08;
                 }
             } else if (pType === 'changeup') {
-                // 체인지업: 타자가 직구 터널인 줄 알고 직구 타이밍(0.50초)으로 스윙을 앞서 나감!
-                aiWillSwing = isStrikePitch ? (Math.random() < 0.85) : (Math.random() < 0.55);
-                aiSwingTimingOffset = -0.17 + (Math.random() - 0.5) * 0.04; // 체인지업에 완전히 낚여 이른 헛스윙!
+                aiWillSwing = isStrikePitch ? (Math.random() < 0.75) : (Math.random() < (isEasy ? 0.75 : 0.55));
+                aiSwingTimingOffset = -0.22 + (Math.random() - 0.5) * 0.05; // 체인지업에 낚여 이른 헛스윙!
             } else if (pType === 'slider') {
-                // 슬라이더: 가운데 직구 터널인 줄 알고 휘두르다가 바깥쪽으로 도망가서 헛스윙!
-                aiWillSwing = isStrikePitch ? (Math.random() < 0.84) : (Math.random() < 0.70); // 바깥쪽 유인구에 특히 잘 낚임!
-                aiSwingTimingOffset = (Math.random() - 0.5) * 0.03;
+                aiWillSwing = isStrikePitch ? (Math.random() < 0.75) : (Math.random() < (isEasy ? 0.80 : 0.70));
+                aiSwingTimingOffset = (Math.random() - 0.5) * 0.04;
             } else if (pType === 'curve') {
-                // 커브: 높은 공으로 착각하거나 느린 낙차에 타이밍 뺏김
-                aiWillSwing = isStrikePitch ? (Math.random() < 0.80) : (actualTargetY < 24 && Math.random() < 0.55);
-                aiSwingTimingOffset = -0.12 + (Math.random() - 0.5) * 0.05;
+                aiWillSwing = isStrikePitch ? (Math.random() < 0.70) : (actualTargetY < 24 && Math.random() < (isEasy ? 0.75 : 0.55));
+                aiSwingTimingOffset = -0.16 + (Math.random() - 0.5) * 0.06;
             } else if (pType === 'knuckleball') {
-                // 너클볼: 카오스 무회전 비행에 스윙 타이밍 예측 불가
-                aiWillSwing = Math.random() < 0.65;
-                aiSwingTimingOffset = -0.16 + (Math.random() - 0.5) * 0.12;
+                aiWillSwing = Math.random() < (isEasy ? 0.75 : 0.65);
+                aiSwingTimingOffset = -0.20 + (Math.random() - 0.5) * 0.14;
             }
 
             if (aiWillSwing) {
-                const swingDelay = Math.max(0.18, (flightDuration * 0.90) + aiSwingTimingOffset);
+                const swingDelay = Math.max(0.25, (flightDuration * 0.88) + aiSwingTimingOffset);
                 setTimeout(() => {
                     if (this.isRunning && this.gameState === 'in_flight' && !this.ball.isHit) {
                         this.triggerBatterSwing();
@@ -1230,26 +1282,31 @@ class BaseballGame {
         const lineupItem = this.getCurrentBatterLineup();
 
         const sweetSpotZ = 380;
-        const diffZ = z - sweetSpotZ; // 음수: 공이 아직 덜 옴(이른 스윙), 양수: 공이 이미 지남(늦은 스윙)
+        const diffZ = z - sweetSpotZ; // 음수: 이른 스윙, 양수: 늦은 스윙
 
-        // 1. ⚠️ 타이밍 판정 (Z축 거리 오차 - 너무 이르거나 늦은 헛스윙)
-        if (diffZ < -42) {
-            // 체인지업 / 커브에 속아 너무 일찍 나간 헛스윙!
+        const isEasy = (this.difficulty === 'easy');
+        const isNormal = (this.difficulty === 'normal');
+
+        // 🐾 난이도별 타격 허용 한계 (쉬움 모드는 대폭 완화되어 누구나 시원하게 타격!)
+        const earlyLimit = isEasy ? -95 : (isNormal ? -68 : -46);
+        const lateLimit = isEasy ? 85 : (isNormal ? 58 : 38);
+        const maxDistXY = isEasy ? 68 : (isNormal ? 52 : 36);
+
+        // 1. ⚠️ 타이밍 판정 (너무 이르거나 늦은 헛스윙)
+        if (diffZ < earlyLimit) {
             this.handleDeceptiveSwingMiss('early', b.type, diffZ);
             return;
-        } else if (diffZ > 36) {
-            // 154km/h 광속구에 배트가 밀려 늦은 헛스윙!
+        } else if (diffZ > lateLimit) {
             this.handleDeceptiveSwingMiss('late', b.type, diffZ);
             return;
         }
 
-        // 2. ⚠️ 2D 로케이션 판정 (X, Y축 오차 - 슬라이더 횡 변화 등 유인구 낚임 판정)
+        // 2. ⚠️ 2D 로케이션 판정 (스트라이크 존을 너무 크게 벗어난 경우)
         const dx = b.x;
         const dy = (b.y - 44) * 0.85;
         const distXY = Math.sqrt(dx * dx + dy * dy);
 
-        if (distXY > 33) {
-            // 스트라이크 존 밖으로 예리하게 도망간 유인구에 낚인 헛스윙!
+        if (distXY > maxDistXY) {
             this.handleDeceptiveSwingMiss('chase', b.type, distXY);
             return;
         }
@@ -1261,10 +1318,16 @@ class BaseballGame {
         const prevBases = { ...this.bases };
         const absDiffZ = Math.abs(diffZ);
 
-        // [1] 💥 PERFECT CONTACT: 초특대형 홈런! (타이밍 오차 16 이하 & 코스 오차 16 이하)
-        if (absDiffZ <= 16 && distXY <= 16) {
+        const hrTiming = isEasy ? 35 : (isNormal ? 24 : 16);
+        const hrDist = isEasy ? 32 : (isNormal ? 22 : 16);
+
+        const hitTiming = isEasy ? 68 : (isNormal ? 50 : 32);
+        const hitDist = isEasy ? 56 : (isNormal ? 42 : 28);
+
+        // [1] 💥 PERFECT CONTACT: 초특대형 홈런!
+        if (absDiffZ <= hrTiming && distXY <= hrDist) {
             b.hitType = 'homerun';
-            let dist = Math.round(126 + (lineupItem.powerBonus || 0) + (batterChar.powerBonus || 0) + Math.random() * 24);
+            let dist = Math.round(128 + (lineupItem.powerBonus || 0) + (batterChar.powerBonus || 0) + Math.random() * 24);
             if (b.type === 'knuckleball') dist += 8;
 
             b.hitDist = dist;
@@ -1283,14 +1346,14 @@ class BaseballGame {
             this.playBatHitSound('homerun');
             this.triggerHomeRunCelebration(dist, scoredRuns);
         }
-        // [2] 🎯 GREAT CONTACT: 2루타 / 3루타 / 1루타 (타이밍 오차 28 이하 & 코스 오차 25 이하)
-        else if (absDiffZ <= 28 && distXY <= 25) {
-            const isTriple = (Math.random() < 0.12 * (lineupItem.contactBonus || 1.0));
-            const isDouble = !isTriple && (Math.random() < 0.42 * (lineupItem.doubleBonus || batterChar.doubleBonus || 1.0));
+        // [2] 🎯 GREAT CONTACT: 2루타 / 3루타 / 1루타
+        else if (absDiffZ <= hitTiming && distXY <= hitDist) {
+            const isTriple = (Math.random() < 0.15 * (lineupItem.contactBonus || 1.0));
+            const isDouble = !isTriple && (Math.random() < 0.45 * (lineupItem.doubleBonus || batterChar.doubleBonus || 1.0));
             const hitType = isTriple ? 'triple' : (isDouble ? 'double' : 'single');
             b.hitType = hitType;
 
-            const dist = isTriple ? Math.round(108 + Math.random() * 15) : (isDouble ? Math.round(92 + Math.random() * 24) : Math.round(66 + Math.random() * 22));
+            const dist = isTriple ? Math.round(110 + Math.random() * 15) : (isDouble ? Math.round(94 + Math.random() * 24) : Math.round(68 + Math.random() * 22));
             b.hitDist = dist;
             if (dist > this.maxDistance) this.maxDistance = dist;
 
@@ -1299,21 +1362,21 @@ class BaseballGame {
             this.addScore(scoredRuns, hitType);
             this.resetAtBatCount(true);
 
-            b.vz = -420 - Math.random() * 50;
+            b.vz = -430 - Math.random() * 50;
             b.vy = 130 + Math.random() * 35;
             b.vx = (b.x * 2.0) + (Math.random() - 0.5) * 160;
 
             this.camera.shake = 10;
             this.playBatHitSound('hit');
             let titleText = '⚾ 1루타 클린 안타 성공!';
-            if (hitType === 'triple') titleText = '⚡ 3루타! 우중간을 완전히 가르는 벼락 3루타!';
-            else if (hitType === 'double') titleText = '🌪️ 2루타! 외야를 가르는 총알 라인드라이브!';
+            if (hitType === 'triple') titleText = '⚡ 3루타! 우중간을 가르는 총알 3루타!';
+            else if (hitType === 'double') titleText = '🌪️ 2루타! 외야를 가르는 시원한 2루타!';
 
-            const subText = (scoredRuns > 0) ? `주자 홈인! (+${scoredRuns}점 득점)` : `주자 전원 진루 (비거리 ${dist}m)`;
+            const subText = (scoredRuns > 0) ? `주자 홈인! (+${scoredRuns}점 득점)` : `주자 진루 (비거리 ${dist}m)`;
             this.showResultBanner(titleText, subText, '#38bdf8');
         }
         // [3] 🛡️ 빗맞은 내야 땅볼 / 외야 플라이 아웃
-        else if (absDiffZ <= 38 && distXY <= 31) {
+        else if (absDiffZ <= hitTiming + 18 && distXY <= hitDist + 12) {
             b.hitType = 'out';
             b.vz = -240 - Math.random() * 45;
             b.vy = 85 + Math.random() * 30;
@@ -2673,6 +2736,55 @@ class BaseballGame {
             ctx.strokeStyle = 'rgba(56, 189, 248, 0.25)';
             ctx.strokeRect(szTL.x + szW / 3, szTL.y, szW / 3, szH);
             ctx.strokeRect(szTL.x, szTL.y + szH / 3, szW, szH / 3);
+
+            // 🎯 [타격 어시스트 타이밍 링 (Impact Timing Ring)]
+            if (this.gameState === 'in_flight' && this.ball && this.ball.active) {
+                const b = this.ball;
+                const prog = Math.max(0, Math.min(1.0, (b.z - b.startZ) / (b.targetZ - b.startZ)));
+                const aimPt = this.project(0, 44, 380);
+                if (aimPt) {
+                    const s = aimPt.scale;
+                    const ringRadius = Math.max(16 * s, (75 * s) * (1.0 - prog * 0.76));
+                    const isSweetSpot = (b.z >= 320 && b.z <= 395);
+
+                    ctx.save();
+                    ctx.translate(aimPt.x, aimPt.y);
+
+                    if (isSweetSpot) {
+                        ctx.strokeStyle = '#22c55e';
+                        ctx.fillStyle = 'rgba(34, 197, 94, 0.3)';
+                        ctx.lineWidth = 4.0 * s;
+                        ctx.shadowColor = '#22c55e';
+                        ctx.shadowBlur = 18;
+                    } else {
+                        ctx.strokeStyle = '#38bdf8';
+                        ctx.fillStyle = 'rgba(56, 189, 248, 0.12)';
+                        ctx.lineWidth = 2.2 * s;
+                        ctx.shadowColor = '#38bdf8';
+                        ctx.shadowBlur = 8;
+                    }
+
+                    ctx.beginPath();
+                    ctx.arc(0, 0, ringRadius, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+
+                    // 가이드 텍스트
+                    ctx.textAlign = 'center';
+                    if (isSweetSpot) {
+                        ctx.font = `900 ${Math.max(12, Math.round(14 * s))}px sans-serif`;
+                        ctx.fillStyle = '#fde047';
+                        ctx.shadowColor = '#000000';
+                        ctx.shadowBlur = 6;
+                        ctx.fillText('⚡ 지금 스윙! [NOW]', 0, -ringRadius - 10 * s);
+                    } else {
+                        ctx.font = `bold ${Math.max(10, Math.round(11 * s))}px sans-serif`;
+                        ctx.fillStyle = '#bae6fd';
+                        ctx.fillText('🎯 공을 보고 타이밍 맞추기', 0, -ringRadius - 8 * s);
+                    }
+                    ctx.restore();
+                }
+            }
         }
 
         ctx.restore();
@@ -3548,6 +3660,8 @@ class BaseballGame {
         if (lineupBadge) lineupBadge.textContent = `${currLineup.order}번 타자`;
         if (lineupName) lineupName.textContent = `${currLineup.emoji} ${currLineup.name}`;
         if (lineupPerk) lineupPerk.textContent = currLineup.roleDesc;
+
+        this.updateDifficultyUI();
 
         // [2] 하단 조작부 토글 (투수 모드 vs 타자 모드)
         const pitcherBar = document.getElementById('mlb-pitcher-bar');
