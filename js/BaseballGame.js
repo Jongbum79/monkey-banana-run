@@ -279,6 +279,7 @@ class BaseballGame {
         this.outs = 0;
         this.strikes = 0;
         this.balls = 0;
+        this.lastResultWasBall = false;
         this.maxDistance = 0;
         this.difficulty = 'easy'; // 'easy' (초보자) | 'normal' (보통) | 'pro' (프로)
 
@@ -905,6 +906,7 @@ class BaseballGame {
         this.outs = 0;
         this.strikes = 0;
         this.balls = 0;
+        this.lastResultWasBall = false;
         this.maxDistance = 0;
         this.difficulty = 'easy'; // 'easy' (초보자) | 'normal' (보통) | 'pro' (프로)
 
@@ -971,6 +973,10 @@ class BaseballGame {
         this.stateTimer = delay;
         this.ball.active = false;
         this.ball.isHit = false;
+        this.ball.hasSwung = false;
+        this.lastResultWasBall = false;
+        this.batter.isSwinging = false;
+        this.batter.swingProgress = 0;
         this.activeRunners = [];
         this.pitcher.phase = 'ready';
         this.pitcher.phaseTimer = 0;
@@ -1073,8 +1079,8 @@ class BaseballGame {
                 // 볼/유인구 의도: 100% 스트라이크 존 바깥(볼)으로 확정 제구!
                 actualTargetX = this.pitchAimX + (Math.random() - 0.5) * 3;
                 actualTargetY = this.pitchAimY + (Math.random() - 0.5) * 3;
-                if (Math.abs(actualTargetX) < 26 && actualTargetY > 20 && actualTargetY < 68) {
-                    actualTargetX = (actualTargetX >= 0) ? 28 : -28;
+                if (Math.abs(actualTargetX) < 32 && actualTargetY > 15 && actualTargetY < 73) {
+                    actualTargetX = (actualTargetX >= 0) ? 33 : -33;
                 }
             }
         } else {
@@ -1101,6 +1107,7 @@ class BaseballGame {
         const releaseZ = 85;
         const targetZ = 380;
 
+        this.lastResultWasBall = false;
         this.ball = {
             active: true,
             speedKm: finalSpeed,
@@ -1119,6 +1126,7 @@ class BaseballGame {
             type: pType,
             speedKmh: finalSpeed,
             isHit: false,
+            hasSwung: false,
             hitType: null,
             flightTimer: 0,
             hitDist: 0,
@@ -1217,7 +1225,10 @@ class BaseballGame {
         else if (pType === 'changeup') pitchName = '🐢 서클 체인지업 (급감속 싱커 -26km/h)';
         else if (pType === 'knuckleball') pitchName = '🔮 무회전 너클볼 (카오스 플러터 0.2 RPM)';
 
-        const locationDesc = isStrike ? '스트라이크 존 공략' : '존을 벗어난 유인구';
+        let locationDesc = isStrike ? '스트라이크 존 통과' : '존을 벗어난 유인구';
+        if (this.ball && this.ball.hasSwung) {
+            locationDesc = isStrike ? '헛스윙 스트라이크' : '유인구 헛스윙';
+        }
         descEl.textContent = `${pitchName} • ${locationDesc}`;
 
         tracker.style.display = 'flex';
@@ -1233,6 +1244,10 @@ class BaseballGame {
     resetAtBatCount(advanceLineup = true) {
         this.balls = 0;
         this.strikes = 0;
+        this.lastResultWasBall = false;
+        if (this.ball) {
+            this.ball.hasSwung = false;
+        }
         if (advanceLineup && this.lineup && this.lineup.length > 0) {
             this.lineupIndex = (this.lineupIndex + 1) % this.lineup.length;
         }
@@ -1257,14 +1272,40 @@ class BaseballGame {
     }
 
     triggerBatterSwing() {
+        // [1] 방금 포구 직후 늦은 헛스윙 판정 정정 (볼 판정 후 0.4초 이내에 스윙 시 스트라이크로 즉시 정정)
+        if (this.gameState === 'result_pause' && this.stateTimer > 0.65 && this.lastResultWasBall) {
+            this.correctLateSwingToStrike();
+            return;
+        }
+
         if (this.batter.isSwinging) return;
         this.batter.isSwinging = true;
         this.batter.swingTime = 0;
         this.playSwingSound();
 
-        if (this.gameState === 'in_flight' && this.ball.active && !this.ball.isHit) {
+        // ⚾ 현재 투구에 스윙 시도 플래그 영구 기록 (이후 어떤 판정이 오더라도 헛스윙 스트라이크 보장)
+        if (this.ball) {
+            this.ball.hasSwung = true;
+        }
+
+        if (this.gameState === 'in_flight' && this.ball && this.ball.active && !this.ball.isHit) {
             this.checkBatContact();
         }
+    }
+
+    correctLateSwingToStrike() {
+        this.lastResultWasBall = false;
+        this.batter.isSwinging = true;
+        this.batter.swingTime = 0;
+        this.playSwingSound();
+
+        // 직전에 잘못 부여된 볼 카운트 즉시 회수
+        if (this.balls > 0) {
+            this.balls--;
+        }
+
+        const pType = (this.ball && this.ball.type) || 'fastball';
+        this.handleDeceptiveSwingMiss('late', pType, 40);
     }
 
     swing() {
@@ -1411,13 +1452,25 @@ class BaseballGame {
 
     /**
      * 💨 구종 및 궤적에 속아 발생한 헛스윙 처리 (Deceptive Swing-and-Miss)
+     * 배터가 스윙을 시도하여 헛돌았으므로 공 위치와 상관없이 100% 무조건 스트라이크!
      */
     handleDeceptiveSwingMiss(reason, pitchType, offsetVal) {
+        if (this.ball) {
+            this.ball.active = false;
+            this.ball.hasSwung = true;
+        }
+        this.lastResultWasBall = false;
         this.strikes++;
         this.playCatchSound();
         this.playUmpireWhistle(1400, 0.2);
 
-        let title = '💨 헛스윙! (SWING AND MISS)';
+        // 🎯 헛스윙 시에도 실시간 MLB 스트라이크존 트래커 카드 즉시 팝업!
+        const bX = (this.ball && this.ball.x !== undefined) ? this.ball.x : (this.ball ? this.ball.targetX : 0);
+        const bY = (this.ball && this.ball.y !== undefined) ? this.ball.y : (this.ball ? this.ball.targetY : 44);
+        const bSpeed = (this.ball && this.ball.speedKm) || 148;
+        this.showPitchTrackerOverlay(bX, bY, true, bSpeed, pitchType);
+
+        let title = '💨 헛스윙 스트라이크! (SWING AND MISS)';
         let desc = '완벽하게 타이밍을 뺏겼습니다!';
 
         if (reason === 'early') {
@@ -1762,7 +1815,7 @@ class BaseballGame {
             // 4. 포수 미트 포구 (홈플레이트 z=380 통과 후 미타격 시)
             if (rawProg >= 1.0 && !b.isHit) {
                 b.active = false;
-                this.handlePitchMissResult(b.targetX, b.targetY);
+                this.handlePitchMissResult(b.x, b.y);
             }
         } else if (this.gameState === 'hit_flight') {
             const b = this.ball;
@@ -1845,27 +1898,47 @@ class BaseballGame {
     }
 
     handlePitchMissResult(tx, ty) {
-        // 스트라이크존 규격: x [-24, 24], y [22, 66]
-        const inZone = (Math.abs(tx) <= 24 && ty >= 22 && ty <= 66);
-        const pitchSpeed = this.ball.speedKm || 148;
-        const pitchType = this.ball.type || 'fastball';
+        const pitchSpeed = (this.ball && this.ball.speedKm) || 148;
+        const pitchType = (this.ball && this.ball.type) || 'fastball';
+
+        // 1. 💨 헛스윙 여부 체크: 타자가 스윙을 시도했는가?
+        // 배터가 스윙을 시도했다면 공의 위치(볼/스트라이크)와 무관하게 100% 무조건 스트라이크!
+        const isSwung = Boolean((this.ball && this.ball.hasSwung) || this.batter.isSwinging);
+
+        // 2. ⚾ 스트라이크존 규격 판정 (KBO/MLB 공식 규칙: 공의 일부라도 존에 닿으면 스트라이크)
+        // 스트라이크존 기본 규격: x [-24, 24], y [22, 66]
+        // 야구공 반지름(r=8.5) 마진 4.5 반영 -> 존 경계선에 걸치거나 스치는 공은 100% 스트라이크!
+        const strikeMarginX = 4.5;
+        const strikeMarginY = 4.5;
+        const inZonePhysical = (Math.abs(tx) <= (24 + strikeMarginX) && ty >= (22 - strikeMarginY) && ty <= (66 + strikeMarginY));
+
+        const isStrike = isSwung || inZonePhysical;
 
         // 🎯 실시간 MLB 스트라이크존 판정 트래커 카드 즉시 팝업
-        this.showPitchTrackerOverlay(tx, ty, inZone, pitchSpeed, pitchType);
+        this.showPitchTrackerOverlay(tx, ty, isStrike, pitchSpeed, pitchType);
 
-        if (inZone) {
+        if (isStrike) {
+            this.lastResultWasBall = false;
             this.strikes++;
             this.playCatchSound();
             this.playUmpireWhistle(1400, 0.2);
 
             if (this.strikes >= 3) {
-                this.recordOut('💨 3구 삼진 아웃! (STRIKE OUT!)');
+                const outMsg = isSwung ? '💨 3구 헛스윙 삼진 아웃! (STRIKE OUT!)' : '💨 3구 루킹 삼진 아웃! (STRIKE OUT!)';
+                this.recordOut(outMsg);
             } else {
-                this.showResultBanner('⚡ 스트라이크! (STRIKE)', `카운트: ${this.balls}B - ${this.strikes}S`, '#facc15');
+                let title = '⚡ 스트라이크! (STRIKE)';
+                let desc = `카운트: ${this.balls}B - ${this.strikes}S`;
+                if (isSwung) {
+                    title = '💨 헛스윙 스트라이크! (SWINGING STRIKE)';
+                    desc = `배트가 헛돌았습니다! (${this.balls}B - ${this.strikes}S)`;
+                }
+                this.showResultBanner(title, desc, '#facc15');
                 this.gameState = 'result_pause';
                 this.stateTimer = 1.3;
             }
         } else {
+            this.lastResultWasBall = true;
             this.balls++;
             this.playCatchSound();
 
