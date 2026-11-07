@@ -1079,12 +1079,12 @@ class BaseballGame {
         const pitcherChar = this.getCurrentPitcher();
         const pType = this.selectedPitchType;
 
-        // ⚾ 현실적인 KBO/MLB 프로 구속 계산 (직구 150~156km/h, 체인지업 124~128km/h)
-        let baseSpeed = pitcherChar.fastballSpeed || 152;
-        if (pType === 'curve') baseSpeed = 121;
-        if (pType === 'slider') baseSpeed = 139;
-        if (pType === 'changeup') baseSpeed = 125;
-        if (pType === 'knuckleball') baseSpeed = 101; // 너클볼: 98~104km/h의 느린 마구!
+        // ⚾ 현실적인 KBO/MLB 프로 구속 계산 (광속 직구 154~160km/h, 극대화된 슬로우 변화구)
+        let baseSpeed = pitcherChar.fastballSpeed || 156;
+        if (pType === 'curve') baseSpeed = 112; // 112km/h 슬로우 파워 커브 (느린 낙차)
+        if (pType === 'slider') baseSpeed = 136;
+        if (pType === 'changeup') baseSpeed = 118; // 118km/h 체인지업 (직구 대비 38km/h 오프스피드!)
+        if (pType === 'knuckleball') baseSpeed = 94; // 너클볼: 90~96km/h의 초슬로우 마구!
 
         const finalSpeed = Math.round(baseSpeed + (Math.random() - 0.5) * 6);
 
@@ -1112,18 +1112,18 @@ class BaseballGame {
             actualTargetY = this.pitchAimY + (Math.random() - 0.5) * spread;
         }
 
-        // ⚾ [구종별 비행 시간 - 실전 MLB 체감 속도 및 구속 격차]
-        // 보통(Normal): 0.51초 (~152km/h 패스트볼 기준 실전 반응 타이밍)
+        // ⚾ [구종별 비행 시간 - 직구는 초광속(0.44s), 변화구는 강력한 슬로우 오프스피드(0.72s~0.88s)]
+        // 보통(Normal): 직구 0.44초 (~156km/h 불꽃 강속구), 체인지업 0.72초, 커브 0.78초, 너클볼 0.88초
         let diffFactor = 1.0;
         if (this.difficulty === 'easy') diffFactor = 1.25;
-        else if (this.difficulty === 'pro') diffFactor = 0.88;
+        else if (this.difficulty === 'pro') diffFactor = 0.86;
 
-        let flightDuration = 0.51 * diffFactor;
-        if (pType === 'fastball') flightDuration = (152 / finalSpeed) * 0.51 * diffFactor;
-        else if (pType === 'slider') flightDuration = 0.56 * diffFactor;
-        else if (pType === 'changeup') flightDuration = 0.64 * diffFactor;
-        else if (pType === 'curve') flightDuration = 0.68 * diffFactor;
-        else if (pType === 'knuckleball') flightDuration = 0.75 * diffFactor;
+        let flightDuration = 0.44 * diffFactor;
+        if (pType === 'fastball') flightDuration = (156 / finalSpeed) * 0.44 * diffFactor;
+        else if (pType === 'slider') flightDuration = 0.54 * diffFactor;
+        else if (pType === 'changeup') flightDuration = 0.72 * diffFactor;
+        else if (pType === 'curve') flightDuration = 0.78 * diffFactor;
+        else if (pType === 'knuckleball') flightDuration = 0.88 * diffFactor;
 
         const releaseX = 0;
         const releaseY = 46;
@@ -1163,11 +1163,11 @@ class BaseballGame {
 
         // 스피드건 레이더 팝업 표시 (구종별 극대화된 무브먼트 특성 포함)
         const pNameMap = {
-            fastball: '⚡ 4-SEAM FASTBALL • 라이징 홉 +45cm Rising Hop',
-            curve: '🌀 12-6 POWER CURVE • 12-6 수직 폭포수 -58cm Plunge',
-            slider: '🌪️ WICKED SWEEPER • 대각 횡와이프아웃 38cm Wipeout',
-            changeup: '🐢 CIRCLE CHANGEUP • 에어브레이크 싱킹 -34cm Sink',
-            knuckleball: '🔮 MYSTIC KNUCKLEBALL • 3D 카오스 무회전 플러터'
+            fastball: '⚡ 4-SEAM FIREBALL • 156KM/H 광속 직구 (Rising Hop)',
+            curve: '🌀 12-6 RAINBOW CURVE • 수직 폭포수 슬로커브 (-58cm Plunge)',
+            slider: '🌪️ WICKED SWEEPER • 횡와이프아웃 38cm 슬라이더',
+            changeup: '🐢 OFF-SPEED CHANGEUP • 직구 대비 340ms 느린 체인지업',
+            knuckleball: '🔮 MYSTIC KNUCKLEBALL • 3D 카오스 초슬로우 무회전 마구'
         };
         this.showRadarGun(finalSpeed, pNameMap[pType] || 'FASTBALL');
 
@@ -1357,9 +1357,9 @@ class BaseballGame {
         const isPro = (this.difficulty === 'pro');
 
         // 🐾 난이도별 타격 허용 한계 (보통 모드는 실전성 높은 긴장감 넘치는 공방!)
-        const earlyLimit = isEasy ? -80 : (isPro ? -36 : -56);
-        const lateLimit = isEasy ? 65 : (isPro ? 32 : 46);
-        const maxDistXY = isEasy ? 54 : (isPro ? 28 : 40);
+        const earlyLimit = isEasy ? -75 : (isPro ? -28 : -44);
+        const lateLimit = isEasy ? 58 : (isPro ? 24 : 36);
+        const maxDistXY = isEasy ? 48 : (isPro ? 22 : 34);
 
         // 1. ⚠️ 타이밍 판정 (너무 이르거나 늦은 헛스윙)
         if (diffZ < earlyLimit) {
@@ -1387,11 +1387,11 @@ class BaseballGame {
         const prevBases = { ...this.bases };
         const absDiffZ = Math.abs(diffZ);
 
-        const hrTiming = isEasy ? 26 : (isPro ? 14 : 18);
-        const hrDist = isEasy ? 24 : (isPro ? 13 : 17);
+        const hrTiming = isEasy ? 22 : (isPro ? 10 : 14);
+        const hrDist = isEasy ? 20 : (isPro ? 10 : 13);
 
-        const hitTiming = isEasy ? 52 : (isPro ? 28 : 38);
-        const hitDist = isEasy ? 38 : (isPro ? 22 : 28);
+        const hitTiming = isEasy ? 44 : (isPro ? 22 : 30);
+        const hitDist = isEasy ? 32 : (isPro ? 16 : 22);
 
         // [1] 💥 PERFECT CONTACT: 초특대형 홈런!
         if (absDiffZ <= hrTiming && distXY <= hrDist) {
@@ -1704,9 +1704,16 @@ class BaseballGame {
         this.crowdCheerTimer += dt * 3;
 
         // 🏃 3D 다이아몬드 주자 진루 애니메이션 업데이트
+        let anyRunnerActive = false;
         for (let i = this.activeRunners.length - 1; i >= 0; i--) {
             const runner = this.activeRunners[i];
-            runner.runCycle += dt * 15;
+            if (runner.isFinished) {
+                // 베이스에 안착한 주자는 제자리 달리기를 멈추고 안전하게 대기
+                continue;
+            }
+
+            anyRunnerActive = true;
+            runner.runCycle += dt * 17;
             runner.progress += dt * runner.speed;
 
             const fromKey = runner.path[runner.legIndex];
@@ -1720,18 +1727,18 @@ class BaseballGame {
                 runner.y = 0;
                 runner.z = p0.z + (p1.z - p0.z) * t;
 
-                // 스파이크 흙먼지 파티클
-                if (Math.random() < 0.35) {
+                // 스파이크 흙먼지 파티클 (질주 발자국)
+                if (Math.random() < 0.45) {
                     this.particles.push({
-                        x: runner.x + (Math.random() - 0.5) * 6,
+                        x: runner.x + (Math.random() - 0.5) * 8,
                         y: 2,
-                        z: runner.z + (Math.random() - 0.5) * 6,
-                        vx: (Math.random() - 0.5) * 10,
-                        vy: 5 + Math.random() * 8,
-                        vz: (Math.random() - 0.5) * 10,
-                        color: '#b45309',
-                        size: 3 + Math.random() * 3,
-                        life: 0.35
+                        z: runner.z + (Math.random() - 0.5) * 8,
+                        vx: -(p1.x - p0.x) * 0.05 + (Math.random() - 0.5) * 6,
+                        vy: 4 + Math.random() * 8,
+                        vz: -(p1.z - p0.z) * 0.05 + (Math.random() - 0.5) * 6,
+                        color: '#d97706',
+                        size: 3.5 + Math.random() * 3.5,
+                        life: 0.38
                     });
                 }
 
@@ -1754,6 +1761,18 @@ class BaseballGame {
                     }
                 }
             }
+        }
+
+        // 주자들이 모두 베이스에 도달한 후 부드럽게 정적 베이스 주자로 전환
+        if (this.activeRunners.length > 0 && !anyRunnerActive) {
+            if (!this.runnersFinishedTimer) this.runnersFinishedTimer = 0;
+            this.runnersFinishedTimer += dt;
+            if (this.runnersFinishedTimer > 1.2) {
+                this.activeRunners = [];
+                this.runnersFinishedTimer = 0;
+            }
+        } else {
+            this.runnersFinishedTimer = 0;
         }
 
         // 🏏 자연스러운 3D 타자 스윙 (스탠스 -> 스트라이드 -> 힙턴 -> 래그 -> 익스텐션 & 팔로스루)
@@ -1816,15 +1835,11 @@ class BaseballGame {
                 trailColor = '#00f2fe';
                 if (Math.random() < 0.45) this.createFastballSparks(b.x, b.y, b.z);
             } else if (b.type === 'curve') {
-                // 🌀 12-6 POWER CURVE: 초기 솟구치는 무지개 험프(+24) -> 48% 지점 이후 수직 폭포수 급낙차(-54)!
-                if (p < 0.48) {
-                    offsetY = Math.sin((p / 0.48) * Math.PI) * 24.0;
-                } else {
-                    const u = (p - 0.48) / 0.52;
-                    offsetY = -52.0 * Math.sin(u * Math.PI) * Math.pow(u, 0.72);
-                }
-                offsetX = Math.sin(p * Math.PI) * 8.0;
-                b.rot += dt * 44;
+                // 🌀 12-6 RAINBOW CURVE: 자연스러운 초기 릴리스 무지개 호(+20) -> 홈플레이트를 향해 가속 낙하하는 수직 폭포수 궤적!
+                // 역주행이나 중간 바운스 없이 plate(p=1.0)에 최대 급강하 각도로 자연스럽게 꽂힘
+                offsetY = 52.0 * (Math.pow(p, 0.6) - Math.pow(p, 1.8));
+                offsetX = -Math.sin(p * Math.PI) * Math.pow(p, 0.7) * 10.0;
+                b.rot += dt * 36;
                 trailColor = '#10b981';
                 if (Math.random() < 0.45) this.createCurveTrail(b.x, b.y, b.z);
             } else if (b.type === 'slider') {
@@ -1841,15 +1856,10 @@ class BaseballGame {
                 trailColor = '#a855f7';
                 if (Math.random() < 0.45) this.createSliderTrail(b.x, b.y, b.z);
             } else if (b.type === 'changeup') {
-                // 🐢 CIRCLE CHANGEUP: 직구 터널 궤적 위장 -> 홈플레이트 앞 급감속 & 역회전 싱킹 페이드(-34)!
-                if (p < 0.55) {
-                    offsetY = Math.sin((p / 0.55) * (Math.PI * 0.5)) * 14.0;
-                } else {
-                    const u = (p - 0.55) / 0.45;
-                    offsetY = -34.0 * Math.sin(u * Math.PI);
-                    offsetX = 14.0 * Math.sin(u * Math.PI);
-                }
-                b.rot += dt * 22;
+                // 🐢 CIRCLE CHANGEUP: 직구 터널 궤적 위장 -> 홈플레이트 앞에서 뚝 떨어지는 싱킹 페이드!
+                offsetY = -32.0 * Math.pow(p, 2.2) * (1.0 - p) * 3.6;
+                offsetX = 12.0 * Math.sin(p * Math.PI) * Math.pow(p, 0.8);
+                b.rot += dt * 18;
                 trailColor = '#f59e0b';
                 if (Math.random() < 0.45) this.createChangeupSmoke(b.x, b.y, b.z);
             } else if (b.type === 'knuckleball') {
@@ -2791,7 +2801,7 @@ class BaseballGame {
     }
 
     /**
-     * 🏃 실제 질주하는 3D 주자 캐릭터 (다관절 달리기 모션 & 흙먼지)
+     * 🏃 실제 질주하는 3D 주자 캐릭터 (다관절 달리기 모션 & 슬라이딩 & 흙먼지)
      */
     render3DRunner(ctx, runner) {
         const p = this.project(runner.x, runner.y, runner.z);
@@ -2802,120 +2812,326 @@ class BaseballGame {
         const char = runner.char || this.characters.tiger;
         const skin = runner.skin || { jersey: '#dc2626', cap: '#991b1b' };
 
+        // 🏃 이동 방향 판정: 현재 레그의 시작 베이스 -> 목표 베이스 벡터
+        const fromKey = runner.path[runner.legIndex] || 'HOME';
+        const toKey = runner.path[runner.legIndex + 1] || '1B';
+        const p0 = this.BASE_POS[fromKey];
+        const p1 = this.BASE_POS[toKey];
+        const dx = (p1 && p0) ? (p1.x - p0.x) : 1;
+        const dz = (p1 && p0) ? (p1.z - p0.z) : -1;
+
+        const isMovingLeft = (dx < 0);
+        const isMovingAway = (dz < 0); // 외야/원거리 방향으로 뛰어가는 뒷모습
+
+        const isFinalLeg = (runner.legIndex >= runner.path.length - 2);
+        const isSliding = !runner.isFinished && isFinalLeg && (runner.progress > 0.76);
+
         ctx.save();
         ctx.translate(p.x, p.y);
 
         // 3D 지면 그림자
         ctx.fillStyle = 'rgba(15, 23, 42, 0.44)';
         ctx.beginPath();
-        ctx.ellipse(0, 4 * s, 15 * s, 6 * s, 0, 0, Math.PI * 2);
+        if (isSliding) {
+            ctx.ellipse(0, 3 * s, 26 * s, 8 * s, 0, 0, Math.PI * 2);
+        } else {
+            ctx.ellipse(0, 4 * s, 15 * s, 6 * s, 0, 0, Math.PI * 2);
+        }
         ctx.fill();
 
-        // 달리기 각도 (다리와 팔의 역동적인 교차 스윙)
-        const leg1 = Math.sin(runner.runCycle) * 0.78;
-        const leg2 = -Math.sin(runner.runCycle) * 0.78;
-        const arm1 = -Math.sin(runner.runCycle) * 0.88;
-        const arm2 = Math.sin(runner.runCycle) * 0.88;
-        const bobY = Math.abs(Math.sin(runner.runCycle)) * 4.5 * s;
+        // 🔄 좌측으로 이동 중이면 스프라이트 수평 반전 (더 이상 거꾸로 문워크하지 않음!)
+        if (isMovingLeft) {
+            ctx.scale(-1, 1);
+        }
+
+        // [상태 1] 베이스 안착 완료: 당당한 세이프 스탠스
+        if (runner.isFinished) {
+            const breathe = Math.sin(this.crowdCheerTimer * 2.2) * 1.5 * s;
+            // 다리 (베이스 밟고 선 안정된 자세)
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(-w * 0.35, -h * 0.42, w * 0.30, h * 0.42);
+            ctx.fillRect(w * 0.05, -h * 0.42, w * 0.30, h * 0.42);
+            // 발 (스파이크)
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(-w * 0.38, -h * 0.06, w * 0.34, h * 0.06);
+            ctx.fillRect(w * 0.04, -h * 0.06, w * 0.34, h * 0.06);
+
+            // 상체 (유니폼 저지)
+            ctx.fillStyle = skin.jersey;
+            ctx.beginPath();
+            ctx.roundRect(-w * 0.40, -h * 0.82 + breathe, w * 0.80, h * 0.40, 5 * s);
+            ctx.fill();
+            ctx.strokeStyle = '#0f172a';
+            ctx.lineWidth = 1.4 * s;
+            ctx.stroke();
+
+            // 등번호 or 팀 로고
+            ctx.fillStyle = '#ffffff';
+            ctx.font = `bold ${Math.round(8 * s)}px sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.fillText(runner.isBatter ? 'BAT' : 'SAFE', 0, -h * 0.62 + breathe);
+
+            // 머리 & 헬멧
+            ctx.save();
+            ctx.translate(0, -h * 0.92 + breathe);
+            if (isMovingAway) {
+                // 뒷모습 헬멧
+                ctx.fillStyle = skin.cap;
+                ctx.beginPath();
+                ctx.arc(0, 0, 13 * s, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#0f172a';
+                ctx.lineWidth = 1.2 * s;
+                ctx.stroke();
+            } else {
+                if (char.id === 'tiger') this.drawTigerFace(ctx, s * 0.82, true, skin);
+                else if (char.id === 'frog') this.drawFrogFace(ctx, s * 0.82, true, skin);
+                else if (char.id === 'penguin') this.drawPenguinFace(ctx, s * 0.82, true, skin);
+                else this.drawMonkeyFace(ctx, s * 0.82, true, skin);
+
+                ctx.fillStyle = skin.cap;
+                ctx.beginPath();
+                ctx.arc(0, -5 * s, 13 * s, Math.PI, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                ctx.fillRect(4 * s, -6 * s, 10 * s, 3.5 * s);
+            }
+            ctx.restore();
+            ctx.restore();
+            return;
+        }
+
+        // [상태 2] 박진감 넘치는 베이스 슬라이딩! (Sliding into base)
+        if (isSliding) {
+            ctx.save();
+            ctx.translate(0, -h * 0.22);
+            ctx.rotate(0.32); // 바닥에 미끄러져 들어가는 슬라이딩 각도
+
+            // 슬라이딩 흙먼지 폭풍
+            if (Math.random() < 0.6) {
+                this.particles.push({
+                    x: runner.x + (Math.random() - 0.5) * 12,
+                    y: 2,
+                    z: runner.z + (Math.random() - 0.5) * 12,
+                    vx: -(dx) * 0.08 + (Math.random() - 0.5) * 8,
+                    vy: 6 + Math.random() * 10,
+                    vz: -(dz) * 0.08 + (Math.random() - 0.5) * 8,
+                    color: '#fef3c7',
+                    size: 4 + Math.random() * 4,
+                    life: 0.4
+                });
+            }
+
+            // 뻗은 다리 (베이스를 향해 앞으로 전력 뻗음)
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, -h * 0.12, w * 0.85, h * 0.20);
+            ctx.fillStyle = skin.jersey;
+            ctx.fillRect(w * 0.5, -h * 0.12, w * 0.25, h * 0.20);
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(w * 0.75, -h * 0.14, w * 0.18, h * 0.24); // 스파이크
+
+            // 상체 (바닥에 낮게 엎드린 슬라이딩)
+            ctx.fillStyle = skin.jersey;
+            ctx.beginPath();
+            ctx.roundRect(-w * 0.65, -h * 0.25, w * 0.70, h * 0.32, 5 * s);
+            ctx.fill();
+            ctx.stroke();
+
+            // 앞으로 뻗은 팔
+            ctx.strokeStyle = '#fde047';
+            ctx.lineWidth = 5 * s;
+            ctx.beginPath();
+            ctx.moveTo(-w * 0.2, -h * 0.15);
+            ctx.lineTo(w * 0.4, -h * 0.10);
+            ctx.stroke();
+
+            // 머리 & 헬멧
+            ctx.save();
+            ctx.translate(-w * 0.75, -h * 0.22);
+            ctx.fillStyle = skin.cap;
+            ctx.beginPath();
+            ctx.arc(0, 0, 12 * s, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+
+            ctx.restore();
+            ctx.restore();
+            return;
+        }
+
+        // [상태 3] 🏃 리얼 2단 관절 다이내믹 전력 질주 (Athletic Articulated Sprint)
+        const cycle = runner.runCycle;
+        const bobY = Math.abs(Math.sin(cycle)) * 6.0 * s;
+
+        // 관절 계산: 고관절 스윙 + 무릎 굴곡 (High Knee Drive & Heel Kick)
+        const hip1 = Math.sin(cycle) * 0.78;
+        const hip2 = -Math.sin(cycle) * 0.78;
+
+        // 무릎: 다리가 뒤로 갈 때(hip < 0) 무릎이 위로 굽혀지고, 앞으로 올 때(hip > 0) 높이 치솟음!
+        const knee1 = (hip1 < 0) ? Math.abs(hip1) * 1.35 : 0.18;
+        const knee2 = (hip2 < 0) ? Math.abs(hip2) * 1.35 : 0.18;
+
+        // 팔: 어깨 스윙 + 팔꿈치 90도 굽힘 전력 펌핑
+        const shoulder1 = -Math.sin(cycle) * 0.85;
+        const shoulder2 = Math.sin(cycle) * 0.85;
+        const elbow1 = 1.45 + Math.cos(cycle) * 0.25;
+        const elbow2 = 1.45 - Math.cos(cycle) * 0.25;
 
         ctx.save();
         ctx.translate(0, -bobY);
 
-        // 1. 뒷다리
+        // 1. 뒷다리 (2단 관절: 허벅지 -> 무릎 -> 종아리/스파이크)
         ctx.save();
-        ctx.translate(-w * 0.22, -h * 0.42);
-        ctx.rotate(leg1);
+        ctx.translate(-w * 0.15, -h * 0.44);
+        ctx.rotate(hip1);
+        // 허벅지
         ctx.fillStyle = '#ffffff';
-        ctx.fillRect(-w * 0.16, 0, w * 0.32, h * 0.44);
+        ctx.fillRect(-w * 0.14, 0, w * 0.28, h * 0.24);
+        // 무릎 관절 회전
+        ctx.translate(0, h * 0.22);
+        ctx.rotate(knee1);
+        // 종아리 (스타킹)
         ctx.fillStyle = skin.jersey;
-        ctx.fillRect(-w * 0.16, h * 0.22, w * 0.32, h * 0.12);
+        ctx.fillRect(-w * 0.12, 0, w * 0.24, h * 0.20);
+        // 스파이크 (발)
         ctx.fillStyle = '#0f172a';
-        ctx.fillRect(-w * 0.18, h * 0.38, w * 0.36, h * 0.08);
+        ctx.fillRect(-w * 0.14, h * 0.16, w * 0.32, h * 0.07);
         ctx.restore();
 
-        // 2. 앞다리
+        // 2. 앞다리 (2단 관절)
         ctx.save();
-        ctx.translate(w * 0.22, -h * 0.42);
-        ctx.rotate(leg2);
+        ctx.translate(w * 0.15, -h * 0.44);
+        ctx.rotate(hip2);
+        // 허벅지
         ctx.fillStyle = '#ffffff';
-        ctx.fillRect(-w * 0.16, 0, w * 0.32, h * 0.44);
+        ctx.fillRect(-w * 0.14, 0, w * 0.28, h * 0.24);
+        // 무릎 관절 회전
+        ctx.translate(0, h * 0.22);
+        ctx.rotate(knee2);
+        // 종아리 (스타킹)
         ctx.fillStyle = skin.jersey;
-        ctx.fillRect(-w * 0.16, h * 0.22, w * 0.32, h * 0.12);
+        ctx.fillRect(-w * 0.12, 0, w * 0.24, h * 0.20);
+        // 스파이크 (발)
         ctx.fillStyle = '#0f172a';
-        ctx.fillRect(-w * 0.18, h * 0.38, w * 0.36, h * 0.08);
+        ctx.fillRect(-w * 0.14, h * 0.16, w * 0.32, h * 0.07);
         ctx.restore();
 
-        // 3. 상체 (앞으로 기울인 폭발적 전력질주)
+        // 3. 상체 (폭발적인 전방 스프린트 린 Forward Sprint Lean)
         ctx.save();
-        ctx.translate(0, -h * 0.44);
-        ctx.rotate(0.24);
+        ctx.translate(0, -h * 0.45);
+        ctx.rotate(0.30); // 18도 전방 상체 기울기!
 
-        // 뒷팔
+        // 안쪽 팔 (2단 관절: 어깨 -> 팔꿈치 90도 펌핑)
         ctx.save();
-        ctx.translate(-w * 0.38, -h * 0.30);
-        ctx.rotate(arm1);
-        ctx.strokeStyle = '#fde047';
-        ctx.lineWidth = 5 * s;
+        ctx.translate(-w * 0.32, -h * 0.32);
+        ctx.rotate(shoulder1);
+        // 상완
+        ctx.strokeStyle = skin.jersey;
+        ctx.lineWidth = 6 * s;
         ctx.lineCap = 'round';
         ctx.beginPath();
         ctx.moveTo(0, 0);
-        ctx.lineTo(0, h * 0.28);
+        ctx.lineTo(0, h * 0.16);
         ctx.stroke();
+        // 팔꿈치 굴곡
+        ctx.translate(0, h * 0.15);
+        ctx.rotate(elbow1);
+        // 전완 & 주먹
+        ctx.strokeStyle = '#fde047';
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, h * 0.16);
+        ctx.stroke();
+        ctx.fillStyle = '#f59e0b';
+        ctx.beginPath();
+        ctx.arc(0, h * 0.16, 3.5 * s, 0, Math.PI * 2);
+        ctx.fill();
         ctx.restore();
 
         // 유니폼 저지
         ctx.fillStyle = skin.jersey;
         ctx.beginPath();
-        ctx.roundRect(-w * 0.44, -h * 0.38, w * 0.88, h * 0.40, 6 * s);
+        ctx.roundRect(-w * 0.42, -h * 0.38, w * 0.84, h * 0.40, 6 * s);
         ctx.fill();
         ctx.strokeStyle = '#0f172a';
-        ctx.lineWidth = 1.5 * s;
+        ctx.lineWidth = 1.4 * s;
         ctx.stroke();
 
-        // 등번호
+        // 뒷모습 vs 앞모습에 따른 등번호 / 로고 렌더링
         ctx.fillStyle = '#ffffff';
         ctx.font = `bold ${Math.round(8 * s)}px sans-serif`;
         ctx.textAlign = 'center';
-        ctx.fillText(runner.isBatter ? 'BAT' : 'RUN', 0, -h * 0.18);
+        if (isMovingAway) {
+            ctx.fillText(runner.isBatter ? '99' : '7', 0, -h * 0.18);
+        } else {
+            ctx.fillText(runner.isBatter ? 'BAT' : 'RUN', 0, -h * 0.18);
+        }
 
-        // 앞팔
+        // 바깥쪽 팔 (2단 관절: 어깨 -> 팔꿈치 90도 펌핑)
         ctx.save();
-        ctx.translate(w * 0.38, -h * 0.30);
-        ctx.rotate(arm2);
-        ctx.strokeStyle = '#fde047';
-        ctx.lineWidth = 5 * s;
+        ctx.translate(w * 0.32, -h * 0.32);
+        ctx.rotate(shoulder2);
+        // 상완
+        ctx.strokeStyle = skin.jersey;
+        ctx.lineWidth = 6 * s;
         ctx.lineCap = 'round';
         ctx.beginPath();
         ctx.moveTo(0, 0);
-        ctx.lineTo(0, h * 0.28);
+        ctx.lineTo(0, h * 0.16);
         ctx.stroke();
+        // 팔꿈치 굴곡
+        ctx.translate(0, h * 0.15);
+        ctx.rotate(elbow2);
+        // 전완 & 주먹
+        ctx.strokeStyle = '#fde047';
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, h * 0.16);
+        ctx.stroke();
+        ctx.fillStyle = '#f59e0b';
+        ctx.beginPath();
+        ctx.arc(0, h * 0.16, 3.5 * s, 0, Math.PI * 2);
+        ctx.fill();
         ctx.restore();
 
         // 4. 머리 & 헬멧
         ctx.save();
         ctx.translate(0, -h * 0.50);
 
-        if (char.id === 'tiger') this.drawTigerFace(ctx, s * 0.85, true, skin);
-        else if (char.id === 'frog') this.drawFrogFace(ctx, s * 0.85, true, skin);
-        else if (char.id === 'penguin') this.drawPenguinFace(ctx, s * 0.85, true, skin);
-        else this.drawMonkeyFace(ctx, s * 0.85, true, skin);
+        if (isMovingAway) {
+            // 뒤통수 헬멧 & 통풍구
+            ctx.fillStyle = skin.cap;
+            ctx.beginPath();
+            ctx.arc(0, 0, 14 * s, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#0f172a';
+            ctx.lineWidth = 1.2 * s;
+            ctx.stroke();
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(-3 * s, -6 * s, 6 * s, 2 * s);
+        } else {
+            // 정면/측면 동물 캐릭터 얼굴
+            if (char.id === 'tiger') this.drawTigerFace(ctx, s * 0.85, true, skin);
+            else if (char.id === 'frog') this.drawFrogFace(ctx, s * 0.85, true, skin);
+            else if (char.id === 'penguin') this.drawPenguinFace(ctx, s * 0.85, true, skin);
+            else this.drawMonkeyFace(ctx, s * 0.85, true, skin);
 
-        // 타자 헬멧
-        ctx.fillStyle = skin.cap;
-        ctx.beginPath();
-        ctx.arc(0, -5 * s, 14 * s, Math.PI, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = '#0f172a';
-        ctx.lineWidth = 1.2 * s;
-        ctx.stroke();
-        ctx.fillRect(4 * s, -6 * s, 10 * s, 3.5 * s); // 챙
+            // 헬멧 및 앞챙
+            ctx.fillStyle = skin.cap;
+            ctx.beginPath();
+            ctx.arc(0, -5 * s, 14 * s, Math.PI, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#0f172a';
+            ctx.lineWidth = 1.2 * s;
+            ctx.stroke();
+            ctx.fillRect(4 * s, -6 * s, 10 * s, 3.5 * s); // 챙
+        }
 
         ctx.restore(); // head
-
         ctx.restore(); // torso
         ctx.restore(); // bob
-
-        ctx.restore();
+        ctx.restore(); // root
     }
 
     /**
@@ -3106,7 +3322,7 @@ class BaseballGame {
                 if (aimPt) {
                     const s = aimPt.scale;
                     const ringRadius = Math.max(12 * s, (68 * s) * (1.0 - prog * 0.82));
-                    const isSweetSpot = (b.z >= 365 && b.z <= 388);
+                    const isSweetSpot = (b.z >= 370 && b.z <= 386);
 
                     ctx.save();
                     ctx.translate(aimPt.x, aimPt.y);
