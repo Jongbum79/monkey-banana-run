@@ -1112,18 +1112,18 @@ class BaseballGame {
             actualTargetY = this.pitchAimY + (Math.random() - 0.5) * spread;
         }
 
-        // ⚾ [구종별 비행 시간 - 쾌적하고 반응 가능한 플레이 체감]
-        // 보통(Normal): 0.62초 (타자가 투구 모션을 보고 궤적을 인지하여 호쾌하게 타격할 수 있는 황금 타이밍!)
+        // ⚾ [구종별 비행 시간 - 실전 MLB 체감 속도 및 구속 격차]
+        // 보통(Normal): 0.51초 (~152km/h 패스트볼 기준 실전 반응 타이밍)
         let diffFactor = 1.0;
         if (this.difficulty === 'easy') diffFactor = 1.25;
-        else if (this.difficulty === 'pro') diffFactor = 0.78;
+        else if (this.difficulty === 'pro') diffFactor = 0.88;
 
-        let flightDuration = 0.62 * diffFactor;
-        if (pType === 'fastball') flightDuration = (152 / finalSpeed) * 0.62 * diffFactor;
-        else if (pType === 'slider') flightDuration = 0.68 * diffFactor;
-        else if (pType === 'changeup') flightDuration = 0.76 * diffFactor;
-        else if (pType === 'curve') flightDuration = 0.80 * diffFactor;
-        else if (pType === 'knuckleball') flightDuration = 0.86 * diffFactor;
+        let flightDuration = 0.51 * diffFactor;
+        if (pType === 'fastball') flightDuration = (152 / finalSpeed) * 0.51 * diffFactor;
+        else if (pType === 'slider') flightDuration = 0.56 * diffFactor;
+        else if (pType === 'changeup') flightDuration = 0.64 * diffFactor;
+        else if (pType === 'curve') flightDuration = 0.68 * diffFactor;
+        else if (pType === 'knuckleball') flightDuration = 0.75 * diffFactor;
 
         const releaseX = 0;
         const releaseY = 46;
@@ -1356,10 +1356,10 @@ class BaseballGame {
         const isEasy = (this.difficulty === 'easy');
         const isPro = (this.difficulty === 'pro');
 
-        // 🐾 난이도별 타격 허용 한계 (보통 모드는 손맛 넘치는 통쾌한 타격!)
-        const earlyLimit = isEasy ? -95 : (isPro ? -45 : -80);
-        const lateLimit = isEasy ? 80 : (isPro ? 38 : 65);
-        const maxDistXY = isEasy ? 65 : (isPro ? 34 : 54);
+        // 🐾 난이도별 타격 허용 한계 (보통 모드는 실전성 높은 긴장감 넘치는 공방!)
+        const earlyLimit = isEasy ? -80 : (isPro ? -36 : -56);
+        const lateLimit = isEasy ? 65 : (isPro ? 32 : 46);
+        const maxDistXY = isEasy ? 54 : (isPro ? 28 : 40);
 
         // 1. ⚠️ 타이밍 판정 (너무 이르거나 늦은 헛스윙)
         if (diffZ < earlyLimit) {
@@ -1387,11 +1387,11 @@ class BaseballGame {
         const prevBases = { ...this.bases };
         const absDiffZ = Math.abs(diffZ);
 
-        const hrTiming = isEasy ? 35 : (isPro ? 16 : 28);
-        const hrDist = isEasy ? 30 : (isPro ? 16 : 24);
+        const hrTiming = isEasy ? 26 : (isPro ? 14 : 18);
+        const hrDist = isEasy ? 24 : (isPro ? 13 : 17);
 
-        const hitTiming = isEasy ? 68 : (isPro ? 32 : 56);
-        const hitDist = isEasy ? 48 : (isPro ? 26 : 38);
+        const hitTiming = isEasy ? 52 : (isPro ? 28 : 38);
+        const hitDist = isEasy ? 38 : (isPro ? 22 : 28);
 
         // [1] 💥 PERFECT CONTACT: 초특대형 홈런!
         if (absDiffZ <= hrTiming && distXY <= hrDist) {
@@ -3106,7 +3106,7 @@ class BaseballGame {
                 if (aimPt) {
                     const s = aimPt.scale;
                     const ringRadius = Math.max(12 * s, (68 * s) * (1.0 - prog * 0.82));
-                    const isSweetSpot = (b.z >= 335 && b.z <= 405);
+                    const isSweetSpot = (b.z >= 365 && b.z <= 388);
 
                     ctx.save();
                     ctx.translate(aimPt.x, aimPt.y);
