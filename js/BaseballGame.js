@@ -1014,31 +1014,32 @@ class BaseballGame {
                         return;
                     }
 
-                    // ⚾ [볼넷 & 유인구 시스템] 36% 확률로 볼/유인구 투구, 64% 확률로 스트라이크존 승부!
-                    const isIntentionalBall = (this.balls >= 3) ? (Math.random() < 0.20) : (Math.random() < 0.36);
+                    // ⚾ [타격 재미 극대화] 스트라이크존 공격적 승부 (75~80% 스트라이크)
+                    const ballProb = (this.difficulty === 'easy') ? 0.12 : (this.difficulty === 'pro' ? 0.32 : 0.22);
+                    const isIntentionalBall = (this.balls >= 3) ? false : (Math.random() < ballProb);
                     if (isIntentionalBall) {
                         const ballType = Math.random();
                         if (ballType < 0.30) {
                             // 높은 볼 (하이 패스트볼)
-                            this.pitchAimX = (Math.random() - 0.5) * 36;
-                            this.pitchAimY = 70 + Math.random() * 8;
+                            this.pitchAimX = (Math.random() - 0.5) * 32;
+                            this.pitchAimY = 73 + Math.random() * 6;
                         } else if (ballType < 0.60) {
                             // 바운드성 낮은 볼 (로우 유인구)
-                            this.pitchAimX = (Math.random() - 0.5) * 36;
-                            this.pitchAimY = 11 + Math.random() * 8;
+                            this.pitchAimX = (Math.random() - 0.5) * 32;
+                            this.pitchAimY = 10 + Math.random() * 5;
                         } else if (ballType < 0.80) {
-                            // 바깥쪽으로 크게 빠지는 볼
-                            this.pitchAimX = 27 + Math.random() * 12;
-                            this.pitchAimY = 25 + Math.random() * 32;
+                            // 바깥쪽으로 빠지는 볼
+                            this.pitchAimX = 33 + Math.random() * 8;
+                            this.pitchAimY = 28 + Math.random() * 28;
                         } else {
                             // 몸쪽 깊숙한 위협구
-                            this.pitchAimX = -27 - Math.random() * 12;
-                            this.pitchAimY = 25 + Math.random() * 32;
+                            this.pitchAimX = -33 - Math.random() * 8;
+                            this.pitchAimY = 28 + Math.random() * 28;
                         }
                     } else {
-                        // 스트라이크존 안쪽 코스 노리기 (x: -20 ~ 20, y: 26 ~ 62)
-                        this.pitchAimX = (Math.random() - 0.5) * 38;
-                        this.pitchAimY = 26 + Math.random() * 36;
+                        // 스트라이크존 안쪽 칠 만한 코스 노리기 (x: -14 ~ 14, y: 30 ~ 58)
+                        this.pitchAimX = (Math.random() - 0.5) * 28;
+                        this.pitchAimY = 32 + Math.random() * 24;
                     }
                     this.startPitchWindup();
                 }
@@ -1094,28 +1095,28 @@ class BaseballGame {
                 }
             }
         } else {
-            const spread = (pType === 'knuckleball') ? 16 : pitcherChar.controlSpread;
+            const spread = (this.difficulty === 'easy') ? 4 : (this.difficulty === 'pro' ? 12 : 7);
             actualTargetX = this.pitchAimX + (Math.random() - 0.5) * spread;
             actualTargetY = this.pitchAimY + (Math.random() - 0.5) * spread;
         }
 
-        // ⚾ [구종별 비행 시간 - 난이도 연동]
-        // 보통(Normal): 실전 프로야구급 긴장감과 스피디한 반응 속도 (직구 ~0.46초)
-        let diffFactor = 1.06;
-        if (this.difficulty === 'easy') diffFactor = 1.28;
-        else if (this.difficulty === 'pro') diffFactor = 0.90;
+        // ⚾ [구종별 비행 시간 - 쾌적하고 반응 가능한 플레이 체감]
+        // 보통(Normal): 0.62초 (타자가 투구 모션을 보고 궤적을 인지하여 호쾌하게 타격할 수 있는 황금 타이밍!)
+        let diffFactor = 1.0;
+        if (this.difficulty === 'easy') diffFactor = 1.25;
+        else if (this.difficulty === 'pro') diffFactor = 0.78;
 
-        let flightDuration = 0.44 * diffFactor;
-        if (pType === 'fastball') flightDuration = (152 / finalSpeed) * 0.43 * diffFactor;
-        else if (pType === 'slider') flightDuration = 0.48 * diffFactor;
-        else if (pType === 'changeup') flightDuration = 0.56 * diffFactor;
-        else if (pType === 'curve') flightDuration = 0.60 * diffFactor;
-        else if (pType === 'knuckleball') flightDuration = 0.68 * diffFactor;
+        let flightDuration = 0.62 * diffFactor;
+        if (pType === 'fastball') flightDuration = (152 / finalSpeed) * 0.62 * diffFactor;
+        else if (pType === 'slider') flightDuration = 0.68 * diffFactor;
+        else if (pType === 'changeup') flightDuration = 0.76 * diffFactor;
+        else if (pType === 'curve') flightDuration = 0.80 * diffFactor;
+        else if (pType === 'knuckleball') flightDuration = 0.86 * diffFactor;
 
         const releaseX = 0;
         const releaseY = 46;
         const releaseZ = 85;
-        const targetZ = 380;
+        const targetZ = 420; // 포수 미트 위치 (홈플레이트 z=380 통과 후 포구)
 
         this.lastResultWasBall = false;
         this.ball = {
@@ -1223,8 +1224,11 @@ class BaseballGame {
         speedEl.textContent = `${speed} KM/H`;
 
         // 3x3 스트라이크존 (x: -24 ~ 24, y: 22 ~ 66)에 점 매핑
-        const percentX = Math.max(8, Math.min(92, 50 + (tx / 48) * 100));
-        const percentY = Math.max(8, Math.min(92, 100 - ((ty - 22) / 44) * 100));
+        // 스트라이크는 [0%, 100%] 박스 내부, 볼(유인구)은 박스 바깥([-16%, 116%])에 정확히 위치!
+        const rawPercentX = 50 + (tx / 48) * 100;
+        const rawPercentY = 100 - ((ty - 22) / 44) * 100;
+        const percentX = Math.max(-16, Math.min(116, rawPercentX));
+        const percentY = Math.max(-16, Math.min(116, rawPercentY));
 
         dot.style.left = `${percentX.toFixed(1)}%`;
         dot.style.top = `${percentY.toFixed(1)}%`;
@@ -1235,9 +1239,9 @@ class BaseballGame {
         else if (pType === 'changeup') pitchName = '🐢 서클 체인지업 (에어브레이킹 싱커 -34cm)';
         else if (pType === 'knuckleball') pitchName = '🔮 무회전 너클볼 (3D 카오스 플러터)';
 
-        let locationDesc = isStrike ? '스트라이크 존 통과' : '존을 벗어난 유인구';
+        let locationDesc = isStrike ? '스트라이크 존 통과' : '존을 벗어난 볼';
         if (this.ball && this.ball.hasSwung) {
-            locationDesc = isStrike ? '헛스윙 스트라이크' : '유인구 헛스윙';
+            locationDesc = '헛스윙 스트라이크';
         }
         descEl.textContent = `${pitchName} • ${locationDesc}`;
 
@@ -1282,8 +1286,8 @@ class BaseballGame {
     }
 
     triggerBatterSwing() {
-        // [1] 방금 포구 직후 늦은 헛스윙 판정 정정 (볼 판정 후 0.4초 이내에 스윙 시 스트라이크로 즉시 정정)
-        if (this.gameState === 'result_pause' && this.stateTimer > 0.65 && this.lastResultWasBall) {
+        // [1] 방금 포구 직후 늦은 헛스윙 판정 정정 (볼 판정 후 스윙 시 100% 헛스윙 스트라이크로 즉각 정정)
+        if (this.gameState === 'result_pause' && this.lastResultWasBall) {
             this.correctLateSwingToStrike();
             return;
         }
@@ -1338,10 +1342,10 @@ class BaseballGame {
         const isEasy = (this.difficulty === 'easy');
         const isPro = (this.difficulty === 'pro');
 
-        // 🐾 난이도별 타격 허용 한계 (보통 모드는 긴장감 넘치는 정통 프로야구 타격!)
-        const earlyLimit = isEasy ? -68 : (isPro ? -34 : -48);
-        const lateLimit = isEasy ? 58 : (isPro ? 28 : 38);
-        const maxDistXY = isEasy ? 50 : (isPro ? 26 : 36);
+        // 🐾 난이도별 타격 허용 한계 (보통 모드는 손맛 넘치는 통쾌한 타격!)
+        const earlyLimit = isEasy ? -95 : (isPro ? -45 : -80);
+        const lateLimit = isEasy ? 80 : (isPro ? 38 : 65);
+        const maxDistXY = isEasy ? 65 : (isPro ? 34 : 54);
 
         // 1. ⚠️ 타이밍 판정 (너무 이르거나 늦은 헛스윙)
         if (diffZ < earlyLimit) {
@@ -1369,11 +1373,11 @@ class BaseballGame {
         const prevBases = { ...this.bases };
         const absDiffZ = Math.abs(diffZ);
 
-        const hrTiming = isEasy ? 24 : (isPro ? 13 : 18);
-        const hrDist = isEasy ? 24 : (isPro ? 13 : 17);
+        const hrTiming = isEasy ? 35 : (isPro ? 16 : 28);
+        const hrDist = isEasy ? 30 : (isPro ? 16 : 24);
 
-        const hitTiming = isEasy ? 48 : (isPro ? 26 : 35);
-        const hitDist = isEasy ? 40 : (isPro ? 22 : 28);
+        const hitTiming = isEasy ? 68 : (isPro ? 32 : 56);
+        const hitDist = isEasy ? 48 : (isPro ? 26 : 38);
 
         // [1] 💥 PERFECT CONTACT: 초특대형 홈런!
         if (absDiffZ <= hrTiming && distXY <= hrDist) {
@@ -1752,15 +1756,16 @@ class BaseballGame {
             }
             b.z = b.startZ + (b.targetZ - b.startZ) * Math.min(1.0, zProg);
 
-            // 2. 궤적 진행률 (0.0 ~ 1.0)
-            const p = Math.max(0, Math.min(1.0, (b.z - b.startZ) / (b.targetZ - b.startZ)));
-            const xBase = b.startX + (b.targetX - b.startX) * p;
-            const yBase = b.startY + (b.targetY - b.startY) * p;
+            // 2. 홈플레이트(z=380) 기준 궤적 진행률 (0.0 ~ 1.0)
+            const pPlate = Math.max(0, Math.min(1.0, (b.z - b.startZ) / (380 - b.startZ)));
+            const xBase = b.startX + (b.targetX - b.startX) * pPlate;
+            const yBase = b.startY + (b.targetY - b.startY) * pPlate;
 
             let offsetX = 0;
             let offsetY = 0;
             let trailColor = '#38bdf8';
 
+            const p = pPlate;
             if (b.type === 'fastball') {
                 // ⚡ 4-SEAM FASTBALL: 강력한 백스핀에 의한 라이징 홉(Rising Hop) 효과!
                 // 홈플레이트 접근 시점(p>=0.45)에서 중력을 이겨내며 타자 눈앞으로 솟구치는 라이징 궤적!
@@ -1774,7 +1779,7 @@ class BaseballGame {
                     offsetY = Math.sin((p / 0.48) * Math.PI) * 24.0;
                 } else {
                     const u = (p - 0.48) / 0.52;
-                    offsetY = -52.0 * Math.sin(u * Math.PI * 0.92) * Math.pow(u, 0.72);
+                    offsetY = -52.0 * Math.sin(u * Math.PI) * Math.pow(u, 0.72);
                 }
                 offsetX = Math.sin(p * Math.PI) * 8.0;
                 b.rot += dt * 44;
@@ -1787,7 +1792,7 @@ class BaseballGame {
                 } else {
                     const u = (p - 0.52) / 0.48;
                     const sweepDir = (b.targetX >= 0) ? 1 : -1;
-                    offsetX = sweepDir * 36.0 * Math.sin(u * Math.PI * 0.95);
+                    offsetX = sweepDir * 36.0 * Math.sin(u * Math.PI);
                     offsetY = -18.0 * Math.sin(u * Math.PI);
                 }
                 b.rot += dt * 52;
@@ -1799,7 +1804,7 @@ class BaseballGame {
                     offsetY = Math.sin((p / 0.55) * (Math.PI * 0.5)) * 14.0;
                 } else {
                     const u = (p - 0.55) / 0.45;
-                    offsetY = -34.0 * Math.sin(u * Math.PI * 0.95);
+                    offsetY = -34.0 * Math.sin(u * Math.PI);
                     offsetX = 14.0 * Math.sin(u * Math.PI);
                 }
                 b.rot += dt * 22;
@@ -1824,10 +1829,10 @@ class BaseballGame {
             b.trail.push({ x: b.x, y: b.y, z: b.z, color: trailColor });
             if (b.trail.length > 55) b.trail.shift();
 
-            // 4. 포수 미트 포구 (홈플레이트 z=380 통과 후 미타격 시)
-            if (rawProg >= 1.0 && !b.isHit) {
+            // 4. 포수 미트 포구 (홈플레이트 z=380 통과 후 z>=415 또는 비행 완료 시)
+            if ((rawProg >= 1.0 || b.z >= 415) && !b.isHit) {
                 b.active = false;
-                this.handlePitchMissResult(b.x, b.y);
+                this.handlePitchMissResult(b.targetX, b.targetY);
             }
         } else if (this.gameState === 'hit_flight') {
             const b = this.ball;
@@ -1919,9 +1924,9 @@ class BaseballGame {
 
         // 2. ⚾ 스트라이크존 규격 판정 (KBO/MLB 공식 규칙: 공의 일부라도 존에 닿으면 스트라이크)
         // 스트라이크존 기본 규격: x [-24, 24], y [22, 66]
-        // 야구공 반지름(r=8.5) 마진 4.5 반영 -> 존 경계선에 걸치거나 스치는 공은 100% 스트라이크!
-        const strikeMarginX = 4.5;
-        const strikeMarginY = 4.5;
+        // 야구공 반지름(r=8.5) 및 시각적 박스 두께를 넉넉히 반영 (마진 7.0) -> 시각적으로 존에 스치거나 걸친 공은 100% 무조건 스트라이크!
+        const strikeMarginX = 7.0;
+        const strikeMarginY = 7.0;
         const inZonePhysical = (Math.abs(tx) <= (24 + strikeMarginX) && ty >= (22 - strikeMarginY) && ty <= (66 + strikeMarginY));
 
         const isStrike = isSwung || inZonePhysical;
@@ -2835,17 +2840,17 @@ class BaseballGame {
                 if (aimPt) {
                     const s = aimPt.scale;
                     const ringRadius = Math.max(12 * s, (68 * s) * (1.0 - prog * 0.82));
-                    const isSweetSpot = (b.z >= 355 && b.z <= 386);
+                    const isSweetSpot = (b.z >= 335 && b.z <= 405);
 
                     ctx.save();
                     ctx.translate(aimPt.x, aimPt.y);
 
                     if (isSweetSpot) {
                         ctx.strokeStyle = '#22c55e';
-                        ctx.fillStyle = 'rgba(34, 197, 94, 0.35)';
+                        ctx.fillStyle = 'rgba(34, 197, 94, 0.4)';
                         ctx.lineWidth = 3.5 * s;
                         ctx.shadowColor = '#22c55e';
-                        ctx.shadowBlur = 16;
+                        ctx.shadowBlur = 18;
                     } else {
                         ctx.strokeStyle = '#38bdf8';
                         ctx.fillStyle = 'rgba(56, 189, 248, 0.12)';
@@ -2863,10 +2868,10 @@ class BaseballGame {
                     ctx.textAlign = 'center';
                     if (isSweetSpot) {
                         ctx.font = `900 ${Math.max(12, Math.round(14 * s))}px sans-serif`;
-                        ctx.fillStyle = '#fde047';
+                        ctx.fillStyle = '#22c55e';
                         ctx.shadowColor = '#000000';
-                        ctx.shadowBlur = 6;
-                        ctx.fillText('⚡ 지금 스윙! [NOW]', 0, -ringRadius - 10 * s);
+                        ctx.shadowBlur = 8;
+                        ctx.fillText('⚡ 지금 스윙! [HIT NOW]', 0, -ringRadius - 10 * s);
                     } else if (this.difficulty === 'easy') {
                         ctx.font = `bold ${Math.max(10, Math.round(11 * s))}px sans-serif`;
                         ctx.fillStyle = '#bae6fd';
