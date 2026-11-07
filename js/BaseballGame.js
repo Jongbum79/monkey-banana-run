@@ -263,14 +263,15 @@ class BaseballGame {
 
         // 🛡️ 7인제 3D 정밀 수비수 배치 (Fielders)
         this.fielders = [
-            { role: '1B', name: '1루수', x: 140, y: 0, z: 235, defaultX: 140, defaultZ: 235, baseAngle: -0.2 },
-            { role: '2B', name: '2루수', x: 65, y: 0, z: 155, defaultX: 65, defaultZ: 155, baseAngle: -0.1 },
-            { role: 'SS', name: '유격수', x: -65, y: 0, z: 155, defaultX: -65, defaultZ: 155, baseAngle: 0.1 },
-            { role: '3B', name: '3루수', x: -140, y: 0, z: 235, defaultX: -140, defaultZ: 235, baseAngle: 0.2 },
-            { role: 'LF', name: '좌익수', x: -210, y: 0, z: -30, defaultX: -210, defaultZ: -30, baseAngle: 0.15 },
-            { role: 'CF', name: '중견수', x: 0, y: 0, z: -55, defaultX: 0, defaultZ: -55, baseAngle: 0 },
-            { role: 'RF', name: '우익수', x: 210, y: 0, z: -30, defaultX: 210, defaultZ: -30, baseAngle: -0.15 }
+            { role: '1B', name: '1루수', x: 140, y: 0, z: 235, defaultX: 140, defaultZ: 235, baseAngle: -0.2, action: 'ready', runTimer: 0, isAssigned: false },
+            { role: '2B', name: '2루수', x: 65, y: 0, z: 155, defaultX: 65, defaultZ: 155, baseAngle: -0.1, action: 'ready', runTimer: 0, isAssigned: false },
+            { role: 'SS', name: '유격수', x: -65, y: 0, z: 155, defaultX: -65, defaultZ: 155, baseAngle: 0.1, action: 'ready', runTimer: 0, isAssigned: false },
+            { role: '3B', name: '3루수', x: -140, y: 0, z: 235, defaultX: -140, defaultZ: 235, baseAngle: 0.2, action: 'ready', runTimer: 0, isAssigned: false },
+            { role: 'LF', name: '좌익수', x: -210, y: 0, z: -30, defaultX: -210, defaultZ: -30, baseAngle: 0.15, action: 'ready', runTimer: 0, isAssigned: false },
+            { role: 'CF', name: '중견수', x: 0, y: 0, z: -55, defaultX: 0, defaultZ: -55, baseAngle: 0, action: 'ready', runTimer: 0, isAssigned: false },
+            { role: 'RF', name: '우익수', x: 210, y: 0, z: -30, defaultX: 210, defaultZ: -30, baseAngle: -0.15, action: 'ready', runTimer: 0, isAssigned: false }
         ];
+        this.fieldingThrow = null;
 
         this.trackerTimer = null;
 
@@ -899,8 +900,13 @@ class BaseballGame {
             this.fielders.forEach(f => {
                 f.x = f.defaultX;
                 f.z = f.defaultZ;
+                f.y = 0;
+                f.action = 'ready';
+                f.runTimer = 0;
+                f.isAssigned = false;
             });
         }
+        this.fieldingThrow = null;
 
         this.inningHalf = 'top';
         this.outs = 0;
@@ -988,8 +994,13 @@ class BaseballGame {
             this.fielders.forEach(f => {
                 f.x = f.defaultX;
                 f.z = f.defaultZ;
+                f.y = 0;
+                f.action = 'ready';
+                f.runTimer = 0;
+                f.isAssigned = false;
             });
         }
+        this.fieldingThrow = null;
 
         // 타자 모드일 때: 상대 컴퓨터(AI 투수)가 자동으로 구종과 코스를 정하고 투구!
         if (this.userRole === 'batter') {
@@ -1014,32 +1025,33 @@ class BaseballGame {
                         return;
                     }
 
-                    // ⚾ [타격 재미 극대화] 스트라이크존 공격적 승부 (75~80% 스트라이크)
-                    const ballProb = (this.difficulty === 'easy') ? 0.12 : (this.difficulty === 'pro' ? 0.32 : 0.22);
-                    const isIntentionalBall = (this.balls >= 3) ? false : (Math.random() < ballProb);
+                    // ⚾ [MLB 실전 볼배합 시스템] 볼/스트라이크의 진짜 야구 승부!
+                    // 볼넷(Walk)도 얻어내고 유인구를 골라내는 선구안의 재미를 위해 약 38% 확률로 볼 투구!
+                    const ballProb = (this.difficulty === 'easy') ? 0.28 : (this.difficulty === 'pro' ? 0.44 : 0.38);
+                    const isIntentionalBall = (Math.random() < ballProb);
                     if (isIntentionalBall) {
                         const ballType = Math.random();
-                        if (ballType < 0.30) {
-                            // 높은 볼 (하이 패스트볼)
+                        if (ballType < 0.28) {
+                            // 높은 볼 (하이 패스트볼: 타자 눈높이 위)
                             this.pitchAimX = (Math.random() - 0.5) * 32;
-                            this.pitchAimY = 73 + Math.random() * 6;
-                        } else if (ballType < 0.60) {
-                            // 바운드성 낮은 볼 (로우 유인구)
+                            this.pitchAimY = 73 + Math.random() * 8;
+                        } else if (ballType < 0.56) {
+                            // 바운드성 낮은 볼 (원바운드 로우 유인구)
                             this.pitchAimX = (Math.random() - 0.5) * 32;
-                            this.pitchAimY = 10 + Math.random() * 5;
-                        } else if (ballType < 0.80) {
-                            // 바깥쪽으로 빠지는 볼
-                            this.pitchAimX = 33 + Math.random() * 8;
-                            this.pitchAimY = 28 + Math.random() * 28;
+                            this.pitchAimY = 8 + Math.random() * 7;
+                        } else if (ballType < 0.78) {
+                            // 바깥쪽으로 빠지는 볼 (우타자 기준 바깥쪽 와이드 코스)
+                            this.pitchAimX = 32 + Math.random() * 10;
+                            this.pitchAimY = 24 + Math.random() * 32;
                         } else {
-                            // 몸쪽 깊숙한 위협구
-                            this.pitchAimX = -33 - Math.random() * 8;
-                            this.pitchAimY = 28 + Math.random() * 28;
+                            // 몸쪽 깊숙한 위협구 (우타자 기준 몸쪽 위협 코스)
+                            this.pitchAimX = -32 - Math.random() * 10;
+                            this.pitchAimY = 24 + Math.random() * 32;
                         }
                     } else {
-                        // 스트라이크존 안쪽 칠 만한 코스 노리기 (x: -14 ~ 14, y: 30 ~ 58)
-                        this.pitchAimX = (Math.random() - 0.5) * 28;
-                        this.pitchAimY = 32 + Math.random() * 24;
+                        // 스트라이크존 안쪽 칠 만한 코스 노리기 (x: -18 ~ 18, y: 28 ~ 60)
+                        this.pitchAimX = (Math.random() - 0.5) * 32;
+                        this.pitchAimY = 28 + Math.random() * 30;
                     }
                     this.startPitchWindup();
                 }
@@ -1159,33 +1171,23 @@ class BaseballGame {
         };
         this.showRadarGun(finalSpeed, pNameMap[pType] || 'FASTBALL');
 
-        // 투수 모드일 때: 상대 AI 타자의 선구안 및 스윙 (난이도 연동)
+        // 투수 모드일 때: 상대 AI 타자의 선구안 및 스윙 (실제 야구다운 볼/스트라이크 판별!)
         if (this.userRole === 'pitcher') {
             const isStrikePitch = (Math.abs(actualTargetX) <= 24 && actualTargetY >= 22 && actualTargetY <= 66);
             let aiWillSwing = false;
             let aiSwingTimingOffset = 0; // 초 단위 타이밍 오차
 
             const isEasy = (this.difficulty === 'easy');
-            if (pType === 'fastball') {
-                if (isStrikePitch) {
-                    aiWillSwing = isEasy ? (Math.random() < 0.65) : (Math.random() < 0.88);
-                    aiSwingTimingOffset = (finalSpeed >= 152) ? 0.08 + Math.random() * 0.06 : (Math.random() - 0.5) * 0.04;
-                } else {
-                    aiWillSwing = (actualTargetY > 66 && Math.random() < (isEasy ? 0.60 : 0.45));
-                    aiSwingTimingOffset = 0.08;
-                }
-            } else if (pType === 'changeup') {
-                aiWillSwing = isStrikePitch ? (Math.random() < 0.75) : (Math.random() < (isEasy ? 0.75 : 0.55));
-                aiSwingTimingOffset = -0.22 + (Math.random() - 0.5) * 0.05; // 체인지업에 낚여 이른 헛스윙!
-            } else if (pType === 'slider') {
-                aiWillSwing = isStrikePitch ? (Math.random() < 0.75) : (Math.random() < (isEasy ? 0.80 : 0.70));
-                aiSwingTimingOffset = (Math.random() - 0.5) * 0.04;
-            } else if (pType === 'curve') {
-                aiWillSwing = isStrikePitch ? (Math.random() < 0.70) : (actualTargetY < 24 && Math.random() < (isEasy ? 0.75 : 0.55));
-                aiSwingTimingOffset = -0.16 + (Math.random() - 0.5) * 0.06;
-            } else if (pType === 'knuckleball') {
-                aiWillSwing = Math.random() < (isEasy ? 0.75 : 0.65);
-                aiSwingTimingOffset = -0.20 + (Math.random() - 0.5) * 0.14;
+            if (isStrikePitch) {
+                // 스트라이크 코스는 적극 타격!
+                aiWillSwing = isEasy ? (Math.random() < 0.65) : (Math.random() < 0.85);
+                aiSwingTimingOffset = (finalSpeed >= 152) ? 0.08 + Math.random() * 0.06 : (Math.random() - 0.5) * 0.04;
+            } else {
+                // ⚾ 존 바깥의 볼 코스: AI 타자도 선구안을 발휘하여 78~85% 확률로 볼을 골라냄 (Take!)
+                // 2스트라이크(2S) 상황에서만 유인구에 속아 배트를 낼 확률 증가 (Chase)
+                const chaseProb = (this.strikes === 2) ? (isEasy ? 0.40 : 0.32) : (isEasy ? 0.18 : 0.14);
+                aiWillSwing = (Math.random() < chaseProb);
+                aiSwingTimingOffset = (pType === 'changeup' || pType === 'curve') ? -0.18 : 0.08;
             }
 
             if (aiWillSwing) {
@@ -1266,6 +1268,18 @@ class BaseballGame {
             this.lineupIndex = (this.lineupIndex + 1) % this.lineup.length;
         }
         this.updateHUD();
+    }
+
+    /**
+     * 🛡️ 타구 방향에 따른 전담 수비수 지정 및 추격 모드 활성화
+     */
+    assignFielderForBall(role) {
+        if (!this.fielders) return;
+        this.fielders.forEach(f => {
+            f.isAssigned = (f.role === role);
+            f.action = f.isAssigned ? 'pursuing' : 'ready';
+            f.runTimer = 0;
+        });
     }
 
     showRadarGun(speed, pitchName) {
@@ -1427,25 +1441,53 @@ class BaseballGame {
             if (hitType === 'triple') titleText = '⚡ 3루타! 우중간을 가르는 총알 3루타!';
             else if (hitType === 'double') titleText = '🌪️ 2루타! 외야를 가르는 시원한 2루타!';
 
+            // 외야수 수비 추격 지정
+            let targetRole = 'CF';
+            if (b.vx < -50) targetRole = 'LF';
+            else if (b.vx > 50) targetRole = 'RF';
+            this.assignFielderForBall(targetRole);
+
             const subText = (scoredRuns > 0) ? `주자 홈인! (+${scoredRuns}점 득점)` : `주자 진루 (비거리 ${dist}m)`;
             this.showResultBanner(titleText, subText, '#38bdf8');
         }
         // [3] 🛡️ 빗맞은 내야 땅볼 / 외야 플라이 아웃
         else if (absDiffZ <= hitTiming + 18 && distXY <= hitDist + 12) {
             b.hitType = 'out';
-            b.vz = -240 - Math.random() * 45;
-            b.vy = 85 + Math.random() * 30;
-            b.vx = (b.x * 2.0) + (Math.random() - 0.5) * 140;
             this.playBatHitSound('hit');
 
-            let outPos = '유격수 땅볼';
-            if (b.vx > 35) outPos = '1루수 땅볼';
-            else if (b.vx < -35) outPos = '3루수 땅볼';
-            else if (Math.random() < 0.45) outPos = '중견수 플라이';
+            const isFlyOut = (absDiffZ > hitTiming + 6 || Math.random() < 0.42);
+            b.isFlyOut = isFlyOut;
 
+            if (isFlyOut) {
+                // 외야/내야 플라이볼 타구 (높은 궤적)
+                b.vy = 185 + Math.random() * 45;
+                b.vz = -260 - Math.random() * 40;
+                b.vx = (b.x * 2.2) + (Math.random() - 0.5) * 160;
+
+                let targetRole = 'CF';
+                if (b.vx < -55) targetRole = 'LF';
+                else if (b.vx > 55) targetRole = 'RF';
+                this.assignFielderForBall(targetRole);
+            } else {
+                // 내야 땅볼 타구 (지면을 낮게 깔려가는 빠른 타구)
+                b.vy = 28 + Math.random() * 18;
+                b.vz = -210 - Math.random() * 35;
+                b.vx = (b.x * 2.0) + (Math.random() - 0.5) * 140;
+
+                let targetRole = 'SS';
+                if (b.vx < -45) targetRole = '3B';
+                else if (b.vx < 15) targetRole = 'SS';
+                else if (b.vx < 75) targetRole = '2B';
+                else targetRole = '1B';
+                this.assignFielderForBall(targetRole);
+            }
+
+            // 안전 타임아웃 (수비 인터셉트 지연 시 자동 아웃 처리)
             setTimeout(() => {
-                this.recordOut(`🛡️ 빗맞은 타구! ${outPos} 아웃!`);
-            }, 850);
+                if (this.isRunning && this.gameState === 'hit_flight' && b.hitType === 'out') {
+                    this.recordOut('🛡️ 빗맞은 타구! 수비수 포구 아웃!');
+                }
+            }, 3200);
         }
         // [4] ⚠️ 빗맞은 관중석 파울볼
         else {
@@ -1838,7 +1880,8 @@ class BaseballGame {
             const b = this.ball;
             b.flightTimer += dt;
 
-            b.vy -= 170 * dt;
+            // 중력 및 공기 저항
+            b.vy -= 165 * dt;
             b.vx *= 0.995;
             b.vz *= 0.995;
 
@@ -1846,26 +1889,135 @@ class BaseballGame {
             b.y += b.vy * dt;
             b.z += b.vz * dt;
 
-            // 🛡️ 수비수 7인의 능동적 타구 추적 및 대처 이동
-            if (this.fielders && b.active) {
-                this.fielders.forEach(f => {
-                    const dx = b.x - f.x;
-                    const dz = b.z - f.z;
+            // 지면 바운스 감쇠
+            if (b.y <= 0) {
+                b.y = 0;
+                b.vy = Math.max(0, -b.vy * 0.42);
+                b.vx *= 0.94;
+                b.vz *= 0.94;
+            }
+
+            // 🛡️ 3D 수비수 실시간 전력 질주, 포구, 송구 시뮬레이션
+            if (this.fielders) {
+                const assigned = this.fielders.find(f => f.isAssigned) || this.fielders[0];
+                if (assigned) {
+                    assigned.runTimer += dt * 18;
+                    const dx = b.x - assigned.x;
+                    const dz = b.z - assigned.z;
                     const dist = Math.sqrt(dx * dx + dz * dz);
-                    if (dist < 180) {
-                        f.x += (dx / dist) * 42 * dt;
-                        f.z += (dz / dist) * 42 * dt;
+
+                    // 공을 향해 전력 질주 (230 units/s)
+                    const sprintSpeed = (assigned.role === 'CF' || assigned.role === 'SS') ? 250 : 220;
+                    if (dist > 8 && assigned.action === 'pursuing') {
+                        assigned.x += (dx / dist) * Math.min(dist, sprintSpeed * dt);
+                        assigned.z += (dz / dist) * Math.min(dist, sprintSpeed * dt);
                     }
-                });
+
+                    // 수비 인터셉트 / 포구 체크
+                    if (b.active) {
+                        if (b.hitType === 'out') {
+                            if (b.isFlyOut) {
+                                // 🧤 외야/내야 플라이 낙하지점 점핑 캐치!
+                                if (dist < 32 && b.y <= 42) {
+                                    b.active = false;
+                                    assigned.action = 'jumping';
+                                    assigned.y = 16;
+                                    this.playCatchSound();
+                                    this.createCatchSparks(assigned.x, assigned.y + 16, assigned.z);
+                                    this.showResultBanner(`🧤 ${assigned.name} 점핑 캐치 호수비!`, `공중에서 타구를 낚아채 아웃!`, '#ef4444');
+                                    setTimeout(() => {
+                                        this.recordOut(`🧤 ${assigned.name} 플라이볼 포구 아웃!`);
+                                    }, 850);
+                                }
+                            } else {
+                                // 🛡️ 내야 땅볼 포구 & 1루 총알 송구 (6-4-3 / 5-3 / 4-3)
+                                if (dist < 28 && b.y <= 18 && assigned.action === 'pursuing') {
+                                    b.active = false;
+                                    assigned.action = 'throwing';
+                                    this.playCatchSound();
+                                    this.createCatchSparks(assigned.x, assigned.y + 12, assigned.z);
+                                    this.showResultBanner(`🧤 ${assigned.name} 깔끔한 포구!`, `1루로 총알 송구!`, '#facc15');
+
+                                    // 1루수에게 총알 레이저 송구 발사!
+                                    const firstBaseman = this.fielders.find(f => f.role === '1B');
+                                    this.fieldingThrow = {
+                                        active: true,
+                                        startX: assigned.x,
+                                        startY: assigned.y + 18,
+                                        startZ: assigned.z,
+                                        targetX: firstBaseman ? firstBaseman.x : 140,
+                                        targetY: 16,
+                                        targetZ: firstBaseman ? firstBaseman.z : 235,
+                                        x: assigned.x,
+                                        y: assigned.y + 18,
+                                        z: assigned.z,
+                                        progress: 0,
+                                        speed: 3.4,
+                                        catcher: firstBaseman,
+                                        sourceFielder: assigned
+                                    };
+                                }
+                            }
+                        } else if (b.hitType === 'single' || b.hitType === 'double' || b.hitType === 'triple') {
+                            // 안타 타구 외야수 컷오프 수비 및 2루 중계 송구
+                            if (dist < 32 && b.y <= 12 && assigned.action === 'pursuing') {
+                                b.active = false;
+                                assigned.action = 'throwing';
+                                this.playCatchSound();
+                                this.createCatchSparks(assigned.x, assigned.y + 14, assigned.z);
+                                const cutoffFielder = this.fielders.find(f => f.role === 'SS' || f.role === '2B');
+                                this.fieldingThrow = {
+                                    active: true,
+                                    startX: assigned.x,
+                                    startY: assigned.y + 18,
+                                    startZ: assigned.z,
+                                    targetX: cutoffFielder ? cutoffFielder.x : 0,
+                                    targetY: 16,
+                                    targetZ: cutoffFielder ? cutoffFielder.z : 155,
+                                    x: assigned.x,
+                                    y: assigned.y + 18,
+                                    z: assigned.z,
+                                    progress: 0,
+                                    speed: 2.8,
+                                    catcher: cutoffFielder,
+                                    sourceFielder: assigned
+                                };
+                            }
+                        }
+                    }
+                }
             }
 
-            // 홈런/타구 시 다이내믹 카메라 트래킹
-            if (this.userRole === 'batter') {
-                this.camera.x += (b.x * 0.25 - this.camera.x) * 4 * dt;
-                this.camera.y += (56 + Math.max(0, (b.y - 40) * 0.3) - this.camera.y) * 4 * dt;
+            // ⚾ 송구(Laser Throw) 비행 애니메이션
+            if (this.fieldingThrow && this.fieldingThrow.active) {
+                const ft = this.fieldingThrow;
+                ft.progress += dt * ft.speed;
+                const p = Math.min(1.0, ft.progress);
+                ft.x = ft.startX + (ft.targetX - ft.startX) * p;
+                ft.y = ft.startY + (ft.targetY - ft.startY) * p + Math.sin(p * Math.PI) * 12;
+                ft.z = ft.startZ + (ft.targetZ - ft.startZ) * p;
+
+                if (p >= 1.0) {
+                    ft.active = false;
+                    this.playCatchSound();
+                    this.createCatchSparks(ft.targetX, ft.targetY, ft.targetZ);
+                    if (ft.catcher) {
+                        ft.catcher.action = 'stretching'; // 베이스 위 글러브 포구 자세
+                    }
+                    if (this.ball && this.ball.hitType === 'out') {
+                        const srcName = ft.sourceFielder ? ft.sourceFielder.name : '내야수';
+                        this.recordOut(`🛡️ ${srcName} 포구 & 1루 총알 송구 아웃!`);
+                    }
+                }
             }
 
-            if (b.y <= 0 || b.z <= -380) {
+            // 홈런/타구/수비 시 다이내믹 카메라 트래킹
+            const trackTargetX = b.active ? (b.x * 0.35) : (this.fieldingThrow && this.fieldingThrow.active ? this.fieldingThrow.x * 0.35 : 0);
+            this.camera.x += (trackTargetX - this.camera.x) * 4 * dt;
+            this.camera.y += (56 + Math.max(0, (b.y - 40) * 0.25) - this.camera.y) * 4 * dt;
+
+            // 타구 비행 완료 및 펜스 너머 홈런
+            if (b.active && (b.z <= -360 || (b.y <= 0 && b.vz > -10 && b.flightTimer > 2.2))) {
                 b.active = false;
                 this.gameState = 'result_pause';
                 let pauseTime = 2.4;
@@ -1924,9 +2076,9 @@ class BaseballGame {
 
         // 2. ⚾ 스트라이크존 규격 판정 (KBO/MLB 공식 규칙: 공의 일부라도 존에 닿으면 스트라이크)
         // 스트라이크존 기본 규격: x [-24, 24], y [22, 66]
-        // 야구공 반지름(r=8.5) 및 시각적 박스 두께를 넉넉히 반영 (마진 7.0) -> 시각적으로 존에 스치거나 걸친 공은 100% 무조건 스트라이크!
-        const strikeMarginX = 7.0;
-        const strikeMarginY = 7.0;
+        // 야구공 외곽선 정밀 마진 2.5 반영 -> 공이 실제 존 박스 라인에 닿은 공만 정확히 스트라이크!
+        const strikeMarginX = 2.5;
+        const strikeMarginY = 2.5;
         const inZonePhysical = (Math.abs(tx) <= (24 + strikeMarginX) && ty >= (22 - strikeMarginY) && ty <= (66 + strikeMarginY));
 
         const isStrike = isSwung || inZonePhysical;
@@ -2024,8 +2176,9 @@ class BaseballGame {
         // 2. 💎 3D 다이아몬드 베이스 (홈, 1루, 2루, 3루 잔디 줄무늬 & 흙 주로 & 베이스백)
         this.renderDiamondAndBases(ctx);
 
-        // 3. 🛡️ 7인제 3D 정밀 수비수 (1루, 2루, 유격수, 3루, 좌/중/우익수)
+        // 3. 🛡️ 7인제 3D 정밀 수비수 (1루, 2루, 유격수, 3루, 좌/중/우익수) & 송구
         this.renderFielders(ctx);
+        this.renderFieldingThrow(ctx);
 
         // 4. 🏃 3D 다이아몬드 주자들 (질주하는 주자들 & 베이스 위 주자들)
         this.renderBaseRunners(ctx);
@@ -2402,9 +2555,8 @@ class BaseballGame {
 
         sorted.forEach(f => {
             // 🚫 [투수 시점 뷰 클리어링]
-            // 투수 시점에서는 홈플레이트를 향해 바라보므로 카메라 앞이나 시야 정중앙을 가리는
-            // 외야수(CF, LF, RF) 및 중앙 내야수는 절대 화면을 가리지 않도록 렌더링 제외!
-            if (this.userRole === 'pitcher') {
+            // 투구 조준 및 비행 시에는 화면 중앙을 가리지 않되, 타구 발생(hit_flight/result_pause) 시에는 전 수비수 시각화!
+            if (this.userRole === 'pitcher' && (this.gameState === 'aiming' || this.gameState === 'windup' || this.gameState === 'in_flight')) {
                 if (f.role === 'CF' || f.role === 'LF' || f.role === 'RF') return;
                 if (Math.abs(f.x) < 80) return; // 투수-홈플레이트 중앙 통로 100% 확보
             }
@@ -2418,24 +2570,56 @@ class BaseballGame {
             ctx.save();
             ctx.translate(p.x, p.y);
 
-            // 1. 지면 타원 그림자
+            // 1. 전담 수비수 발밑 다이내믹 펄스 링 & 그림자
+            if (f.isAssigned) {
+                const pulseR = (16 + Math.sin(f.runTimer * 3) * 4) * s;
+                ctx.strokeStyle = '#facc15';
+                ctx.lineWidth = 2.5 * s;
+                ctx.shadowColor = '#facc15';
+                ctx.shadowBlur = 12;
+                ctx.beginPath();
+                ctx.ellipse(0, 3 * s, pulseR, pulseR * 0.45, 0, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+            }
+
             ctx.fillStyle = 'rgba(15, 23, 42, 0.45)';
             ctx.beginPath();
             ctx.ellipse(0, 3 * s, 14 * s, 6 * s, 0, 0, Math.PI * 2);
             ctx.fill();
 
-            // 2. 수비 대기 자세 (낮게 무릎을 굽힌 수비 스탠스)
-            // 양다리 (화이트 유니폼 바지)
-            ctx.fillStyle = '#f8fafc';
-            ctx.fillRect(-w * 0.42, -h * 0.40, w * 0.36, h * 0.40);
-            ctx.fillRect(w * 0.06, -h * 0.40, w * 0.36, h * 0.40);
+            // 2. 수비 동작별 포스처 변환 (달리기 / 점핑 캐치 / 1루 송구 / 스트레칭)
+            if (f.action === 'jumping') {
+                ctx.translate(0, -18 * s); // 공중으로 솟구침!
+            }
 
-            // 스파이크화
+            const isRunning = (f.action === 'pursuing');
+            const legAngle = isRunning ? Math.sin(f.runTimer) * 0.5 : 0;
+
+            // [다리 렌더링 - 질주 애니메이션]
+            // 왼다리
+            ctx.save();
+            ctx.translate(-w * 0.24, -h * 0.40);
+            if (isRunning) ctx.rotate(legAngle);
+            ctx.fillStyle = '#f8fafc';
+            ctx.fillRect(-w * 0.18, 0, w * 0.36, h * 0.40);
             ctx.fillStyle = '#0f172a';
-            ctx.fillRect(-w * 0.44, -h * 0.06, w * 0.38, h * 0.06);
-            ctx.fillRect(w * 0.04, -h * 0.06, w * 0.38, h * 0.06);
+            ctx.fillRect(-w * 0.20, h * 0.34, w * 0.38, h * 0.06);
+            ctx.restore();
+
+            // 오른다리
+            ctx.save();
+            ctx.translate(w * 0.24, -h * 0.40);
+            if (isRunning) ctx.rotate(-legAngle);
+            ctx.fillStyle = '#f8fafc';
+            ctx.fillRect(-w * 0.18, 0, w * 0.36, h * 0.40);
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(-w * 0.20, h * 0.34, w * 0.38, h * 0.06);
+            ctx.restore();
 
             // 3. 수비 상체 (팀 저지)
+            ctx.save();
+            if (isRunning) ctx.rotate(0.1);
             ctx.fillStyle = fieldingSkin.jersey || '#1d4ed8';
             ctx.beginPath();
             ctx.roundRect(-w * 0.46, -h * 0.78, w * 0.92, h * 0.40, 5 * s);
@@ -2444,24 +2628,31 @@ class BaseballGame {
             ctx.lineWidth = 1.2 * s;
             ctx.stroke();
 
-            // 4. 가죽 글러브 (왼손에 장착된 브라운 가죽 글러브)
+            // 4. 가죽 글러브
             ctx.fillStyle = '#92400e';
             ctx.beginPath();
-            ctx.ellipse(-w * 0.52, -h * 0.55, 7 * s, 9 * s, 0.2, 0, Math.PI * 2);
+            if (f.action === 'jumping') {
+                // 머리 위로 높이 뻗은 글러브
+                ctx.ellipse(-w * 0.2, -h * 1.15, 9 * s, 11 * s, 0, 0, Math.PI * 2);
+            } else if (f.action === 'stretching') {
+                // 1루 베이스 쪽으로 쭉 뻗은 글러브
+                ctx.ellipse(-w * 0.75, -h * 0.55, 10 * s, 11 * s, 0.4, 0, Math.PI * 2);
+            } else {
+                ctx.ellipse(-w * 0.52, -h * 0.55, 7 * s, 9 * s, 0.2, 0, Math.PI * 2);
+            }
             ctx.fill();
             ctx.strokeStyle = '#451a03';
             ctx.lineWidth = 1 * s;
             ctx.stroke();
-            // 글러브 웹(웹비) 포켓
-            ctx.fillStyle = '#b45309';
-            ctx.beginPath();
-            ctx.arc(-w * 0.52, -h * 0.55, 4 * s, 0, Math.PI * 2);
-            ctx.fill();
 
-            // 5. 오른손 (송구 대기)
+            // 5. 오른손
             ctx.fillStyle = '#fed7aa';
             ctx.beginPath();
-            ctx.arc(w * 0.46, -h * 0.55, 4 * s, 0, Math.PI * 2);
+            if (f.action === 'throwing') {
+                ctx.arc(w * 0.7, -h * 0.85, 5 * s, 0, Math.PI * 2); // 송구 투구폼
+            } else {
+                ctx.arc(w * 0.46, -h * 0.55, 4 * s, 0, Math.PI * 2);
+            }
             ctx.fill();
 
             // 6. 머리 & 캡
@@ -2470,27 +2661,102 @@ class BaseballGame {
             ctx.arc(0, -h * 0.88, 11 * s, 0, Math.PI * 2);
             ctx.fill();
 
-            // 야구 모자
             ctx.fillStyle = fieldingSkin.cap || '#1e3a8a';
             ctx.beginPath();
             ctx.arc(0, -h * 0.93, 11.5 * s, Math.PI, Math.PI * 2);
             ctx.fill();
-            // 캡 챙 (visor)
             ctx.fillStyle = '#0f172a';
             ctx.fillRect(-12 * s, -h * 0.93, 24 * s, 3 * s);
+            ctx.restore();
 
-            // 7. 수비 포지션 네임택 배지
-            ctx.fillStyle = 'rgba(15, 23, 42, 0.82)';
+            // 7. 수비 포지션 네임택 배지 & 실시간 수비 상태 텍스트
+            let statusText = f.role;
+            let badgeBg = 'rgba(15, 23, 42, 0.82)';
+            let badgeColor = '#38bdf8';
+
+            if (f.isAssigned) {
+                badgeBg = '#facc15';
+                badgeColor = '#0f172a';
+                if (f.action === 'jumping') statusText = '🧤 점핑 캐치!';
+                else if (f.action === 'throwing') statusText = '⚾ 1루 송구!';
+                else if (f.action === 'stretching') statusText = '🧤 1루 포구!';
+                else statusText = `🏃 ${f.name} 수비중!`;
+            }
+
+            ctx.fillStyle = badgeBg;
             ctx.beginPath();
-            ctx.roundRect(-16 * s, -h * 1.15, 32 * s, 11 * s, 3 * s);
+            const badgeW = Math.max(34 * s, 54 * s);
+            ctx.roundRect(-badgeW / 2, -h * 1.25, badgeW, 12 * s, 3 * s);
             ctx.fill();
-            ctx.fillStyle = '#38bdf8';
-            ctx.font = `bold ${Math.max(7, Math.round(8 * s))}px sans-serif`;
+            ctx.fillStyle = badgeColor;
+            ctx.font = `bold ${Math.max(8, Math.round(9 * s))}px sans-serif`;
             ctx.textAlign = 'center';
-            ctx.fillText(f.role, 0, -h * 1.05);
+            ctx.fillText(statusText, 0, -h * 1.13);
 
             ctx.restore();
         });
+    }
+
+    /**
+     * ⚾ 3D 수비수 레이저 송구(Laser Throw) 비행 렌더링
+     */
+    renderFieldingThrow(ctx) {
+        if (!this.fieldingThrow || !this.fieldingThrow.active) return;
+        const ft = this.fieldingThrow;
+        const pt = this.project(ft.x, ft.y, ft.z);
+        if (!pt || pt.scale <= 0) return;
+
+        const s = pt.scale;
+        const r = Math.max(3.5, 7.5 * s);
+
+        ctx.save();
+
+        // 1. 송구 레이저 스피드 라인 (Yellow-white glow trail)
+        const startPt = this.project(ft.startX, ft.startY, ft.startZ);
+        if (startPt) {
+            ctx.strokeStyle = 'rgba(250, 204, 21, 0.75)';
+            ctx.lineWidth = 3.5 * s;
+            ctx.beginPath();
+            ctx.moveTo(startPt.x, startPt.y);
+            ctx.lineTo(pt.x, pt.y);
+            ctx.stroke();
+
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1.8 * s;
+            ctx.beginPath();
+            ctx.moveTo(startPt.x, startPt.y);
+            ctx.lineTo(pt.x, pt.y);
+            ctx.stroke();
+        }
+
+        ctx.translate(pt.x, pt.y);
+
+        // 2. 송구 야구공 본체
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 1.2 * s;
+        ctx.stroke();
+
+        // 3. 야구공 붉은 실밥 스티치
+        ctx.strokeStyle = '#dc2626';
+        ctx.lineWidth = 1 * s;
+        ctx.beginPath();
+        ctx.arc(-r * 0.35, 0, r * 0.75, -Math.PI * 0.4, Math.PI * 0.4);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(r * 0.35, 0, r * 0.75, Math.PI * 0.6, Math.PI * 1.4);
+        ctx.stroke();
+
+        // 4. 스피드 플레어 글로우
+        ctx.fillStyle = 'rgba(250, 204, 21, 0.35)';
+        ctx.beginPath();
+        ctx.arc(0, 0, r * 2.0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
     }
 
     /**
@@ -3637,6 +3903,20 @@ class BaseballGame {
                 color: ['#facc15', '#38bdf8', '#ffffff', '#ea580c'][Math.floor(Math.random() * 4)],
                 size: 5 + Math.random() * 6,
                 life: 0.6 + Math.random() * 0.4
+            });
+        }
+    }
+
+    createCatchSparks(x, y, z) {
+        for (let i = 0; i < 20; i++) {
+            this.particles.push({
+                x: x, y: y, z: z,
+                vx: (Math.random() - 0.5) * 180,
+                vy: (Math.random() - 0.5) * 180,
+                vz: (Math.random() - 0.5) * 180,
+                color: ['#facc15', '#ffffff', '#38bdf8', '#4ade80'][Math.floor(Math.random() * 4)],
+                size: 4 + Math.random() * 4,
+                life: 0.45 + Math.random() * 0.3
             });
         }
     }
