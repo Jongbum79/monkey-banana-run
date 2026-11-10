@@ -1164,11 +1164,54 @@ body.is-playing .concept-badge {
     z-index: 10;
     display: flex;
     flex-direction: column;
-    background: radial-gradient(circle at 50% 25%, #86efac 0%, #4ade80 40%, #15803d 90%, #14532d 100%);
+    background: 
+        radial-gradient(circle at 50% 15%, rgba(254, 240, 138, 0.35) 0%, transparent 60%),
+        linear-gradient(180deg, #15803d 0%, #166534 35%, #14532d 70%, #052e16 100%);
     overflow: hidden;
-    padding: 18px 24px;
+    padding: 16px 24px;
     user-select: none;
     box-sizing: border-box;
+}
+
+/* 정원 풍경 배경 장식 */
+.mole-bg-scenery {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    overflow: hidden;
+}
+
+.mole-bg-hills {
+    position: absolute;
+    bottom: 0;
+    left: -10%;
+    right: -10%;
+    height: 60%;
+    background: radial-gradient(ellipse at 50% 100%, #22c55e 0%, #16a34a 45%, #15803d 75%, #14532d 100%);
+    border-radius: 50% 50% 0 0 / 25% 25% 0 0;
+    box-shadow: inset 0 20px 40px rgba(255, 255, 255, 0.18), 0 -10px 30px rgba(0, 0, 0, 0.25);
+}
+
+.mole-bg-sunbeams {
+    position: absolute;
+    top: -80px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 140%;
+    height: 400px;
+    background: repeating-conic-gradient(
+        from 0deg,
+        rgba(254, 240, 138, 0.08) 0deg 15deg,
+        transparent 15deg 30deg
+    );
+    pointer-events: none;
+    animation: sunbeamRotate 50s infinite linear;
+}
+
+@keyframes sunbeamRotate {
+    from { transform: translateX(-50%) rotate(0deg); }
+    to { transform: translateX(-50%) rotate(360deg); }
 }
 
 /* 상단 전용 스코어보드 박스 */
@@ -1303,6 +1346,17 @@ body.is-playing .concept-badge {
 
 .score-card .stat-value {
     color: #b45309;
+    transition: color 0.15s, transform 0.15s;
+}
+
+.score-card .stat-value.score-deduct {
+    animation: scoreDeductAnim 0.35s ease-out;
+}
+
+@keyframes scoreDeductAnim {
+    0% { transform: scale(1.25); color: #dc2626; }
+    50% { transform: scale(0.9); color: #ef4444; }
+    100% { transform: scale(1); color: #b45309; }
 }
 
 .combo-card {
@@ -1412,14 +1466,50 @@ body.is-playing .concept-badge {
 
 /* 3D 흙더미 구멍 */
 .mole-mound {
-    width: 130px;
-    height: 110px;
+    width: 136px;
+    height: 114px;
     position: relative;
-    background: radial-gradient(ellipse at 50% 40%, #1c1917 0%, #292524 55%, #44403c 85%, #57534e 100%);
-    border: 4px solid #1a1612;
+    background: radial-gradient(ellipse at 50% 38%, #090d16 0%, #1e293b 45%, #334155 75%, #475569 100%);
+    border: 4.5px solid #1a1612;
     border-radius: 50% / 40%;
-    box-shadow: inset 0 10px 18px rgba(0, 0, 0, 0.85), 0 10px 20px rgba(0, 0, 0, 0.35);
+    box-shadow: inset 0 14px 22px rgba(0, 0, 0, 0.95), 0 12px 24px rgba(0, 0, 0, 0.4);
     overflow: hidden;
+}
+
+/* 흙더미 주변 3D 잔디 & 야생화 장식 */
+.mound-decor {
+    position: absolute;
+    bottom: 22px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 10px;
+    pointer-events: none;
+    z-index: 25;
+}
+
+.mound-grass {
+    font-size: 17px;
+    filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.4));
+    transform-origin: bottom center;
+    animation: grassSway 2.5s infinite ease-in-out alternate;
+}
+
+.mound-grass.right {
+    animation-delay: -1.25s;
+}
+
+.mound-flower {
+    font-size: 19px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
+    margin-top: -6px;
+}
+
+@keyframes grassSway {
+    from { transform: rotate(-6deg); }
+    to { transform: rotate(6deg); }
 }
 
 /* 두더지 캐릭터 액터 */
@@ -1428,8 +1518,8 @@ body.is-playing .concept-badge {
     bottom: 0;
     left: 50%;
     transform: translateX(-50%) translateY(120%);
-    width: 100px;
-    height: 110px;
+    width: 104px;
+    height: 118px;
     transition: transform 0.16s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     pointer-events: none;
 }
@@ -1488,32 +1578,91 @@ body.is-playing .concept-badge {
     bottom: -6px;
     left: -4px;
     right: -4px;
-    height: 38px;
-    background: radial-gradient(ellipse at 50% 10%, #78350f 0%, #572207 60%, #3e1603 100%);
-    border-top: 3.5px solid #1a1612;
+    height: 42px;
+    background: radial-gradient(ellipse at 50% 10%, #854d0e 0%, #713f12 40%, #451a03 100%);
+    border-top: 4px solid #1a1612;
     border-radius: 50% / 70% 70% 30% 30%;
     pointer-events: none;
-    box-shadow: 0 -3px 8px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.35);
 }
 
 /* 두더지 SVG 내부 세부 애니메이션 */
-.fuse-spark {
-    animation: sparkFlicker 0.15s infinite alternate;
+.fuse-spark-halo {
+    animation: sparkFlickerHalo 0.15s infinite alternate;
+}
+.fuse-spark-core {
+    animation: sparkFlickerCore 0.12s infinite alternate;
+    transform-origin: 80px 12px;
 }
 
-@keyframes sparkFlicker {
-    from { r: 5; fill: #ef4444; }
-    to { r: 8; fill: #fbbf24; }
+@keyframes sparkFlickerHalo {
+    from { r: 14; opacity: 0.7; }
+    to { r: 20; opacity: 1; }
 }
 
-.gold-sparkle {
-    animation: starRotate 0.6s infinite linear;
-    transform-origin: 50px 24px;
+@keyframes sparkFlickerCore {
+    from { transform: scale(0.85) rotate(-10deg); }
+    to { transform: scale(1.2) rotate(15deg); }
 }
 
-@keyframes starRotate {
-    from { transform: rotate(0deg) scale(0.8); }
-    to { transform: rotate(180deg) scale(1.2); }
+.bomb-wind-key {
+    animation: keyWiggle 0.4s infinite ease-in-out alternate;
+    transform-origin: 8px 62px;
+}
+@keyframes keyWiggle {
+    from { transform: rotate(-16deg); }
+    to { transform: rotate(16deg); }
+}
+
+.gold-aura-ring {
+    animation: goldPulse 1.2s infinite ease-in-out alternate;
+}
+.gold-aura-spin {
+    animation: auraSpin 6s infinite linear;
+    transform-origin: 60px 65px;
+}
+@keyframes goldPulse {
+    from { stroke-width: 3; opacity: 0.3; }
+    to { stroke-width: 6; opacity: 0.75; }
+}
+@keyframes auraSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.diamond-float-1 {
+    animation: diamondFloat 1s infinite alternate ease-in-out;
+}
+.diamond-float-2 {
+    animation: diamondFloat 1s infinite alternate ease-in-out -0.5s;
+}
+@keyframes diamondFloat {
+    from { transform: translateY(0); }
+    to { transform: translateY(-5px); }
+}
+
+.dizzy-star-spin {
+    animation: starSpinCW 0.8s infinite linear;
+    transform-origin: 30px 28px;
+}
+.dizzy-star-spin-reverse {
+    animation: starSpinCCW 0.8s infinite linear;
+    transform-origin: 88px 24px;
+}
+.dizzy-bird {
+    animation: birdHop 0.4s infinite alternate ease-in-out;
+}
+@keyframes starSpinCW {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+@keyframes starSpinCCW {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(-360deg); }
+}
+@keyframes birdHop {
+    from { transform: translateY(0); }
+    to { transform: translateY(-4px); }
 }
 
 /* 타격 시 팝업 버블 (쾅!, +100, 헛스윙 등) */
@@ -1550,6 +1699,14 @@ body.is-playing .concept-badge {
     border-color: #78350f;
 }
 
+.popup-bubble.hit-diamond {
+    background: linear-gradient(135deg, #e0f2fe, #38bdf8, #0284c7);
+    color: #ffffff;
+    font-size: 26px;
+    border-color: #0369a1;
+    text-shadow: 0 0 10px #38bdf8;
+}
+
 .popup-bubble.hit-bomb {
     background: #ef4444;
     color: #ffffff;
@@ -1557,9 +1714,11 @@ body.is-playing .concept-badge {
 }
 
 .popup-bubble.hit-miss {
-    background: #e2e8f0;
-    color: #64748b;
-    font-size: 18px;
+    background: #fee2e2;
+    color: #b91c1c;
+    border-color: #b91c1c;
+    font-size: 20px;
+    font-weight: 900;
 }
 
 @keyframes popupFly {
@@ -1570,54 +1729,79 @@ body.is-playing .concept-badge {
 }
 
 /* =========================================================================
-   🔨 3. 나무 망치 (Hammer) 스타일 & 쾅! 타격 애니메이션
+   🔨 3. 디럭스 3D 아케이드 황금 별 망치 (Hammer) 스타일 & 쾅! 타격 애니메이션
    ========================================================================= */
 .mole-hammer {
     position: fixed;
-    width: 90px;
-    height: 100px;
+    width: 96px;
+    height: 108px;
     pointer-events: none;
     z-index: 999;
     transform: translate(-30%, -70%) rotate(-25deg);
-    transition: transform 0.05s ease-out;
+    transition: transform 0.04s ease-out;
     transform-origin: 30% 80%;
+    filter: drop-shadow(4px 8px 12px rgba(0, 0, 0, 0.45));
 }
 
 .hammer-head {
-    width: 65px;
-    height: 42px;
-    background: linear-gradient(180deg, #92400e 0%, #78350f 50%, #451a03 100%);
+    width: 72px;
+    height: 46px;
+    background: linear-gradient(180deg, #b45309 0%, #78350f 45%, #451a03 100%);
     border: 3.5px solid #1a1612;
-    border-radius: 10px;
+    border-radius: 12px;
     position: absolute;
     top: 0;
     left: 0;
-    box-shadow: inset 0 4px 6px rgba(255, 255, 255, 0.25), 3px 3px 0px rgba(0, 0, 0, 0.4);
+    box-shadow: inset 0 4px 8px rgba(255, 255, 255, 0.3), inset 0 -4px 8px rgba(0, 0, 0, 0.5), 3px 3px 0px rgba(0, 0, 0, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.hammer-star-badge {
+    font-size: 20px;
+    color: #facc15;
+    text-shadow: 0 0 8px #facc15, 1px 1px 0 #1a1612;
 }
 
 .hammer-ring {
     position: absolute;
-    width: 8px;
-    height: 42px;
-    background: #94a3b8;
+    width: 9px;
+    height: 46px;
+    background: linear-gradient(180deg, #fef08a 0%, #eab308 50%, #ca8a04 100%);
     border-left: 2px solid #1a1612;
     border-right: 2px solid #1a1612;
     top: -3.5px;
+    box-shadow: 1px 0 3px rgba(0, 0, 0, 0.3);
 }
 
 .hammer-ring.left { left: 8px; }
 .hammer-ring.right { right: 8px; }
 
 .hammer-handle {
-    width: 14px;
-    height: 75px;
-    background: linear-gradient(90deg, #fef08a 0%, #eab308 50%, #ca8a04 100%);
+    width: 15px;
+    height: 80px;
+    background: linear-gradient(90deg, #fed7aa 0%, #f97316 45%, #c2410c 100%);
     border: 3px solid #1a1612;
-    border-radius: 6px;
+    border-radius: 7px;
     position: absolute;
-    top: 36px;
-    left: 24px;
+    top: 40px;
+    left: 28px;
     box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+}
+
+.hammer-grip {
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(
+        45deg,
+        #78350f,
+        #78350f 5px,
+        #451a03 5px,
+        #451a03 10px
+    );
+    opacity: 0.85;
 }
 
 /* 망치 쾅! 스윙 애니메이션 */
@@ -1649,6 +1833,14 @@ body.is-playing .concept-badge {
     0% { transform: translate(-50%, -50%) scale(0.2); opacity: 1; border-color: #fef08a; }
     60% { border-color: #f59e0b; }
     100% { transform: translate(-50%, -50%) scale(2.2); opacity: 0; }
+}
+
+/* 코믹 타격 스티커 (다이아몬드 스타일 추가) */
+.comic-smash-burst.burst-diamond {
+    background: linear-gradient(135deg, #e0f2fe 0%, #38bdf8 50%, #0284c7 100%);
+    border-color: #0369a1;
+    color: #ffffff;
+    box-shadow: 0 0 16px #38bdf8, 3px 3px 0px #0369a1;
 }
 
 .shake-screen {

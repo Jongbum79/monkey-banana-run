@@ -32,6 +32,7 @@ class MoleGame {
         this.misses = 0;
         this.molesCaught = 0;
         this.goldCaught = 0;
+        this.diamondCaught = 0;
         this.bombsHit = 0;
         this.playerName = '도전자';
 
@@ -118,6 +119,16 @@ class MoleGame {
             const mound = document.createElement('div');
             mound.className = 'mole-mound';
 
+            // 잔디 & 꽃 장식 (자연스럽고 예쁜 디테일)
+            const decor = document.createElement('div');
+            decor.className = 'mound-decor';
+            const flowers = ['🌸', '🌼', '🍀', '🌻', '🌺'];
+            decor.innerHTML = `
+                <span class="mound-grass left">🌱</span>
+                <span class="mound-flower">${flowers[(hole.id - 1) % flowers.length]}</span>
+                <span class="mound-grass right">🌱</span>
+            `;
+
             // 3. 두더지 캐릭터 엘리먼트 (SVG 선글라스 두더지 일러스트레이션)
             const mole = document.createElement('div');
             mole.className = 'mole-actor mole-hidden';
@@ -133,6 +144,7 @@ class MoleGame {
 
             holeEl.appendChild(badge);
             holeEl.appendChild(mound);
+            mound.appendChild(decor);
             mound.appendChild(mole);
             mound.appendChild(frontLip);
             holeEl.appendChild(popup);
@@ -163,115 +175,269 @@ class MoleGame {
     }
 
     /**
-     * 선글라스 두더지 및 황금 두더지, 폭탄병 SVG 벡터 그래픽
+     * 6학년 프로 게이머들도 반하는 프리미엄 스튜디오급 3D 일러스트레이션 SVG
      */
     getMoleSVG(type = 'normal') {
         if (type === 'bomb') {
-            // 💣 폭탄병 (Bob-omb)
+            // 💣 메카 다이너마이트 폭탄병 (Mecha Bob-omb)
             return `
-            <svg class="mole-svg bob-omb-svg" viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg">
-                <!-- 도화선 -->
-                <path d="M50 35 Q55 18 64 12" stroke="#f5cb42" stroke-width="4.5" fill="none" stroke-linecap="round"/>
-                <!-- 불꽃 -->
-                <circle cx="66" cy="10" r="6" fill="#ef4444" class="fuse-spark"/>
-                <circle cx="66" cy="3" fill="#fef08a"/>
-                <!-- 태엽 키 (뒤쪽) -->
-                <rect x="18" y="44" width="10" height="6" rx="2" fill="#eab308" stroke="#1a1612" stroke-width="2"/>
-                <circle cx="16" cy="47" r="8" fill="#fde047" stroke="#1a1612" stroke-width="2.5"/>
-                <!-- 폭탄 구체 몸통 -->
-                <circle cx="50" cy="62" r="32" fill="#1e1e24" stroke="#111827" stroke-width="3.5"/>
-                <!-- 몸통 하이라이트 -->
-                <ellipse cx="40" cy="48" rx="8" ry="5" fill="#4b5563" opacity="0.6" transform="rotate(-25 40 48)"/>
-                <!-- 하얀 타원형 눈 2개 -->
-                <ellipse cx="42" cy="60" rx="5" ry="9" fill="#ffffff" stroke="#111827" stroke-width="1.5"/>
-                <ellipse cx="58" cy="60" rx="5" ry="9" fill="#ffffff" stroke="#111827" stroke-width="1.5"/>
-                <!-- 발 -->
-                <ellipse cx="38" cy="94" rx="9" ry="5" fill="#f59e0b" stroke="#1a1612" stroke-width="2"/>
-                <ellipse cx="62" cy="94" rx="9" ry="5" fill="#f59e0b" stroke="#1a1612" stroke-width="2"/>
+            <svg class="mole-svg bob-omb-svg" viewBox="0 0 120 135" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <radialGradient id="bombBodyGrad" cx="38%" cy="32%" r="62%">
+                        <stop offset="0%" stop-color="#64748b"/>
+                        <stop offset="25%" stop-color="#1e293b"/>
+                        <stop offset="70%" stop-color="#0f172a"/>
+                        <stop offset="100%" stop-color="#020617"/>
+                    </radialGradient>
+                    <linearGradient id="keyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#fef08a"/>
+                        <stop offset="45%" stop-color="#eab308"/>
+                        <stop offset="100%" stop-color="#854d0e"/>
+                    </linearGradient>
+                    <radialGradient id="fuseGlow" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" stop-color="#ffffff"/>
+                        <stop offset="30%" stop-color="#fef08a"/>
+                        <stop offset="70%" stop-color="#f97316"/>
+                        <stop offset="100%" stop-color="#ef4444" stop-opacity="0"/>
+                    </radialGradient>
+                </defs>
+
+                <!-- 황동 태엽 키 (뒤쪽 회전) -->
+                <g class="bomb-wind-key">
+                    <rect x="8" y="58" width="16" height="8" rx="2" fill="url(#keyGrad)" stroke="#111827" stroke-width="2.5"/>
+                    <circle cx="8" cy="62" r="13" fill="none" stroke="url(#keyGrad)" stroke-width="6"/>
+                    <circle cx="8" cy="62" r="13" fill="none" stroke="#111827" stroke-width="2.5"/>
+                </g>
+
+                <!-- 도화선 (입체 굵은 밧줄) -->
+                <path d="M60 42 Q66 22 78 14" stroke="#ca8a04" stroke-width="7" fill="none" stroke-linecap="round" stroke-dasharray="3 3"/>
+                <path d="M60 42 Q66 22 78 14" stroke="#78350f" stroke-width="3" fill="none" stroke-linecap="round"/>
+                
+                <!-- 도화선 불꽃 스파크 & 연기 -->
+                <g class="bomb-spark-group">
+                    <circle cx="80" cy="12" r="18" fill="url(#fuseGlow)" class="fuse-spark-halo"/>
+                    <polygon points="80,2 84,9 91,8 86,14 90,21 82,17 76,21 78,14 72,10 79,9" fill="#fef08a" class="fuse-spark-core"/>
+                    <circle cx="80" cy="12" r="4.5" fill="#ffffff"/>
+                </g>
+
+                <!-- 메카 발 (오렌지 스니커즈) -->
+                <ellipse cx="44" cy="118" rx="14" ry="8" fill="#ea580c" stroke="#111827" stroke-width="3"/>
+                <ellipse cx="44" cy="116" rx="11" ry="5" fill="#f97316"/>
+                <rect x="40" y="112" width="8" height="3" rx="1.5" fill="#ffffff"/>
+                <ellipse cx="76" cy="118" rx="14" ry="8" fill="#ea580c" stroke="#111827" stroke-width="3"/>
+                <ellipse cx="76" cy="116" rx="11" ry="5" fill="#f97316"/>
+                <rect x="72" y="112" width="8" height="3" rx="1.5" fill="#ffffff"/>
+
+                <!-- 구체 폭탄 본체 -->
+                <circle cx="60" cy="78" r="40" fill="url(#bombBodyGrad)" stroke="#090d16" stroke-width="4"/>
+
+                <!-- 금속 3D 하이라이트 (스펙큘러) -->
+                <path d="M36 50 Q48 42 66 45 Q50 50 42 62 Z" fill="#ffffff" opacity="0.6"/>
+                <ellipse cx="38" cy="64" rx="4" ry="9" fill="#ffffff" opacity="0.4" transform="rotate(-30 38 64)"/>
+
+                <!-- 공사 위험 경고 스트라이프 벨트 -->
+                <g clip-path="url(#bombBeltClip)">
+                    <clipPath id="bombBeltClip">
+                        <rect x="22" y="75" width="76" height="15" rx="4"/>
+                    </clipPath>
+                    <rect x="22" y="75" width="76" height="15" fill="#eab308" stroke="#111827" stroke-width="2.5"/>
+                    <path d="M24 75 L34 90 M36 75 L46 90 M48 75 L58 90 M60 75 L70 90 M72 75 L82 90 M84 75 L94 90" 
+                          stroke="#1e293b" stroke-width="5"/>
+                </g>
+
+                <!-- 분노한 애니메 눈 (> <) -->
+                <g class="bomb-eyes-angry">
+                    <path d="M42 67 L52 72 L42 77" stroke="#ef4444" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round" filter="drop-shadow(0 0 5px #ef4444)"/>
+                    <path d="M78 67 L68 72 L78 77" stroke="#ef4444" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round" filter="drop-shadow(0 0 5px #ef4444)"/>
+                </g>
+
+                <!-- 해골 위험 심볼 -->
+                <circle cx="60" cy="101" r="9.5" fill="#ef4444" stroke="#111827" stroke-width="2"/>
+                <text x="60" y="105" font-size="10" font-weight="900" fill="#ffffff" text-anchor="middle">☠️</text>
             </svg>`;
         }
 
-        const isGold = type === 'gold';
-        const bodyColor = isGold ? '#facc15' : '#8d5b4c';
-        const bodyShade = isGold ? '#eab308' : '#6c3b2d';
-        const snoutColor = isGold ? '#fef08a' : '#f5d0b5';
-        const snoutBorder = isGold ? '#b45309' : '#5c3a21';
+        const isGold = (type === 'gold');
+        const isDiamond = (type === 'diamond');
 
-        // 선글라스 두더지 SVG
+        let bodyGradStops = `
+            <stop offset="0%" stop-color="#b45309"/>
+            <stop offset="38%" stop-color="#854d0e"/>
+            <stop offset="72%" stop-color="#57300a"/>
+            <stop offset="100%" stop-color="#2e1503"/>
+        `;
+        let snoutFill = '#fef3c7';
+        let snoutStroke = '#78350f';
+        let capColor = '#dc2626';
+
+        if (isGold) {
+            bodyGradStops = `
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="15%" stop-color="#fef08a"/>
+                <stop offset="45%" stop-color="#facc15"/>
+                <stop offset="80%" stop-color="#b45309"/>
+                <stop offset="100%" stop-color="#713f12"/>
+            `;
+            snoutFill = '#fef9c3';
+            snoutStroke = '#a16207';
+            capColor = '#f59e0b';
+        } else if (isDiamond) {
+            bodyGradStops = `
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="20%" stop-color="#e0f2fe"/>
+                <stop offset="50%" stop-color="#38bdf8"/>
+                <stop offset="80%" stop-color="#0284c7"/>
+                <stop offset="100%" stop-color="#0c4a6e"/>
+            `;
+            snoutFill = '#e0f2fe';
+            snoutStroke = '#0369a1';
+            capColor = '#06b6d4';
+        }
+
         return `
-        <svg class="mole-svg monty-mole-svg ${isGold ? 'gold-mole' : ''}" viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg">
+        <svg class="mole-svg ${type}-mole-svg" viewBox="0 0 120 135" xmlns="http://www.w3.org/2000/svg">
             <defs>
-                <radialGradient id="moleGrad_${type}" cx="45%" cy="40%" r="55%">
-                    <stop offset="0%" stop-color="${bodyColor}"/>
-                    <stop offset="85%" stop-color="${bodyShade}"/>
-                    <stop offset="100%" stop-color="#3d2116"/>
+                <radialGradient id="moleGrad_${type}" cx="42%" cy="38%" r="58%">
+                    ${bodyGradStops}
                 </radialGradient>
-                <linearGradient id="glassesGrad_${type}" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="#111827"/>
-                    <stop offset="70%" stop-color="#030712"/>
+                <linearGradient id="glassesLensGrad_${type}" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#06b6d4"/>
+                    <stop offset="45%" stop-color="#3b82f6"/>
+                    <stop offset="100%" stop-color="#8b5cf6"/>
                 </linearGradient>
+                <linearGradient id="goldCrownGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#fef08a"/>
+                    <stop offset="40%" stop-color="#facc15"/>
+                    <stop offset="80%" stop-color="#eab308"/>
+                    <stop offset="100%" stop-color="#854d0e"/>
+                </linearGradient>
+                <radialGradient id="diamondGlow" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.6"/>
+                    <stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/>
+                </radialGradient>
             </defs>
 
-            <!-- 귀 (동글동글) -->
-            <circle cx="22" cy="38" r="9" fill="${bodyColor}" stroke="#1a1612" stroke-width="3"/>
-            <circle cx="22" cy="38" r="5" fill="${snoutColor}"/>
-            <circle cx="78" cy="38" r="9" fill="${bodyColor}" stroke="#1a1612" stroke-width="3"/>
-            <circle cx="78" cy="38" r="5" fill="${snoutColor}"/>
-
-            <!-- 통통한 두더지 몸통/머리 -->
-            <path d="M22 88 C16 60, 24 24, 50 24 C76 24, 84 60, 78 88 Z" 
-                  fill="url(#moleGrad_${type})" stroke="#1a1612" stroke-width="3.5"/>
-
             ${isGold ? `
-            <!-- 황금 반짝이 이펙트 -->
-            <polygon points="50,15 52,21 58,21 53,25 55,31 50,27 45,31 47,25 42,21 48,21" fill="#ffffff" class="gold-sparkle"/>
+            <!-- 황금 후광 아우라 -->
+            <circle cx="60" cy="65" r="52" fill="none" stroke="#fde047" stroke-width="4" opacity="0.45" class="gold-aura-ring"/>
+            <circle cx="60" cy="65" r="48" fill="none" stroke="#facc15" stroke-width="2" stroke-dasharray="6 4" class="gold-aura-spin"/>
             ` : ''}
 
-            <!-- 🕶️ 두더지의 상징: 검정 선글라스! -->
-            <g class="mole-sunglasses">
-                <!-- 안경테 브릿지 -->
-                <path d="M44 48 L56 48" stroke="#111827" stroke-width="4.5" stroke-linecap="round"/>
-                <!-- 왼쪽 렌즈 -->
-                <rect x="25" y="40" width="22" height="17" rx="5" fill="url(#glassesGrad_${type})" stroke="#111827" stroke-width="2.5"/>
-                <!-- 오른쪽 렌즈 -->
-                <rect x="53" y="40" width="22" height="17" rx="5" fill="url(#glassesGrad_${type})" stroke="#111827" stroke-width="2.5"/>
-                <!-- 렌즈 날렵한 하얀 반사광 -->
-                <polygon points="30,43 36,43 28,54 26,54" fill="#ffffff" opacity="0.85"/>
-                <polygon points="58,43 64,43 56,54 54,54" fill="#ffffff" opacity="0.85"/>
+            ${isDiamond ? `
+            <!-- 다이아몬드 네온 아우라 -->
+            <circle cx="60" cy="65" r="52" fill="url(#diamondGlow)"/>
+            <polygon points="24,30 28,38 20,38" fill="#e0f2fe" class="diamond-float-1"/>
+            <polygon points="96,32 100,40 92,40" fill="#e0f2fe" class="diamond-float-2"/>
+            ` : ''}
+
+            <!-- 귀 (입체 그라데이션) -->
+            <g class="mole-ears">
+                <circle cx="24" cy="54" r="13" fill="url(#moleGrad_${type})" stroke="#1a1612" stroke-width="3.5"/>
+                <circle cx="24" cy="54" r="7" fill="${snoutFill}" opacity="0.8"/>
+                <circle cx="96" cy="54" r="13" fill="url(#moleGrad_${type})" stroke="#1a1612" stroke-width="3.5"/>
+                <circle cx="96" cy="54" r="7" fill="${snoutFill}" opacity="0.8"/>
             </g>
 
-            <!-- 둥글넓적한 주둥이 (Snout) -->
-            <ellipse cx="50" cy="62" rx="19" ry="12" fill="${snoutColor}" stroke="${snoutBorder}" stroke-width="2.5"/>
+            <!-- 통통하고 매끄러운 3D 몸통/머리 (타원 + 베지어) -->
+            <path d="M24 116 C16 75, 26 32, 60 32 C94 32, 104 75, 96 116 Z" 
+                  fill="url(#moleGrad_${type})" stroke="#1a1612" stroke-width="4.5"/>
 
-            <!-- 까만 삼각형 코 -->
-            <ellipse cx="50" cy="57" rx="5" ry="3.5" fill="#1a1612"/>
-            <ellipse cx="48.5" cy="56" rx="1.5" ry="1" fill="#ffffff" opacity="0.8"/>
+            <!-- 머리 상단 하이라이트 광원 -->
+            <ellipse cx="55" cy="42" rx="16" ry="6" fill="#ffffff" opacity="0.35" transform="rotate(-12 55 42)"/>
 
-            <!-- 앙증맞은 커다란 앞니 (Buck Teeth) -->
-            <rect x="45" y="66" width="5" height="6.5" rx="1.5" fill="#ffffff" stroke="#1a1612" stroke-width="1.8"/>
-            <rect x="50" y="66" width="5" height="6.5" rx="1.5" fill="#ffffff" stroke="#1a1612" stroke-width="1.8"/>
+            ${isGold ? `
+            <!-- 👑 로열 골드 왕관 -->
+            <g class="mole-crown">
+                <ellipse cx="60" cy="33" rx="19" ry="8" fill="#991b1b" stroke="#1a1612" stroke-width="2"/>
+                <path d="M38 34 L42 16 L52 25 L60 12 L68 25 L78 16 L82 34 Z" 
+                      fill="url(#goldCrownGrad)" stroke="#1a1612" stroke-width="3" stroke-linejoin="round"/>
+                <circle cx="60" cy="22" r="4.5" fill="#ef4444" stroke="#1a1612" stroke-width="1.5"/>
+                <circle cx="59" cy="21" r="1.5" fill="#ffffff"/>
+                <circle cx="48" cy="28" r="3.5" fill="#3b82f6" stroke="#1a1612" stroke-width="1.5"/>
+                <circle cx="72" cy="28" r="3.5" fill="#10b981" stroke="#1a1612" stroke-width="1.5"/>
+            </g>
+            ` : (isDiamond ? `
+            <!-- 💎 다이아몬드 크리스탈 티아라 -->
+            <g class="mole-diamond-tiara">
+                <polygon points="60,8 72,24 60,32 48,24" fill="#e0f2fe" stroke="#0369a1" stroke-width="2.5"/>
+                <polygon points="60,8 60,32 48,24" fill="#bae6fd" opacity="0.7"/>
+                <polygon points="40,22 48,26 42,33 34,28" fill="#7dd3fc" stroke="#0369a1" stroke-width="2"/>
+                <polygon points="80,22 86,28 78,33 72,26" fill="#7dd3fc" stroke="#0369a1" stroke-width="2"/>
+            </g>
+            ` : `
+            <!-- 🧢 힙스터 스냅백 모자 (뒤로 쓴 스타일) -->
+            <g class="mole-snapback">
+                <ellipse cx="60" cy="34" rx="24" ry="9" fill="${capColor}" stroke="#1a1612" stroke-width="3.5"/>
+                <ellipse cx="60" cy="33" rx="22" ry="6" fill="#b91c1c"/>
+                <circle cx="60" cy="26" r="4.5" fill="#facc15" stroke="#1a1612" stroke-width="2"/>
+                <circle cx="59" cy="25" r="1.5" fill="#ffffff"/>
+            </g>
+            `)}
+
+            <!-- 🕶️ 3D 디자인 선글라스 (사이버펑크 / 미러 렌즈) -->
+            <g class="mole-sunglasses-group">
+                <path d="M50 63 L70 63" stroke="#090d16" stroke-width="6" stroke-linecap="round"/>
+                <path d="M52 63 L68 63" stroke="${isGold ? '#eab308' : (isDiamond ? '#38bdf8' : '#ffffff')}" stroke-width="2" stroke-linecap="round"/>
+                
+                <rect x="26" y="52" width="28" height="22" rx="7" fill="url(#glassesLensGrad_${type})" stroke="#090d16" stroke-width="3.5"/>
+                <rect x="66" y="52" width="28" height="22" rx="7" fill="url(#glassesLensGrad_${type})" stroke="#090d16" stroke-width="3.5"/>
+
+                <polygon points="32,56 42,56 32,70 28,70" fill="#ffffff" opacity="0.85"/>
+                <polygon points="44,56 48,56 40,70 36,70" fill="#ffffff" opacity="0.55"/>
+                <polygon points="72,56 82,56 72,70 68,70" fill="#ffffff" opacity="0.85"/>
+                <polygon points="84,56 88,56 80,70 76,70" fill="#ffffff" opacity="0.55"/>
+
+                <circle cx="28" cy="55" r="1.5" fill="#facc15"/>
+                <circle cx="92" cy="55" r="1.5" fill="#facc15"/>
+            </g>
+
+            <!-- 볼터치 (생동감 넘치는 홍조) -->
+            <ellipse cx="32" cy="82" rx="6" ry="3.5" fill="#f43f5e" opacity="0.45"/>
+            <ellipse cx="88" cy="82" rx="6" ry="3.5" fill="#f43f5e" opacity="0.45"/>
+
+            <!-- 둥글넓적한 입체 주둥이 (Snout) -->
+            <ellipse cx="60" cy="81" rx="24" ry="16" fill="${snoutFill}" stroke="${snoutStroke}" stroke-width="3"/>
+            <ellipse cx="60" cy="77" rx="20" ry="10" fill="#ffffff" opacity="0.35"/>
+
+            <!-- 입체 단추 코 -->
+            <ellipse cx="60" cy="74" rx="7" ry="5" fill="#1c1917" stroke="#0c0a09" stroke-width="1.5"/>
+            <ellipse cx="58" cy="72.5" rx="2.5" ry="1.5" fill="#ffffff" opacity="0.9"/>
+
+            <!-- 앞니 2개 (Glossy Buck Teeth) -->
+            <rect x="53" y="85" width="6.5" height="8.5" rx="2" fill="#ffffff" stroke="#1a1612" stroke-width="2"/>
+            <rect x="60.5" y="85" width="6.5" height="8.5" rx="2" fill="#ffffff" stroke="#1a1612" stroke-width="2"/>
 
             <!-- 귀여운 미소 입꼬리 -->
-            <path d="M41 68 Q50 74 59 68" stroke="#1a1612" stroke-width="2" fill="none" stroke-linecap="round"/>
+            <path d="M48 88 Q60 96 72 88" stroke="#1a1612" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+            <path d="M56 89 Q60 94 64 89" fill="#f43f5e" stroke="#1a1612" stroke-width="1.5"/>
 
-            <!-- 볼터치 -->
-            <ellipse cx="36" cy="63" rx="4" ry="2.5" fill="#f87171" opacity="0.55"/>
-            <ellipse cx="64" cy="63" rx="4" ry="2.5" fill="#f87171" opacity="0.55"/>
+            ${isGold ? `
+            <!-- 🪙 골드 목걸이 메달리온 -->
+            <g class="mole-gold-chain">
+                <path d="M42 108 Q60 120 78 108" stroke="#eab308" stroke-width="5" fill="none" stroke-linecap="round" stroke-dasharray="3 3"/>
+                <circle cx="60" cy="118" r="8" fill="#fde047" stroke="#854d0e" stroke-width="2.5"/>
+                <text x="60" y="122" font-size="10" font-weight="900" fill="#854d0e" text-anchor="middle">★</text>
+            </g>
+            ` : ''}
 
-            <!-- 두더지의 귀여운 앞발 (구멍 테두리를 붙잡고 있는 모습) -->
-            <g class="mole-paws">
-                <!-- 왼발 -->
-                <ellipse cx="26" cy="84" rx="9" ry="6" fill="${snoutColor}" stroke="#1a1612" stroke-width="2.5"/>
-                <path d="M22 84 L20 88 M26 85 L26 89 M30 84 L32 88" stroke="#1a1612" stroke-width="2" stroke-linecap="round"/>
-                <!-- 오른발 -->
-                <ellipse cx="74" cy="84" rx="9" ry="6" fill="${snoutColor}" stroke="#1a1612" stroke-width="2.5"/>
-                <path d="M70 84 L68 88 M74 85 L74 89 M78 84 L80 88" stroke="#1a1612" stroke-width="2" stroke-linecap="round"/>
+            <!-- 🐾 3D 앞발 (구멍 테두리를 꽉 쥐고 솟아나오는 모션) -->
+            <g class="mole-paws-front">
+                <ellipse cx="28" cy="108" rx="13" ry="8" fill="${snoutFill}" stroke="#1a1612" stroke-width="3"/>
+                <ellipse cx="20" cy="105" rx="3" ry="4.5" fill="#ffffff" stroke="#1a1612" stroke-width="1.5"/>
+                <ellipse cx="26" cy="103" rx="3" ry="5" fill="#ffffff" stroke="#1a1612" stroke-width="1.5"/>
+                <ellipse cx="32" cy="104" rx="3" ry="4.5" fill="#ffffff" stroke="#1a1612" stroke-width="1.5"/>
+
+                <ellipse cx="92" cy="108" rx="13" ry="8" fill="${snoutFill}" stroke="#1a1612" stroke-width="3"/>
+                <ellipse cx="88" cy="104" rx="3" ry="4.5" fill="#ffffff" stroke="#1a1612" stroke-width="1.5"/>
+                <ellipse cx="94" cy="103" rx="3" ry="5" fill="#ffffff" stroke="#1a1612" stroke-width="1.5"/>
+                <ellipse cx="100" cy="105" rx="3" ry="4.5" fill="#ffffff" stroke="#1a1612" stroke-width="1.5"/>
             </g>
 
-            <!-- 피격(기절) 시 나타나는 회전 별 레이어 -->
+            <!-- 피격(기절/KO) 시 회전하는 만화풍 3D 별 & 빙글빙글 새 -->
             <g class="mole-dizzy-stars" style="display:none;">
-                <text x="30" y="24" font-size="16" fill="#facc15">💫</text>
-                <text x="56" y="20" font-size="16" fill="#facc15">⭐</text>
+                <text x="20" y="28" font-size="20" class="dizzy-star-spin">💫</text>
+                <text x="78" y="24" font-size="20" class="dizzy-star-spin-reverse">⭐</text>
+                <text x="50" y="16" font-size="16" class="dizzy-bird">🐥</text>
             </g>
         </svg>`;
     }
@@ -450,13 +616,15 @@ class MoleGame {
         if (!hole || hole.state !== 'empty') return;
 
         // 타입 결정:
-        // 일반 두더지 (72%), 황금 두더지 (15%), 폭탄병 (13%)
+        // 일반 두더지 (65%), 황금 두더지 (16%), 폭탄병 (13%), 초희귀 다이아몬드 두더지 (6%)
         const rand = Math.random();
         let type = 'normal';
-        if (rand < 0.15) {
-            type = 'gold'; // 황금 두더지 (+300점)
-        } else if (rand < 0.28) {
-            type = 'bomb'; // 폭탄병 (-150점 & 콤보 리셋)
+        if (rand < 0.06) {
+            type = 'diamond'; // 💎 다이아몬드 두더지 (+500점 슈퍼 잭팟)
+        } else if (rand < 0.22) {
+            type = 'gold'; // 👑 황금 두더지 (+300점)
+        } else if (rand < 0.35) {
+            type = 'bomb'; // 💣 폭탄병 (-150점 & 콤보 리셋)
         }
 
         hole.type = type;
@@ -552,8 +720,8 @@ class MoleGame {
                 this.score += gained;
 
                 this.showHitPopup(hole, `+${gained}!`, 'hit-normal');
-                this.playHammerHitSound(false);
-                this.showSmashImpactStars(targetX, targetY, false);
+                this.playHammerHitSound('normal');
+                this.showSmashImpactStars(targetX, targetY, 'normal');
                 this.animateMoleDizzy(hole);
 
             } else if (hole.type === 'gold') {
@@ -567,9 +735,25 @@ class MoleGame {
                 const gained = Math.round(300 * comboMultiplier);
                 this.score += gained;
 
-                this.showHitPopup(hole, `🌟 황금 두더지! +${gained} 🌟`, 'hit-gold');
-                this.playHammerHitSound(true);
-                this.showSmashImpactStars(targetX, targetY, true);
+                this.showHitPopup(hole, `👑 황금 두더지! +${gained}`, 'hit-gold');
+                this.playHammerHitSound('gold');
+                this.showSmashImpactStars(targetX, targetY, 'gold');
+                this.animateMoleDizzy(hole);
+
+            } else if (hole.type === 'diamond') {
+                // 💎 다이아몬드 두더지 초대박 잭팟!
+                this.hits++;
+                this.diamondCaught = (this.diamondCaught || 0) + 1;
+                this.combo += 3;
+                if (this.combo > this.maxCombo) this.maxCombo = this.combo;
+
+                const comboMultiplier = 1 + Math.min(2.0, (this.combo - 1) * 0.1);
+                const gained = Math.round(500 * comboMultiplier);
+                this.score += gained;
+
+                this.showHitPopup(hole, `💎 다이아 잭팟! +${gained}`, 'hit-diamond');
+                this.playHammerHitSound('diamond');
+                this.showSmashImpactStars(targetX, targetY, 'diamond');
                 this.animateMoleDizzy(hole);
 
             } else if (hole.type === 'bomb') {
@@ -578,9 +762,10 @@ class MoleGame {
                 this.combo = 0;
                 this.score = Math.max(0, this.score - 150);
 
-                this.showHitPopup(hole, `💥 쾅! -150점!`, 'hit-bomb');
+                this.showHitPopup(hole, `💥 폭탄 폭발! -150점!`, 'hit-bomb');
                 this.playBombExplosionSound();
                 this.animateBombExplode(hole);
+                this.flashScorePenalty();
             }
 
             this.updateScoreboard();
@@ -591,10 +776,14 @@ class MoleGame {
             }, 550);
 
         } else {
-            // 빈 구멍 헛스윙!
+            // ❌ 빈 구멍 헛스윙! (유저 요청: 계속 헛스윙해도 포인트 깎이는 게 없는 문제 해결!)
             this.misses++;
             this.combo = 0;
-            this.showHitPopup(hole, `헛스윙!`, 'hit-miss');
+            const penalty = 30; // 헛스윙 시 -30점 감점
+            this.score = Math.max(0, this.score - penalty);
+            this.showHitPopup(hole, `헛스윙! -${penalty}점`, 'hit-miss');
+            this.playMissWhiffSound();
+            this.flashScorePenalty();
             this.updateScoreboard();
         }
     }
@@ -622,18 +811,23 @@ class MoleGame {
     /**
      * 망치로 두더지를 때렸을 때 나타나는 화려한 코믹 타격 효과 (쾅! 버스트 + 별빛 파티클)
      */
-    showSmashImpactStars(targetX, targetY, isGold = false) {
-        // 1. 코믹 타격 스티커 (쾅! / POW!)
+    showSmashImpactStars(targetX, targetY, type = 'normal') {
+        const isGold = (type === 'gold');
+        const isDiamond = (type === 'diamond');
+
+        // 1. 코믹 타격 스티커 (쾅! / 대박! / 💎 잭팟!)
         const burst = document.createElement('div');
-        burst.className = `comic-smash-burst ${isGold ? 'burst-gold' : ''}`;
-        burst.textContent = isGold ? '🌟 대박!' : '쾅!';
+        burst.className = `comic-smash-burst ${isGold ? 'burst-gold' : (isDiamond ? 'burst-diamond' : '')}`;
+        burst.textContent = isDiamond ? '💎 잭팟!' : (isGold ? '🌟 대박!' : '쾅!');
         burst.style.left = `${targetX}px`;
         burst.style.top = `${targetY - 18}px`;
         document.body.appendChild(burst);
         setTimeout(() => burst.remove(), 450);
 
-        // 2. 사방으로 튀는 별빛 파티클 (4개)
-        const starIcons = isGold ? ['⭐', '✨', '🌟', '💫'] : ['⭐', '💥', '✨', '⚡'];
+        // 2. 사방으로 튀는 별빛 & 다이아몬드 파티클 (4개)
+        const starIcons = isDiamond 
+            ? ['💎', '✨', '🔷', '⭐'] 
+            : (isGold ? ['⭐', '✨', '🌟', '💫'] : ['⭐', '💥', '✨', '⚡']);
         for (let i = 0; i < 4; i++) {
             const star = document.createElement('div');
             star.className = 'smash-star-particle';
@@ -675,6 +869,15 @@ class MoleGame {
         pop.textContent = text;
         hole.popupEl.appendChild(pop);
         setTimeout(() => pop.remove(), 700);
+    }
+
+    flashScorePenalty() {
+        const scoreEl = document.getElementById('mole-score');
+        if (scoreEl) {
+            scoreEl.classList.remove('score-deduct');
+            void scoreEl.offsetWidth;
+            scoreEl.classList.add('score-deduct');
+        }
     }
 
     updateScoreboard() {
@@ -749,7 +952,7 @@ class MoleGame {
 
         if (finalScoreEl) finalScoreEl.textContent = `${this.score.toLocaleString()}점`;
         if (finalComboEl) finalComboEl.textContent = `${this.maxCombo} 연속`;
-        if (finalCaughtEl) finalCaughtEl.textContent = `일반 두더지 ${this.molesCaught}마리 / 황금 두더지 ${this.goldCaught}마리 / 폭탄 ${this.bombsHit}회`;
+        if (finalCaughtEl) finalCaughtEl.textContent = `일반 두더지 ${this.molesCaught}마리 / 황금 ${this.goldCaught}마리 / 다이아 ${this.diamondCaught || 0}마리 / 폭탄 ${this.bombsHit}회`;
 
         const totalWhacks = this.hits + this.misses;
         const pct = totalWhacks > 0 ? Math.round((this.hits / totalWhacks) * 100) : 0;
@@ -848,11 +1051,14 @@ class MoleGame {
     /**
      * 두더지 명중 시 강력한 쾅! + 스냅 + 두더지 뾱! + 챠링~ 4중 레이어 타격 효과음
      */
-    playHammerHitSound(isGold = false) {
+    playHammerHitSound(type = 'normal') {
         try {
             const ctx = this.getAudioContext();
             if (!ctx) return;
             const now = ctx.currentTime;
+
+            const isGold = (type === 'gold');
+            const isDiamond = (type === 'diamond');
 
             // 1. 묵직하고 강렬한 나무망치 '쾅/퍽!' 타격음 (Bass Mallet Thump)
             const thumpOsc = ctx.createOscillator();
@@ -894,7 +1100,21 @@ class MoleGame {
             squeakOsc.stop(now + 0.15);
 
             // 4. 경쾌한 득점 챠링~ 벨 차임 (Score Bell Chime)
-            if (isGold) {
+            if (isDiamond) {
+                // 💎 다이아몬드 두더지: 5단 크리스탈 팡파르
+                [1318.5, 1760.0, 2093.0, 2637.0, 3520.0].forEach((freq, idx) => {
+                    const cOsc = ctx.createOscillator();
+                    const cGain = ctx.createGain();
+                    cOsc.type = 'sine';
+                    cOsc.frequency.setValueAtTime(freq, now + 0.03 + idx * 0.045);
+                    cGain.gain.setValueAtTime(0.48, now + 0.03 + idx * 0.045);
+                    cGain.gain.exponentialRampToValueAtTime(0.001, now + 0.28 + idx * 0.045);
+                    cOsc.connect(cGain);
+                    cGain.connect(ctx.destination);
+                    cOsc.start(now + 0.03 + idx * 0.045);
+                    cOsc.stop(now + 0.32 + idx * 0.045);
+                });
+            } else if (isGold) {
                 // 황금 두더지: 3단 보너스 코인 팡파르
                 [1046.5, 1318.5, 2093.0].forEach((freq, idx) => {
                     const cOsc = ctx.createOscillator();
@@ -926,6 +1146,43 @@ class MoleGame {
         } catch (e) {
             console.error(e);
         }
+    }
+
+    /**
+     * 빈 구멍 헛스윙 시 바람을 가르는 슉! + 감점 버저음
+     */
+    playMissWhiffSound() {
+        try {
+            const ctx = this.getAudioContext();
+            if (!ctx) return;
+            const now = ctx.currentTime;
+
+            // 1. 바람 가르는 헛스윙 휘두름
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(340, now);
+            osc.frequency.exponentialRampToValueAtTime(80, now + 0.12);
+            gain.gain.setValueAtTime(0.35, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now);
+            osc.stop(now + 0.13);
+
+            // 2. 아쉬운 뾱/보잉 감점 알림음
+            const buzzOsc = ctx.createOscillator();
+            const buzzGain = ctx.createGain();
+            buzzOsc.type = 'sawtooth';
+            buzzOsc.frequency.setValueAtTime(175, now + 0.03);
+            buzzOsc.frequency.exponentialRampToValueAtTime(115, now + 0.18);
+            buzzGain.gain.setValueAtTime(0.22, now + 0.03);
+            buzzGain.gain.exponentialRampToValueAtTime(0.001, now + 0.20);
+            buzzOsc.connect(buzzGain);
+            buzzGain.connect(ctx.destination);
+            buzzOsc.start(now + 0.03);
+            buzzOsc.stop(now + 0.20);
+        } catch (e) {}
     }
 
     /**
