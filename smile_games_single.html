@@ -3555,12 +3555,15 @@ body.is-playing .concept-badge {
     box-shadow: 0 0 16px rgba(22, 163, 74, 0.9);
 }
 
-/* 6. 타자 전용 대형 배트 스윙 버튼 (우측 하단) */
+/* 6. 타자 전용 대형 배트 스윙 & 번트 버튼 (우측 하단) */
 .mlb-batter-bar {
     position: absolute;
     bottom: 24px;
     right: 28px;
     z-index: 50;
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 .mlb-swing-action-btn {
     width: 96px;
@@ -3577,6 +3580,23 @@ body.is-playing .concept-badge {
     transition: transform 0.08s cubic-bezier(0.18, 0.89, 0.32, 1.28);
     user-select: none;
     -webkit-user-select: none;
+}
+.mlb-bunt-action-btn {
+    width: 82px;
+    height: 82px;
+    background: radial-gradient(circle at 30% 30%, #f59e0b 0%, #d97706 70%, #78350f 100%);
+    border: 3px solid #fef3c7;
+    box-shadow: 0 4px 18px rgba(245, 158, 11, 0.55), inset 0 2px 4px rgba(255, 255, 255, 0.4);
+}
+.mlb-bunt-action-btn.active {
+    background: radial-gradient(circle at 30% 30%, #22c55e 0%, #16a34a 70%, #14532d 100%);
+    border-color: #bbf7d0;
+    box-shadow: 0 0 24px rgba(34, 197, 94, 0.85);
+    animation: buntPulse 0.9s infinite alternate;
+}
+@keyframes buntPulse {
+    from { transform: scale(1.0); }
+    to { transform: scale(1.08); box-shadow: 0 0 28px #22c55e; }
 }
 .mlb-swing-action-btn:active {
     transform: scale(0.92);
@@ -4010,18 +4030,23 @@ body.is-playing .concept-badge {
             </div>
         </div>
 
-        <!-- 🏏 [타자 전용 조작부] 하단 우측 원클릭 배트 스윙 버튼 -->
+        <!-- 🏏 [타자 전용 조작부] 하단 우측 풀스윙 & 번트 컨트롤 콘솔 -->
         <div class="mlb-batter-bar" id="mlb-batter-bar" style="display:none;">
             <button type="button" class="mlb-swing-action-btn" id="btn-baseball-swing">
                 <span class="swing-hero-icon">🏏</span>
                 <span class="swing-hero-title">SWING!</span>
                 <span class="swing-hero-key">[Enter / Click]</span>
             </button>
+            <button type="button" class="mlb-swing-action-btn mlb-bunt-action-btn" id="btn-baseball-bunt" title="번트 자세 토글 (B 키)">
+                <span class="swing-hero-icon">🪵</span>
+                <span class="swing-hero-title">BUNT</span>
+                <span class="swing-hero-key">[B 키 / 번트]</span>
+            </button>
         </div>
 
         <!-- 🎯 하단 미니 조작 가이드 팁 -->
         <div class="mlb-mini-tip" id="mlb-mini-tip">
-            ⚾ <strong>조작 팁:</strong> 타자 [Enter 키 타격 스윙] | 투수 [WASD 코스 조준 + 1~5 구종 + Space 투구]
+            ⚾ <strong>조작 팁:</strong> 타자 [Enter 타격 스윙 / B 키 기습 번트] | 투수 [WASD 코스 조준 + 1~5 구종 + Space 투구]
         </div>
     </div>
 
@@ -20001,10 +20026,10 @@ class BaseballGame {
         this.isRunning = false;
         this.animFrameId = null;
 
-        // 화면 크기 & 레티나
+        // 화면 크기 & 초고해상도 레티나 화질
         this.width = typeof window !== 'undefined' ? window.innerWidth : 1280;
         this.height = typeof window !== 'undefined' ? window.innerHeight : 720;
-        this.dpr = typeof window !== 'undefined' ? Math.max(window.devicePixelRatio || 1, 2) : 2;
+        this.dpr = typeof window !== 'undefined' ? Math.min(Math.max(window.devicePixelRatio || 1, 2.5), 3.5) : 2.5;
 
         // 🎮 나의 플레이 역할: 'batter' (타자) | 'pitcher' (투수)
         this.userRole = safeGetStorage('smilegames_bb_user_role', 'batter');
@@ -20293,6 +20318,7 @@ class BaseballGame {
             y: 0,
             z: 380,
             isSwinging: false,
+            isBunting: false,
             swingTime: 0,
             swingDuration: 0.22,
             swingProgress: 0,
@@ -20366,7 +20392,8 @@ class BaseballGame {
         if (!this.canvas || !this.containerEl) return;
         this.width = window.innerWidth;
         this.height = window.innerHeight;
-        this.dpr = Math.max(window.devicePixelRatio || 1, 2);
+        // 초고해상도 레티나 화질: 태블릿/고해상도 디스플레이에 맞춰 선명도 최대화 (2.5x ~ 3.5x)
+        this.dpr = Math.min(Math.max(window.devicePixelRatio || 1, 2.5), 3.5);
         this.canvas.width = Math.round(this.width * this.dpr);
         this.canvas.height = Math.round(this.height * this.dpr);
         this.canvas.style.width = `${this.width}px`;
@@ -20457,8 +20484,17 @@ class BaseballGame {
 
             // --- 타자 조작 모드 ---
             if (!isCurrentPitcher || this.userRole === 'batter') {
-                if (e.code === 'Enter' || e.code === 'Space' || e.code === 'KeyL') {
+                if (e.code === 'KeyB') {
                     e.preventDefault();
+                    this.toggleBuntStance();
+                } else if (e.code === 'Enter' || e.code === 'Space' || e.code === 'KeyL') {
+                    e.preventDefault();
+                    if (this.batter.isBunting) {
+                        // 번트 자세 중 스윙을 누르면 번트를 풀고 즉시 강타 타격으로 전환!
+                        this.batter.isBunting = false;
+                        const buntBtn = document.getElementById('btn-baseball-bunt');
+                        if (buntBtn) buntBtn.classList.remove('active');
+                    }
                     this.triggerBatterSwing();
                 }
             }
@@ -20522,7 +20558,24 @@ class BaseballGame {
                 if (!this.isRunning) return;
                 e.preventDefault();
                 this.ensureAudio();
+                if (this.batter.isBunting) {
+                    this.batter.isBunting = false;
+                    const buntBtn = document.getElementById('btn-baseball-bunt');
+                    if (buntBtn) buntBtn.classList.remove('active');
+                }
                 this.triggerBatterSwing();
+            });
+        }
+
+        // 🪵 타자 번트 원클릭 토글 버튼
+        const buntBtn = document.getElementById('btn-baseball-bunt');
+        if (buntBtn) {
+            buntBtn.addEventListener('pointerdown', (e) => {
+                if (!this.isRunning) return;
+                e.preventDefault();
+                e.stopPropagation();
+                this.ensureAudio();
+                this.toggleBuntStance();
             });
         }
 
@@ -21285,6 +21338,77 @@ class BaseballGame {
         }
     }
 
+    /**
+     * 🪵 [컴투스 프로야구 2026] 기습 / 희생 번트 자세 토글
+     */
+    toggleBuntStance() {
+        if (this.userRole !== 'batter' || !this.isRunning) return;
+        this.batter.isBunting = !this.batter.isBunting;
+        if (this.batter.isBunting) this.batter.isSwinging = false;
+        const buntBtn = document.getElementById('btn-baseball-bunt');
+        if (buntBtn) buntBtn.classList.toggle('active', this.batter.isBunting);
+
+        if (this.batter.isBunting) {
+            this.showResultBanner('🪵 [컴프야] 번트 자세 세팅!', '배트를 홈플레이트 앞으로 수평으로 갖다 댑니다 (B키로 취소)', '#f59e0b');
+            this.playSwingSound();
+        } else {
+            this.showResultBanner('🏏 [컴프야] 풀스윙 스탠스 복귀', '호쾌한 홈런 타격 스탠스로 전환되었습니다', '#38bdf8');
+        }
+    }
+
+    /**
+     * 🪵 [컴투스 프로야구 2026] 번트 타구 컨택트 및 진루/아웃 처리
+     */
+    executeBuntHit(b) {
+        b.isHit = true;
+        b.hitType = 'bunt';
+        this.gameState = 'hit_flight';
+        this.batter.isBunting = false;
+        const buntBtn = document.getElementById('btn-baseball-bunt');
+        if (buntBtn) buntBtn.classList.remove('active');
+
+        // 번트 타구 사운드 ("툭-!" 데드볼 소리)
+        this.playBuntSound();
+        this.camera.shake = 6;
+
+        // 번트 타구 물리: 내야 잔디에 툭 떨어져 천천히 굴러가는 타구
+        const dir = (Math.random() < 0.5) ? -1 : 1; // 3루선 또는 1루선
+        b.vx = dir * (40 + Math.random() * 25);
+        b.vy = 12 + Math.random() * 8;
+        b.vz = -110 - Math.random() * 45;
+        b.hitDist = Math.round(18 + Math.random() * 14);
+
+        // 내야수(투수, 3루수, 1루수) 돌진 수비 배정
+        const buntFielderRole = (dir < 0) ? '3B' : '1B';
+        this.assignFielderForBall(buntFielderRole);
+
+        const prevBases = { ...this.bases };
+        const hasRunners = (this.bases[1] || this.bases[2] || this.bases[3]);
+
+        if (hasRunners) {
+            // 희생 번트 성공! 주자들 전원 1베이스씩 안전하게 진루!
+            const scoredRuns = this.advanceRunnersOnHit('single');
+            this.spawnBaseRunners('bunt', prevBases);
+            if (scoredRuns > 0) this.addScore(scoredRuns, 'single');
+            this.resetAtBatCount(false);
+            this.showResultBanner('🪵 [컴프야] 완벽한 희생 번트 작전 성공!!', (scoredRuns > 0 ? `주자 홈인! (+${scoredRuns}점 득점)` : '주자 1베이스씩 전원 안전 진루 성공!'), '#22c55e');
+        } else {
+            // 주자 없을 때의 기습 번트 (Drag Bunt): 35% 확률로 1루 세이프 안타, 65% 아웃
+            const isSafe = Math.random() < 0.35;
+            if (isSafe) {
+                const scoredRuns = this.advanceRunnersOnHit('single');
+                this.spawnBaseRunners('single', prevBases);
+                this.resetAtBatCount(true);
+                this.showResultBanner('⚡ [컴프야] 허를 찌르는 기습 번트 내야 안타!!', '빠른 발로 1루에서 세이프 판정!', '#38bdf8');
+            } else {
+                this.spawnBaseRunners('bunt_out', prevBases);
+                this.recordOut();
+                this.resetAtBatCount(false);
+                this.showResultBanner('🛡️ 기습 번트 타구 1루수 포구 아웃!', '아쉽게 1루에서 아웃되었습니다.', '#ef4444');
+            }
+        }
+    }
+
     correctLateSwingToStrike() {
         this.lastResultWasBall = false;
         this.batter.isSwinging = true;
@@ -21851,6 +21975,15 @@ class BaseballGame {
             b.trail.push({ x: b.x, y: b.y, z: b.z, color: trailColor });
             if (b.trail.length > 55) b.trail.shift();
 
+            // 🪵 [컴투스 프로야구 2026] 번트 컨택트 체크: 공이 홈플레이트(z=370~395)를 통과할 때 타자가 번트 자세라면!
+            if (this.batter && this.batter.isBunting && !b.isHit && b.z >= 370 && b.z <= 395) {
+                const distXY = Math.hypot(b.x, b.y - 44);
+                if (distXY <= 32) {
+                    this.executeBuntHit(b);
+                    return;
+                }
+            }
+
             // 4. 포수 미트 포구 (홈플레이트 z=380 통과 후 z>=415 또는 비행 완료 시)
             if ((rawProg >= 1.0 || b.z >= 415) && !b.isHit) {
                 b.active = false;
@@ -22263,6 +22396,23 @@ class BaseballGame {
                 ctx.beginPath();
                 ctx.arc(lp.x, lp.y - 6 * ls, 48 * ls, 0, Math.PI * 2);
                 ctx.fill();
+
+                // 🌟 [초고화질 입체 조명] 조명탑에서 그라운드로 쏟아지는 리얼 야간 입체 스포트라이트 (Volumetric Light Beams)
+                const groundP = this.project(lx * 0.45, 0, (this.userRole === 'batter' ? 260 : 140));
+                if (groundP && groundP.scale > 0) {
+                    const beamGrad = ctx.createLinearGradient(lp.x, lp.y, groundP.x, groundP.y);
+                    beamGrad.addColorStop(0, 'rgba(254, 240, 138, 0.22)');
+                    beamGrad.addColorStop(0.5, 'rgba(254, 240, 138, 0.07)');
+                    beamGrad.addColorStop(1, 'rgba(254, 240, 138, 0.00)');
+                    ctx.fillStyle = beamGrad;
+                    ctx.beginPath();
+                    ctx.moveTo(lp.x - 14 * ls, lp.y);
+                    ctx.lineTo(lp.x + 14 * ls, lp.y);
+                    ctx.lineTo(groundP.x + 85 * groundP.scale, groundP.y);
+                    ctx.lineTo(groundP.x - 85 * groundP.scale, groundP.y);
+                    ctx.closePath();
+                    ctx.fill();
+                }
             }
         });
 
@@ -22294,37 +22444,37 @@ class BaseballGame {
             }
         }
 
-        // 📺 센터필드 대형 MLB 26 일렉트로닉 전광판 (Jumbotron Screen)
-        const jbW = (pTR.x - pTL.x) * 0.38;
-        const jbH = 52;
+        // 📺 센터필드 대형 컴투스 프로야구 2026 일렉트로닉 전광판 (Jumbotron Screen)
+        const jbW = (pTR.x - pTL.x) * 0.42;
+        const jbH = 54;
         const jbX = (pTL.x + pTR.x) / 2 - jbW / 2;
         const jbY = pTL.y + 4;
 
         ctx.fillStyle = '#0f172a';
         ctx.fillRect(jbX - 4, jbY - 4, jbW + 8, jbH + 8);
-        ctx.strokeStyle = '#38bdf8';
+        ctx.strokeStyle = '#f59e0b';
         ctx.lineWidth = 2.5;
-        ctx.shadowColor = '#38bdf8';
-        ctx.shadowBlur = 8;
+        ctx.shadowColor = '#f59e0b';
+        ctx.shadowBlur = 10;
         ctx.strokeRect(jbX - 4, jbY - 4, jbW + 8, jbH + 8);
         ctx.shadowBlur = 0;
 
         ctx.fillStyle = '#020617';
         ctx.fillRect(jbX, jbY, jbW, jbH);
 
-        ctx.fillStyle = '#38bdf8';
-        ctx.font = '900 12px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('★ SMILE STADIUM MLB 26 PRO DUEL ★', jbX + jbW / 2, jbY + 16);
-
         ctx.fillStyle = '#facc15';
+        ctx.font = '900 12.5px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('★ 컴투스 프로야구 2026 KBO 공식 스타디움 ★', jbX + jbW / 2, jbY + 16);
+
+        ctx.fillStyle = '#f8fafc';
         ctx.font = 'bold 11px monospace';
         const roleStr = (this.userRole === 'batter') ? '🏏 ATTACK' : '⚾ DEFENSE';
         ctx.fillText(`${this.p1.name} [${this.p1.score}] vs [${this.p2.score}] ${this.p2.name} | ${roleStr} (${this.inningHalf === 'top' ? '1회초' : '1회말'})`, jbX + jbW / 2, jbY + 34);
 
         ctx.fillStyle = '#4ade80';
         ctx.font = 'bold 9px sans-serif';
-        ctx.fillText('LIVE MATCH CAMERA • RETINA PRO RESOLUTION', jbX + jbW / 2, jbY + 46);
+        ctx.fillText('LIVE 4K ULTRA RETINA RESOLUTION • KBO OFFICIAL STADIUM', jbX + jbW / 2, jbY + 47);
 
         // 메이저리그 딥그린 패딩 외야 펜스 (Green Monster Outfield Wall)
         const wallH = (pBL.y - pTL.y) * 0.42;
@@ -23546,6 +23696,13 @@ class BaseballGame {
                 hipAngle = 0.75;
                 batAngle = -1.32 - p * 0.55; // 어깨 위로 넘어가는 완성도 높은 피니시
             }
+        } else if (b.isBunting) {
+            // 🪵 [컴투스 프로야구 2026] 리얼 번트 스탠스: 몸을 홈플레이트로 돌리고 수평 배트 뻗기
+            const breathe = Math.sin(b.idleTimer * 4.0) * 0.8 * s;
+            strideX = -8 * s;
+            weightShiftY = 3 * s + breathe;
+            hipAngle = 0.38;
+            batAngle = -0.06; // 완전 수평 번트 각도
         } else {
             // 대기 자세 (부드러운 배트 웨글 리듬과 체중 록킹)
             const idleCycle = b.idleTimer * 3.5;
@@ -23660,6 +23817,17 @@ class BaseballGame {
         ctx.beginPath();
         ctx.roundRect(-5 * s, -batLen, 10 * s, batLen - 12 * s, 4 * s);
         ctx.fill();
+
+        // 번트 시 앞손 (배럴 위를 받치는 오른손 타격 장갑)
+        if (b.isBunting) {
+            ctx.fillStyle = '#f8fafc';
+            ctx.beginPath();
+            ctx.ellipse(0, -batLen * 0.42, 6 * s, 6.5 * s, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 1 * s;
+            ctx.stroke();
+        }
 
         ctx.restore();
         ctx.restore();
@@ -24608,6 +24776,43 @@ class BaseballGame {
             gain.connect(ctx.destination);
             osc.start(now);
             osc.stop(now + 0.16);
+        } catch (e) {}
+    }
+
+    playBuntSound() {
+        const ctx = this.getAudioCtx();
+        if (!ctx) return;
+        try {
+            const now = ctx.currentTime;
+            // 둔탁한 목재 "툭-" 사운드
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(360, now);
+            osc.frequency.exponentialRampToValueAtTime(110, now + 0.11);
+            gain.gain.setValueAtTime(0.52, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now);
+            osc.stop(now + 0.11);
+
+            const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.04), ctx.sampleRate);
+            const d = buf.getChannelData(0);
+            for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (d.length * 0.3));
+            const noise = ctx.createBufferSource();
+            noise.buffer = buf;
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.setValueAtTime(1300, now);
+            filter.Q.setValueAtTime(4.0, now);
+            const nGain = ctx.createGain();
+            nGain.gain.setValueAtTime(0.48, now);
+            nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+            noise.connect(filter);
+            filter.connect(nGain);
+            nGain.connect(ctx.destination);
+            noise.start(now);
         } catch (e) {}
     }
 
