@@ -157,8 +157,8 @@ class BaseballGame {
                 cardGrade: '레전드',
                 ovr: 96,
                 emoji: '🐵',
-                pitchStyle: 'windup',
-                pitchStyleName: '클래식 윈드업 (완전 육각형)',
+                pitchStyle: 'submarine',
+                pitchStyleName: '언더핸드 잠수함 (지면 긁는 업슛)',
                 batterPerkTitle: '👑 황금 5툴 (Balanced 94)',
                 batterPerkDesc: '파워+컨택트 완벽 조화, 마구/변화구 대처 능력 +30%, 높은 출루율',
                 power: 92,
@@ -1169,8 +1169,24 @@ class BaseballGame {
         else if (pType === 'curve') flightDuration = 0.78 * diffFactor;
         else if (pType === 'knuckleball') flightDuration = 0.88 * diffFactor;
 
-        const releaseX = 0;
-        const releaseY = 46;
+        // 4대 투구폼별 리얼 3D 릴리즈 포인트 좌표 (오버핸드/쓰리쿼터/사이드암/언더핸드 잠수함)
+        const pChar = this.getCurrentPitcher();
+        const pStyle = pChar ? pChar.pitchStyle : 'overhand';
+        let releaseX = 0;
+        let releaseY = 46;
+        if (pStyle === 'overhand') {
+            releaseX = 4;
+            releaseY = 64; // 고공 12시 오버핸드 타점 (2.1m 위에서 아래로 내리꽂히는 궤적)
+        } else if (pStyle === 'threequarter') {
+            releaseX = 14;
+            releaseY = 50; // 자연스러운 1시반 3/4 대각 슬롯
+        } else if (pStyle === 'sidearm') {
+            releaseX = 34;
+            releaseY = 32; // 3시 방향 횡방향 사이드암 와이프아웃 슬롯
+        } else if (pStyle === 'submarine') {
+            releaseX = 22;
+            releaseY = 12; // 지면 10cm 높이에서 솟구쳐 오르는 언더핸드 업슛 슬롯!
+        }
         const releaseZ = 85;
         const targetZ = 420; // 포수 미트 위치 (홈플레이트 z=380 통과 후 포구)
 
@@ -2507,56 +2523,93 @@ class BaseballGame {
         const pBL = this.project(-460, 0, wallZ);
         const pBR = this.project(460, 0, wallZ);
 
-        // 스타디움 4대 초고광도 조명탑 (Stadium Floodlight Towers)
+        // 스타디움 4대 초고광도 조명탑 (Stadium Floodlight Towers) & 4-Point Starburst Lens Flares
         const lightCols = [-380, -180, 180, 380];
         lightCols.forEach(lx => {
             const lp = this.project(lx, 220, wallZ);
             if (lp && lp.scale > 0) {
                 const ls = lp.scale;
-                // 철골 기둥
-                ctx.fillStyle = '#475569';
-                ctx.fillRect(lp.x - 3 * ls, lp.y, 6 * ls, 65 * ls);
-                // 램프 헤드 프레임
-                ctx.fillStyle = '#0f172a';
-                ctx.fillRect(lp.x - 20 * ls, lp.y - 14 * ls, 40 * ls, 15 * ls);
+                // 트러스 구조 철골 타워 기둥
+                ctx.fillStyle = '#334155';
+                ctx.fillRect(lp.x - 3.5 * ls, lp.y, 7 * ls, 68 * ls);
                 ctx.strokeStyle = '#64748b';
                 ctx.lineWidth = 1 * ls;
-                ctx.strokeRect(lp.x - 20 * ls, lp.y - 14 * ls, 40 * ls, 15 * ls);
+                ctx.strokeRect(lp.x - 3.5 * ls, lp.y, 7 * ls, 68 * ls);
+
+                // 램프 헤드 프레임
+                ctx.fillStyle = '#090d16';
+                ctx.fillRect(lp.x - 22 * ls, lp.y - 15 * ls, 44 * ls, 16 * ls);
+                ctx.strokeStyle = '#475569';
+                ctx.lineWidth = 1.2 * ls;
+                ctx.strokeRect(lp.x - 22 * ls, lp.y - 15 * ls, 44 * ls, 16 * ls);
+
+                // 8구 LED 제논 벌브 포드
+                for (let bi = 0; bi < 8; bi++) {
+                    const bx = lp.x - 18 * ls + (bi % 4) * 11 * ls;
+                    const by = lp.y - 12 * ls + Math.floor(bi / 4) * 8 * ls;
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.arc(bx, by, 2.2 * ls, 0, Math.PI * 2);
+                    ctx.fill();
+                }
 
                 // 할로겐 라이트 발광 글로우
-                const halo = ctx.createRadialGradient(lp.x, lp.y - 6 * ls, 2 * ls, lp.x, lp.y - 6 * ls, 48 * ls);
-                halo.addColorStop(0, 'rgba(254, 240, 138, 0.95)');
-                halo.addColorStop(0.3, 'rgba(250, 204, 21, 0.4)');
+                const halo = ctx.createRadialGradient(lp.x, lp.y - 7 * ls, 2 * ls, lp.x, lp.y - 7 * ls, 55 * ls);
+                halo.addColorStop(0, 'rgba(255, 255, 255, 0.98)');
+                halo.addColorStop(0.2, 'rgba(254, 240, 138, 0.85)');
+                halo.addColorStop(0.5, 'rgba(250, 204, 21, 0.28)');
                 halo.addColorStop(1, 'rgba(250, 204, 21, 0)');
                 ctx.fillStyle = halo;
                 ctx.beginPath();
-                ctx.arc(lp.x, lp.y - 6 * ls, 48 * ls, 0, Math.PI * 2);
+                ctx.arc(lp.x, lp.y - 7 * ls, 55 * ls, 0, Math.PI * 2);
                 ctx.fill();
+
+                // 🌟 [4-Point Starburst Lens Flare & Anamorphic Streak] 4방향 회절 스파이크
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.82)';
+                ctx.lineWidth = 1.6 * ls;
+                ctx.beginPath();
+                // 수평 아나모픽 렌즈 플레어
+                ctx.moveTo(lp.x - 75 * ls, lp.y - 7 * ls);
+                ctx.lineTo(lp.x + 75 * ls, lp.y - 7 * ls);
+                // 수직 회절 스파이크
+                ctx.moveTo(lp.x, lp.y - 45 * ls);
+                ctx.lineTo(lp.x, lp.y + 32 * ls);
+                ctx.stroke();
+
+                // 대각 보조 회절선
+                ctx.strokeStyle = 'rgba(254, 240, 138, 0.45)';
+                ctx.lineWidth = 1 * ls;
+                ctx.beginPath();
+                ctx.moveTo(lp.x - 28 * ls, lp.y - 7 * ls - 28 * ls);
+                ctx.lineTo(lp.x + 28 * ls, lp.y - 7 * ls + 28 * ls);
+                ctx.moveTo(lp.x + 28 * ls, lp.y - 7 * ls - 28 * ls);
+                ctx.lineTo(lp.x - 28 * ls, lp.y - 7 * ls + 28 * ls);
+                ctx.stroke();
 
                 // 🌟 [초고화질 입체 조명] 조명탑에서 그라운드로 쏟아지는 리얼 야간 입체 스포트라이트 (Volumetric Light Beams)
                 const groundP = this.project(lx * 0.45, 0, (this.userRole === 'batter' ? 260 : 140));
                 if (groundP && groundP.scale > 0) {
                     const beamGrad = ctx.createLinearGradient(lp.x, lp.y, groundP.x, groundP.y);
-                    beamGrad.addColorStop(0, 'rgba(254, 240, 138, 0.22)');
-                    beamGrad.addColorStop(0.5, 'rgba(254, 240, 138, 0.07)');
+                    beamGrad.addColorStop(0, 'rgba(254, 240, 138, 0.26)');
+                    beamGrad.addColorStop(0.45, 'rgba(254, 240, 138, 0.09)');
                     beamGrad.addColorStop(1, 'rgba(254, 240, 138, 0.00)');
                     ctx.fillStyle = beamGrad;
                     ctx.beginPath();
-                    ctx.moveTo(lp.x - 14 * ls, lp.y);
-                    ctx.lineTo(lp.x + 14 * ls, lp.y);
-                    ctx.lineTo(groundP.x + 85 * groundP.scale, groundP.y);
-                    ctx.lineTo(groundP.x - 85 * groundP.scale, groundP.y);
+                    ctx.moveTo(lp.x - 16 * ls, lp.y);
+                    ctx.lineTo(lp.x + 16 * ls, lp.y);
+                    ctx.lineTo(groundP.x + 95 * groundP.scale, groundP.y);
+                    ctx.lineTo(groundP.x - 95 * groundP.scale, groundP.y);
                     ctx.closePath();
                     ctx.fill();
                 }
             }
         });
 
-        // 스타디움 3단 관중석 (Grandstands & Stadium Seating)
+        // 스타디움 2단 관중석 구조 (Double-Deck Grandstands & Stadium Seating)
         const grandGrad = ctx.createLinearGradient(0, pTL.y, 0, pBL.y);
-        grandGrad.addColorStop(0, '#1e293b');
-        grandGrad.addColorStop(0.6, '#334155');
-        grandGrad.addColorStop(1, '#0f172a');
+        grandGrad.addColorStop(0, '#0b1120');
+        grandGrad.addColorStop(0.45, '#1e293b');
+        grandGrad.addColorStop(1, '#020617');
         ctx.fillStyle = grandGrad;
         ctx.beginPath();
         ctx.moveTo(pTL.x, pTL.y);
@@ -2566,16 +2619,49 @@ class BaseballGame {
         ctx.closePath();
         ctx.fill();
 
-        // 수만 명의 생동감 넘치는 애니메이션 관중들 (Cheering Crowd)
-        const crowdRows = 5;
-        const crowdCols = 46;
-        for (let r = 0; r < crowdRows; r++) {
-            const gy = pTL.y + 12 + r * 11;
+        // 1단 상단 관중들 (Upper Deck Crowd)
+        const crowdCols = 48;
+        for (let r = 0; r < 3; r++) {
+            const gy = pTL.y + 10 + r * 10;
             for (let c = 0; c < crowdCols; c++) {
                 const gx = pTL.x + (pTR.x - pTL.x) * (c / crowdCols);
-                const bob = Math.sin(this.crowdCheerTimer + c * 0.4 + r * 0.6) * 2.2;
+                const bob = Math.sin(this.crowdCheerTimer + c * 0.4 + r * 0.6) * 2.0;
                 const palette = ['#ef4444', '#38bdf8', '#facc15', '#22c55e', '#a855f7', '#f97316', '#ffffff'];
                 ctx.fillStyle = palette[(c * 3 + r * 5) % palette.length];
+                ctx.fillRect(gx, gy + bob, 4.2, 4.2);
+            }
+        }
+
+        // 🔴 360도 일렉트로닉 LED 리본 전광판 (Mid-Tier LED Ribbon Board)
+        const ribbonY = pTL.y + 44;
+        const ribbonH = 14;
+        ctx.fillStyle = '#020617';
+        ctx.fillRect(pTL.x, ribbonY, pTR.x - pTL.x, ribbonH);
+        ctx.strokeStyle = '#0284c7';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(pTL.x, ribbonY, pTR.x - pTL.x, ribbonH);
+
+        // 리본 전광판 흐르는 텍스트 (Scrolling Dynamic Broadcast Ticker)
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(pTL.x, ribbonY, pTR.x - pTL.x, ribbonH);
+        ctx.clip();
+        ctx.font = '900 9.5px sans-serif';
+        ctx.fillStyle = '#38bdf8';
+        const ribbonText = '★ COM2US PRO BASEBALL 2026 KBO ALL-STAR DERBY ★ 4대 투구폼: 오버핸드 · 쓰리쿼터 · 사이드암 · 잠수함 완벽 구사 ★ BUNT DOUBLE PLAY & SQUEEZE ACTIVE ★ LIVE 4K UHD ★';
+        const textOffset = ((Date.now() * 0.045) % 1200);
+        ctx.fillText(ribbonText, pTL.x + 30 - textOffset, ribbonY + 10.5);
+        ctx.fillText(ribbonText, pTL.x + 30 - textOffset + 1100, ribbonY + 10.5);
+        ctx.restore();
+
+        // 2단 하단 관중석 관중들 (Lower Deck Crowd)
+        for (let r = 0; r < 3; r++) {
+            const gy = ribbonY + ribbonH + 4 + r * 10;
+            for (let c = 0; c < crowdCols; c++) {
+                const gx = pTL.x + (pTR.x - pTL.x) * (c / crowdCols);
+                const bob = Math.sin(this.crowdCheerTimer + c * 0.35 + r * 0.5 + 1.2) * 2.2;
+                const palette = ['#dc2626', '#0284c7', '#eab308', '#16a34a', '#9333ea', '#ea580c', '#f8fafc'];
+                ctx.fillStyle = palette[(c * 4 + r * 7) % palette.length];
                 ctx.fillRect(gx, gy + bob, 4.5, 4.5);
             }
         }
@@ -2646,7 +2732,7 @@ class BaseballGame {
             });
         }
 
-        // [3] 메이저리그 천연 잔디 스트라이프 (Major League Striped Mowed Lawn)
+        // [3] 메이저리그 천연 잔디 & 워닝 트랙 (Major League Striped Lawn & Outfield Warning Track)
         const turfGrad = ctx.createLinearGradient(0, pBL.y, 0, this.height);
         turfGrad.addColorStop(0, '#15803d');
         turfGrad.addColorStop(1, '#166534');
@@ -2659,8 +2745,32 @@ class BaseballGame {
         ctx.closePath();
         ctx.fill();
 
-        // 8개 방사형 잔디 깎기 줄무늬 (Alternating Lawn Mower Stripes)
-        const stripeCount = 10;
+        // 흙빛 외야 워닝 트랙 (Outfield Warning Track Dirt Strip)
+        const wtH = (this.height - pBL.y) * 0.14;
+        const wtGrad = ctx.createLinearGradient(0, pBL.y, 0, pBL.y + wtH);
+        wtGrad.addColorStop(0, '#7c2d12');
+        wtGrad.addColorStop(0.7, '#9a3412');
+        wtGrad.addColorStop(1, '#b45309');
+        ctx.fillStyle = wtGrad;
+        ctx.beginPath();
+        ctx.moveTo(pBL.x, pBL.y);
+        ctx.lineTo(pBR.x, pBR.y);
+        ctx.lineTo(this.width * 0.95, pBL.y + wtH);
+        ctx.lineTo(this.width * 0.05, pBL.y + wtH);
+        ctx.closePath();
+        ctx.fill();
+
+        // 워닝 트랙과 잔디 경계 백색 분필선
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.moveTo(this.width * 0.05, pBL.y + wtH);
+        ctx.lineTo(this.width * 0.95, pBL.y + wtH);
+        ctx.stroke();
+
+        // 💎 KBO/MLB 명품 다이아몬드 교차 잔디 (Diamond-Cut Cross-Mowed Lawn Pattern)
+        const stripeCount = 12;
+        // 1) 세로 깎기 줄무늬
         for (let i = 0; i < stripeCount; i++) {
             if (i % 2 === 0) {
                 const x0 = pBL.x + (pBR.x - pBL.x) * (i / stripeCount);
@@ -2668,15 +2778,28 @@ class BaseballGame {
                 const bx0 = this.width * (i / stripeCount);
                 const bx1 = this.width * ((i + 1) / stripeCount);
 
-                ctx.fillStyle = 'rgba(34, 197, 94, 0.08)'; // 산뜻한 빛 반사 줄무늬
+                ctx.fillStyle = 'rgba(34, 197, 94, 0.09)';
                 ctx.beginPath();
-                ctx.moveTo(x0, pBL.y);
-                ctx.lineTo(x1, pBL.y);
+                ctx.moveTo(x0, pBL.y + wtH);
+                ctx.lineTo(x1, pBL.y + wtH);
                 ctx.lineTo(bx1, this.height);
                 ctx.lineTo(bx0, this.height);
                 ctx.closePath();
                 ctx.fill();
             }
+        }
+        // 2) 45도 대각선 교차 빗살 롤러 줄무늬 (Cross-Diagonal Rolling Stripes)
+        for (let d = -stripeCount; d < stripeCount * 2; d += 2) {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.035)';
+            ctx.beginPath();
+            const sx0 = (this.width / stripeCount) * d;
+            const sx1 = (this.width / stripeCount) * (d + 1);
+            ctx.moveTo(sx0, pBL.y + wtH);
+            ctx.lineTo(sx1, pBL.y + wtH);
+            ctx.lineTo(sx1 + this.width * 0.45, this.height);
+            ctx.lineTo(sx0 + this.width * 0.45, this.height);
+            ctx.closePath();
+            ctx.fill();
         }
     }
 
@@ -3655,13 +3778,14 @@ class BaseballGame {
     }
 
     /**
-     * 3D 투수 렌더링
+     * 3D 투수 렌더링 - 4대 투구폼(오버핸드/쓰리쿼터/사이드암/언더핸드 잠수함) 완벽 구현
      * @param {boolean} isFacingFront - 타자 시점일 때는 정면으로 던지는 모습을, 투수 시점일 때는 뒷모습을 그림
      */
     renderPitcher(ctx, isFacingFront) {
         const pit = this.pitcher;
         const pChar = this.getCurrentPitcher();
         const pSkin = this.getCurrentPitcherSkin();
+        const pStyle = pChar.pitchStyle || 'overhand';
 
         // 마운드 위치 (0, 14, 80)
         const pp = this.project(pit.x, pit.y, pit.z);
@@ -3672,113 +3796,301 @@ class BaseballGame {
         ctx.save();
         ctx.translate(pp.x, pp.y);
 
-        // 투수 마운드 흙 언덕
-        ctx.fillStyle = '#92400e';
+        // [1] 투수 마운드 흙 언덕 (고화질 3D 마운드)
+        const moundGrad = ctx.createRadialGradient(0, 4 * s, 6 * s, 0, 6 * s, 48 * s);
+        moundGrad.addColorStop(0, '#b45309');
+        moundGrad.addColorStop(0.65, '#92400e');
+        moundGrad.addColorStop(1, '#451a03');
+        ctx.fillStyle = moundGrad;
         ctx.beginPath();
-        ctx.ellipse(0, 6 * s, 46 * s, 16 * s, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, 6 * s, 48 * s, 17 * s, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // 투수판 (고무 플레이트)
+        // [2] 투수판 (Rubber Plate)
         ctx.fillStyle = '#f8fafc';
-        ctx.fillRect(-12 * s, 0, 24 * s, 4 * s);
+        ctx.fillRect(-13 * s, 0, 26 * s, 4.5 * s);
         ctx.strokeStyle = '#475569';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(-12 * s, 0, 24 * s, 4 * s);
+        ctx.lineWidth = 1 * s;
+        ctx.strokeRect(-13 * s, 0, 26 * s, 4.5 * s);
 
-        // 그림자
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+        // 지면 스파이크 그림자
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
         ctx.beginPath();
-        ctx.ellipse(0, 5 * s, 20 * s, 7 * s, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, 6 * s, 24 * s, 8 * s, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // 1. 와인드업 킥 모션 (다리 들기)
+        // [3] 4대 투구폼별 생체역학 키네마틱스 (Biomechanics Kinematics)
         let legKickY = 0;
-        if (pit.phase === 'windup') {
-            const windupProg = Math.min(1, pit.phaseTimer / 0.72);
-            legKickY = -h * 0.38 * Math.sin(windupProg * Math.PI);
+        let legKickX = 0;
+        let torsoAngle = 0;
+        let torsoOffsetY = 0;
+
+        let armShoulderX = w * 0.32;
+        let armShoulderY = -h * 0.76;
+        let gloveShoulderX = -w * 0.32;
+        let gloveShoulderY = -h * 0.76;
+
+        let elbowX = armShoulderX + 12 * s;
+        let elbowY = armShoulderY - 10 * s;
+        let wristX = elbowX + 10 * s;
+        let wristY = elbowY - 14 * s;
+        let isHoldingBall = true;
+
+        let gElbowX = gloveShoulderX - 10 * s;
+        let gElbowY = gloveShoulderY + 12 * s;
+        let gWristX = gloveShoulderX - 4 * s;
+        let gWristY = gloveShoulderY + 15 * s;
+        let gloveAngle = 0.2;
+
+        if (pit.phase === 'ready' || pit.phase === 'aiming') {
+            const sway = Math.sin(pit.phaseTimer * 2.8) * 1.5 * s;
+            torsoOffsetY = sway * 0.5;
+            // 셋포지션: 두 손을 가슴 앞에 모으고 글러브 속에 야구공을 숨김
+            gElbowX = gloveShoulderX + 8 * s;
+            gElbowY = gloveShoulderY + 14 * s;
+            gWristX = -2 * s;
+            gWristY = -h * 0.68 + sway;
+            gloveAngle = -0.15;
+
+            elbowX = armShoulderX - 6 * s;
+            elbowY = armShoulderY + 14 * s;
+            wristX = 2 * s;
+            wristY = -h * 0.68 + sway;
+            isHoldingBall = true;
+        } else if (pit.phase === 'windup') {
+            const windupProg = Math.min(1.0, pit.phaseTimer / 0.72);
+            if (windupProg < 0.40) {
+                // 1단계: 하이 레그 킥 & 와인드업 밸런스 포인트
+                const p1 = windupProg / 0.40;
+                const kickEase = Math.sin(p1 * Math.PI * 0.5);
+
+                if (pStyle === 'overhand') {
+                    legKickY = -h * 0.48 * kickEase;
+                    legKickX = -w * 0.08 * kickEase;
+                } else if (pStyle === 'threequarter') {
+                    legKickY = -h * 0.40 * kickEase;
+                    legKickX = -w * 0.05 * kickEase;
+                } else if (pStyle === 'sidearm') {
+                    legKickY = -h * 0.34 * kickEase;
+                    legKickX = w * 0.04 * kickEase;
+                } else if (pStyle === 'submarine') {
+                    legKickY = -h * 0.26 * kickEase;
+                    torsoOffsetY = h * 0.12 * kickEase; // 잠수함 깊은 웅크리기 준비
+                    torsoAngle = 0.22 * kickEase;
+                }
+
+                gWristX = -w * 0.05;
+                gWristY = -h * 0.72 - 6 * s * kickEase;
+                wristX = w * 0.05;
+                wristY = -h * 0.72 - 6 * s * kickEase;
+                gElbowX = gloveShoulderX + 6 * s;
+                gElbowY = gloveShoulderY + 12 * s;
+                elbowX = armShoulderX - 6 * s;
+                elbowY = armShoulderY + 12 * s;
+                isHoldingBall = true;
+            } else if (windupProg < 0.76) {
+                // 2단계: 스트라이드(앞발 내딛기) & 견갑골 장전 (Arm Cocking & Scapular Loading)
+                const p2 = (windupProg - 0.40) / 0.36;
+
+                legKickY = -h * 0.48 * (1 - p2 * 0.82);
+                legKickX = -w * 0.38 * p2;
+
+                gElbowX = gloveShoulderX - 16 * s * p2;
+                gElbowY = gloveShoulderY - 2 * s * p2;
+                gWristX = gElbowX - 14 * s * p2;
+                gWristY = gElbowY - 4 * s * p2;
+                gloveAngle = -0.5 * p2;
+
+                if (pStyle === 'overhand') {
+                    torsoAngle = -0.06 * p2;
+                    torsoOffsetY = h * 0.03 * p2;
+                    elbowX = armShoulderX + 8 * s * p2;
+                    elbowY = armShoulderY - 14 * s * p2;
+                    wristX = elbowX - 4 * s;
+                    wristY = elbowY - 22 * s * p2; // 머리 뒤 고공 12시 코킹
+                } else if (pStyle === 'threequarter') {
+                    torsoAngle = 0.18 * p2;
+                    torsoOffsetY = h * 0.05 * p2;
+                    elbowX = armShoulderX + 16 * s * p2;
+                    elbowY = armShoulderY - 6 * s * p2;
+                    wristX = elbowX + 14 * s * p2;
+                    wristY = elbowY - 16 * s * p2; // 대각선 1시반 코킹
+                } else if (pStyle === 'sidearm') {
+                    torsoAngle = 0.48 * p2; // 1루 쪽으로 상체 28도 기울임
+                    torsoOffsetY = h * 0.08 * p2;
+                    elbowX = armShoulderX + 24 * s * p2;
+                    elbowY = armShoulderY + 6 * s * p2;
+                    wristX = elbowX + 22 * s * p2;
+                    wristY = elbowY - 2 * s * p2; // 옆구리 수평 3시 코킹
+                } else if (pStyle === 'submarine') {
+                    torsoAngle = 0.95 * p2; // 마운드 흙으로 상체 55도 깊숙이 다운!
+                    torsoOffsetY = h * 0.28 * p2; // 엉덩이 깊은 기마자세
+                    elbowX = armShoulderX + 18 * s * p2;
+                    elbowY = armShoulderY + 28 * s * p2;
+                    wristX = elbowX + 14 * s * p2;
+                    wristY = elbowY + 24 * s * p2; // 지면 흙을 스칠 듯한 5시반 로우 코킹
+                }
+                isHoldingBall = true;
+            } else {
+                // 3단계: 폭발적 체간 회전 & 팔 채찍 가속 (Arm Whip & Release Slot Snap)
+                const p3 = (windupProg - 0.76) / 0.24;
+                const snap = Math.pow(p3, 2.2);
+
+                gElbowX = gloveShoulderX - 4 * s;
+                gElbowY = gloveShoulderY + 14 * s;
+                gWristX = gloveShoulderX + 8 * s;
+                gWristY = gloveShoulderY + 16 * s;
+                gloveAngle = 0.4;
+
+                if (pStyle === 'overhand') {
+                    torsoAngle = 0.08 * snap;
+                    elbowX = armShoulderX + (4 * s - armShoulderX) * snap;
+                    elbowY = -h * 1.05 * snap + (armShoulderY) * (1 - snap);
+                    wristX = elbowX + 3 * s;
+                    wristY = -h * 1.38 * snap + (-h * 0.9) * (1 - snap); // 수직 12시 릴리즈!
+                } else if (pStyle === 'threequarter') {
+                    torsoAngle = 0.24 * snap;
+                    elbowX = armShoulderX + 14 * s;
+                    elbowY = armShoulderY - 8 * s;
+                    wristX = armShoulderX + 22 * s * snap;
+                    wristY = -h * 1.12 * snap + (-h * 0.8) * (1 - snap); // 대각선 채찍 릴리즈!
+                } else if (pStyle === 'sidearm') {
+                    torsoAngle = 0.52;
+                    elbowX = armShoulderX + 28 * s;
+                    elbowY = armShoulderY + 6 * s;
+                    wristX = armShoulderX + 44 * s * snap;
+                    wristY = -h * 0.68 * snap + (-h * 0.6) * (1 - snap); // 횡방향 사이드암 와이프아웃 릴리즈!
+                } else if (pStyle === 'submarine') {
+                    torsoAngle = 0.98;
+                    torsoOffsetY = h * 0.30;
+                    elbowX = armShoulderX + 24 * s;
+                    elbowY = armShoulderY + 32 * s;
+                    wristX = armShoulderX + 30 * s;
+                    wristY = -h * 0.20 + 6 * s * (1 - snap); // 지면 10cm 높이에서 솟구치는 업슛 릴리즈!
+                }
+                isHoldingBall = (windupProg < 0.96);
+            }
+        } else {
+            // 4. 팔로스루 (Follow-Through & Pitch Completion)
+            gElbowX = gloveShoulderX - 4 * s;
+            gElbowY = gloveShoulderY + 14 * s;
+            gWristX = gloveShoulderX + 8 * s;
+            gWristY = gloveShoulderY + 16 * s;
+            gloveAngle = 0.45;
+
+            if (pStyle === 'overhand') {
+                torsoAngle = 0.35;
+                torsoOffsetY = h * 0.08;
+                elbowX = -w * 0.12;
+                elbowY = -h * 0.55;
+                wristX = -w * 0.25;
+                wristY = -h * 0.32; // 왼쪽 무릎 바깥으로 완전히 내려치는 오버핸드 피니시
+                legKickY = -h * 0.30;
+                legKickX = w * 0.32; // 뒷다리 번쩍 들림
+            } else if (pStyle === 'threequarter') {
+                torsoAngle = 0.38;
+                elbowX = -w * 0.05;
+                elbowY = -h * 0.62;
+                wristX = -w * 0.20;
+                wristY = -h * 0.46; // 왼쪽 허리 쪽으로 대각선 감아쥐기
+            } else if (pStyle === 'sidearm') {
+                torsoAngle = 0.55;
+                elbowX = -w * 0.10;
+                elbowY = -h * 0.65;
+                wristX = -w * 0.32;
+                wristY = -h * 0.60; // 몸 앞을 넓게 가로지르는 수평 와이드 피니시
+            } else if (pStyle === 'submarine') {
+                torsoAngle = 0.85;
+                torsoOffsetY = h * 0.24;
+                elbowX = w * 0.15;
+                elbowY = -h * 0.45;
+                wristX = w * 0.08;
+                wristY = -h * 0.62; // 아래에서 위로 퍼올린 후 가슴 앞 정지
+            }
+            isHoldingBall = false;
         }
 
-        // 지지 다리 (오른다리 - 3D 입체 원기둥)
+        // [4] 하체 다리 렌더링 (원기둥 3D 유니폼 팬츠 & 스파이크)
+        // 오른다리 (축 다리)
         const pLegGradR = ctx.createLinearGradient(w * 0.05, 0, w * 0.41, 0);
         pLegGradR.addColorStop(0, '#f1f5f9');
         pLegGradR.addColorStop(0.35, '#ffffff');
         pLegGradR.addColorStop(1, '#475569');
         ctx.fillStyle = pLegGradR;
         ctx.beginPath();
-        ctx.roundRect(w * 0.05, -h * 0.42, w * 0.36, h * 0.42, 4 * s);
+        const rLegTopY = -h * 0.42 + torsoOffsetY;
+        ctx.roundRect(w * 0.05, rLegTopY, w * 0.36, -rLegTopY, 4 * s);
         ctx.fill();
         ctx.fillStyle = pSkin.jersey;
-        ctx.fillRect(w * 0.05, -h * 0.2, w * 0.36, h * 0.1);
+        ctx.fillRect(w * 0.05, rLegTopY * 0.5, w * 0.36, h * 0.1);
         ctx.fillStyle = '#1e293b';
         ctx.fillRect(w * 0.02, -h * 0.06, w * 0.42, h * 0.06);
 
-        // 킥하는 앞다리 (왼다리 - 3D 입체 원기둥)
-        const pLegGradL = ctx.createLinearGradient(-w * 0.45, 0, -w * 0.09, 0);
+        // 왼다리 (스트라이드/킥 다리)
+        const pLegGradL = ctx.createLinearGradient(-w * 0.45 + legKickX, 0, -w * 0.09 + legKickX, 0);
         pLegGradL.addColorStop(0, '#cbd5e1');
         pLegGradL.addColorStop(0.3, '#ffffff');
         pLegGradL.addColorStop(1, '#64748b');
         ctx.fillStyle = pLegGradL;
         ctx.beginPath();
-        ctx.roundRect(-w * 0.45, -h * 0.42 + legKickY, w * 0.36, h * 0.42 - legKickY, 4 * s);
+        const lLegTopY = -h * 0.42 + torsoOffsetY;
+        const lLegBotY = legKickY;
+        ctx.roundRect(-w * 0.45 + legKickX, lLegTopY, w * 0.36, lLegBotY - lLegTopY, 4 * s);
         ctx.fill();
         ctx.fillStyle = pSkin.jersey;
-        ctx.fillRect(-w * 0.45, -h * 0.2 + legKickY, w * 0.36, h * 0.1);
+        ctx.fillRect(-w * 0.45 + legKickX, lLegTopY + (lLegBotY - lLegTopY) * 0.5, w * 0.36, h * 0.1);
         ctx.fillStyle = '#1e293b';
-        ctx.fillRect(-w * 0.48, -h * 0.06 + legKickY, w * 0.42, h * 0.06);
+        ctx.fillRect(-w * 0.48 + legKickX, lLegBotY - h * 0.06, w * 0.42, h * 0.06);
 
-        // 2. 상체 유니폼 (3D 저지 볼륨 그라데이션)
+        // [5] 상체 유니폼 (체간 회전 & 3D 볼륨)
+        ctx.save();
+        ctx.translate(0, -h * 0.42 + torsoOffsetY);
+        ctx.rotate(torsoAngle);
+
+        // 유니폼 저지
         const pJerseyGrad = ctx.createLinearGradient(-w * 0.48, 0, w * 0.48, 0);
         pJerseyGrad.addColorStop(0, pSkin.jersey);
         pJerseyGrad.addColorStop(0.3, '#ffffff');
-        pJerseyGrad.addColorStop(0.6, pSkin.jersey);
+        pJerseyGrad.addColorStop(0.65, pSkin.jersey);
         pJerseyGrad.addColorStop(1, '#020617');
         ctx.fillStyle = pJerseyGrad;
         ctx.beginPath();
-        ctx.roundRect(-w * 0.48, -h * 0.82, w * 0.96, h * 0.44, 8 * s);
+        ctx.roundRect(-w * 0.48, -h * 0.40, w * 0.96, h * 0.44, 8 * s);
         ctx.fill();
         ctx.strokeStyle = '#0f172a';
-        ctx.lineWidth = 2 * s;
+        ctx.lineWidth = 1.8 * s;
         ctx.stroke();
 
-        // 3. 투구 팔 애니메이션
-        let armEndX = 22 * s;
-        let armEndY = -h * 0.75;
-
-        if (pit.phase === 'windup') {
-            if (pChar.pitchStyle === 'overhand') {
-                armEndX = 4 * s;
-                armEndY = -h * 1.35; // 머리 위 수직 릴리즈 준비
-            } else if (pChar.pitchStyle === 'sidearm') {
-                armEndX = 38 * s;
-                armEndY = -h * 0.62;
-            } else {
-                armEndX = 24 * s;
-                armEndY = -h * 1.08;
-            }
-        } else if (pit.phase === 'release') {
-            armEndX = 18 * s;
-            armEndY = -h * 0.65;
-        }
-
-        ctx.strokeStyle = '#fde047';
-        ctx.lineWidth = 5 * s;
-        ctx.lineCap = 'round';
+        // 저지 단추선 & 팀 로고 엠블럼
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.lineWidth = 1.2 * s;
         ctx.beginPath();
-        ctx.moveTo(w * 0.15, -h * 0.75);
-        ctx.lineTo(armEndX, armEndY);
+        ctx.moveTo(0, -h * 0.40);
+        ctx.lineTo(0, 4 * s);
         ctx.stroke();
 
-        // 4. 머리 및 얼굴 (타자 시점이면 정면 얼굴, 투수 시점이면 3/4 등판)
-        const headY = -h * 0.94;
+        // [6] 리얼 3D 가죽 글러브 팔 (Glove Arm)
+        this.drawArticulatedGloveArm(
+            ctx, s, pSkin,
+            gloveShoulderX, gloveShoulderY - (-h * 0.42 + torsoOffsetY),
+            gElbowX, gElbowY - (-h * 0.42 + torsoOffsetY),
+            gWristX, gWristY - (-h * 0.42 + torsoOffsetY),
+            gloveAngle
+        );
+
+        // [7] 머리 & 3D 야구 모자 (투구 폼에 맞춰 시선 유지)
+        const headRelY = -h * 0.52;
         ctx.save();
-        ctx.translate(0, headY);
+        ctx.translate(0, headRelY);
+        // 몸이 기울어져도 시선은 홈플레이트를 응시하도록 반대 회전
+        ctx.rotate(-torsoAngle * 0.65);
 
         if (pChar.id === 'tiger') this.drawTigerFace(ctx, s, !isFacingFront, pSkin);
         else if (pChar.id === 'frog') this.drawFrogFace(ctx, s, !isFacingFront, pSkin);
         else if (pChar.id === 'penguin') this.drawPenguinFace(ctx, s, !isFacingFront, pSkin);
         else this.drawMonkeyFace(ctx, s, !isFacingFront, pSkin);
 
-        // 야구 모자
+        // 3D 야구 모자
         ctx.fillStyle = pSkin.cap;
         ctx.beginPath();
         ctx.arc(0, -6 * s, 17 * s, Math.PI, Math.PI * 2);
@@ -3786,6 +4098,344 @@ class BaseballGame {
         ctx.strokeStyle = '#0f172a';
         ctx.lineWidth = 1.2 * s;
         ctx.stroke();
+
+        ctx.restore();
+
+        // [8] 리얼 3D 다관절 투구 팔 (어깨 -> 상완 이두 -> 팔꿈치 -> 전완근 -> 아대 -> 5손가락 & 3D 실밥 야구공)
+        this.drawArticulatedPitchingArm(
+            ctx, s, pSkin, pChar,
+            armShoulderX, armShoulderY - (-h * 0.42 + torsoOffsetY),
+            elbowX, elbowY - (-h * 0.42 + torsoOffsetY),
+            wristX, wristY - (-h * 0.42 + torsoOffsetY),
+            isHoldingBall, pStyle
+        );
+
+        ctx.restore(); // 상체 rotate restore
+        ctx.restore(); // 투수 pp.x, pp.y restore
+    }
+
+    /**
+     * ⚾ 리얼 3D 다관절 투구 팔 (어깨 유니폼 슬리브 -> 상완 이두/삼두 원기둥 -> 팔꿈치 관절 -> 전완근 -> 손목 아대 -> 5손가락 & 3D 실밥 야구공)
+     */
+    drawArticulatedPitchingArm(ctx, s, pSkin, pChar, sx, sy, ex, ey, wx, wy, isHoldingBall, pStyle) {
+        ctx.save();
+
+        // 1. 상완 (어깨 -> 팔꿈치 원기둥 그라데이션)
+        const d1x = ex - sx;
+        const d1y = ey - sy;
+        const len1 = Math.hypot(d1x, d1y) || 1;
+        const ang1 = Math.atan2(d1y, d1x);
+        const perp1x = -Math.sin(ang1);
+        const perp1y = Math.cos(ang1);
+
+        const armThick1 = 7.5 * s;
+        const armGrad1 = ctx.createLinearGradient(
+            sx + perp1x * armThick1, sy + perp1y * armThick1,
+            sx - perp1x * armThick1, sy - perp1y * armThick1
+        );
+        armGrad1.addColorStop(0, '#f8fafc');
+        armGrad1.addColorStop(0.35, '#ffffff');
+        armGrad1.addColorStop(0.7, pSkin.jersey);
+        armGrad1.addColorStop(1, '#0f172a');
+
+        ctx.fillStyle = armGrad1;
+        ctx.beginPath();
+        ctx.moveTo(sx + perp1x * armThick1, sy + perp1y * armThick1);
+        ctx.lineTo(ex + perp1x * (armThick1 * 0.85), ey + perp1y * (armThick1 * 0.85));
+        ctx.lineTo(ex - perp1x * (armThick1 * 0.85), ey - perp1y * (armThick1 * 0.85));
+        ctx.lineTo(sx - perp1x * armThick1, sy - perp1y * armThick1);
+        ctx.closePath();
+        ctx.fill();
+
+        // 어깨 반소매 소매단 스트라이프
+        ctx.strokeStyle = pSkin.stripe || '#f8fafc';
+        ctx.lineWidth = 2.2 * s;
+        ctx.beginPath();
+        const midSx = sx + d1x * 0.45;
+        const midSy = sy + d1y * 0.45;
+        ctx.moveTo(midSx + perp1x * (armThick1 * 0.95), midSy + perp1y * (armThick1 * 0.95));
+        ctx.lineTo(midSx - perp1x * (armThick1 * 0.95), midSy - perp1y * (armThick1 * 0.95));
+        ctx.stroke();
+
+        // 2. 팔꿈치 관절 캡 (Elbow Joint Hinge)
+        const elbowGrad = ctx.createRadialGradient(ex - 1.5 * s, ey - 1.5 * s, 1 * s, ex, ey, 5.5 * s);
+        elbowGrad.addColorStop(0, '#ffffff');
+        elbowGrad.addColorStop(0.5, pSkin.jersey);
+        elbowGrad.addColorStop(1, '#020617');
+        ctx.fillStyle = elbowGrad;
+        ctx.beginPath();
+        ctx.arc(ex, ey, 5.5 * s, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 3. 전완근 (팔꿈치 -> 손목 테이퍼드 원기둥)
+        const d2x = wx - ex;
+        const d2y = wy - ey;
+        const len2 = Math.hypot(d2x, d2y) || 1;
+        const ang2 = Math.atan2(d2y, d2x);
+        const perp2x = -Math.sin(ang2);
+        const perp2y = Math.cos(ang2);
+
+        const foreThickStart = 6.2 * s;
+        const foreThickEnd = 4.6 * s;
+        const foreGrad = ctx.createLinearGradient(
+            ex + perp2x * foreThickStart, ey + perp2y * foreThickStart,
+            ex - perp2x * foreThickStart, ey - perp2y * foreThickStart
+        );
+        foreGrad.addColorStop(0, '#fef08a');
+        foreGrad.addColorStop(0.3, '#fde047');
+        foreGrad.addColorStop(0.7, '#ca8a04');
+        foreGrad.addColorStop(1, '#713f12');
+
+        ctx.fillStyle = foreGrad;
+        ctx.beginPath();
+        ctx.moveTo(ex + perp2x * foreThickStart, ey + perp2y * foreThickStart);
+        ctx.lineTo(wx + perp2x * foreThickEnd, wy + perp2y * foreThickEnd);
+        ctx.lineTo(wx - perp2x * foreThickEnd, wy - perp2y * foreThickEnd);
+        ctx.lineTo(ex - perp2x * foreThickStart, ey - perp2y * foreThickStart);
+        ctx.closePath();
+        ctx.fill();
+
+        // 4. 팀 컬러 컴프레션 손목 아대 (Wristband)
+        ctx.save();
+        ctx.translate(wx, wy);
+        ctx.rotate(ang2);
+        ctx.fillStyle = pSkin.jersey;
+        ctx.beginPath();
+        ctx.roundRect(-4 * s, -foreThickEnd * 1.05, 5 * s, foreThickEnd * 2.1, 2 * s);
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1 * s;
+        ctx.stroke();
+        ctx.restore();
+
+        // 5. 5손가락 입체 손 & 3D 야구공 (Seamed Baseball)
+        const handDirX = Math.cos(ang2);
+        const handDirY = Math.sin(ang2);
+        const hx = wx + handDirX * 3.5 * s;
+        const hy = wy + handDirY * 3.5 * s;
+
+        if (isHoldingBall) {
+            // 야구공 중심 좌표
+            const bx = hx + handDirX * 6.5 * s;
+            const by = hy + handDirY * 6.5 * s;
+            const bRadius = 6.8 * s;
+
+            // 3D 구체 라이팅 그라데이션
+            const ballGrad = ctx.createRadialGradient(
+                bx - bRadius * 0.35, by - bRadius * 0.35, bRadius * 0.15,
+                bx, by, bRadius
+            );
+            ballGrad.addColorStop(0, '#ffffff');
+            ballGrad.addColorStop(0.65, '#f1f5f9');
+            ballGrad.addColorStop(0.9, '#cbd5e1');
+            ballGrad.addColorStop(1, '#64748b');
+            ctx.fillStyle = ballGrad;
+            ctx.beginPath();
+            ctx.arc(bx, by, bRadius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 0.8 * s;
+            ctx.stroke();
+
+            // 빨간색 말발굽 실밥 2선 (Red Horseshoe Seams)
+            ctx.strokeStyle = '#dc2626';
+            ctx.lineWidth = 1.3 * s;
+            ctx.beginPath();
+            ctx.arc(bx - bRadius * 0.25, by, bRadius * 0.72, -Math.PI * 0.45, Math.PI * 0.45);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(bx + bRadius * 0.25, by, bRadius * 0.72, Math.PI * 0.55, Math.PI * 1.45);
+            ctx.stroke();
+
+            // 3D 5손가락 그립 (검지, 중지가 공 위를 감싸쥐고 엄지가 아래를 받치는 그립)
+            ctx.fillStyle = '#fde047';
+            ctx.strokeStyle = '#b45309';
+            ctx.lineWidth = 0.8 * s;
+
+            // 엄지손가락 (Thumb - 아래)
+            ctx.beginPath();
+            ctx.ellipse(bx - perp2x * 5 * s, by - perp2y * 5 * s, 3.8 * s, 2.2 * s, ang2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // 검지 & 중지 손가락 (Index & Middle - 위쪽 실밥 누름)
+            ctx.beginPath();
+            ctx.ellipse(bx + perp2x * 3.8 * s - handDirX * 2 * s, by + perp2y * 3.8 * s - handDirY * 2 * s, 4.2 * s, 2.2 * s, ang2 + 0.3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.ellipse(bx + perp2x * 0.8 * s - handDirX * 2 * s, by + perp2y * 0.8 * s - handDirY * 2 * s, 4.4 * s, 2.2 * s, ang2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // 약지 & 새끼 손가락 (공 측면 보조)
+            ctx.beginPath();
+            ctx.ellipse(bx - perp2x * 2.2 * s - handDirX * 3 * s, by - perp2y * 2.2 * s - handDirY * 3 * s, 3.5 * s, 1.8 * s, ang2 - 0.2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+        } else {
+            // 릴리즈 직후 5손가락 스냅 (Fingertip Release Snap)
+            ctx.fillStyle = '#fde047';
+            ctx.strokeStyle = '#b45309';
+            ctx.lineWidth = 0.8 * s;
+
+            // 손바닥
+            ctx.beginPath();
+            ctx.ellipse(hx, hy, 4.2 * s, 3.2 * s, ang2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // 앞으로 쭉 뻗은 검지, 중지, 약지, 새끼
+            const fAngles = [-0.35, -0.12, 0.12, 0.35];
+            const fLens = [6.2 * s, 7.0 * s, 6.0 * s, 4.8 * s];
+            for (let i = 0; i < 4; i++) {
+                const fa = ang2 + fAngles[i];
+                const fx = hx + Math.cos(fa) * fLens[i];
+                const fy = hy + Math.sin(fa) * fLens[i];
+                ctx.beginPath();
+                ctx.moveTo(hx + perp2x * (i - 1.5) * 1.5 * s, hy + perp2y * (i - 1.5) * 1.5 * s);
+                ctx.lineTo(fx, fy);
+                ctx.lineWidth = 1.8 * s;
+                ctx.strokeStyle = '#fde047';
+                ctx.lineCap = 'round';
+                ctx.stroke();
+            }
+            // 엄지
+            ctx.beginPath();
+            ctx.moveTo(hx - perp2x * 3 * s, hy - perp2y * 3 * s);
+            ctx.lineTo(hx - perp2x * 5.5 * s + handDirX * 2 * s, hy - perp2y * 5.5 * s + handDirY * 2 * s);
+            ctx.lineWidth = 2.2 * s;
+            ctx.strokeStyle = '#fde047';
+            ctx.lineCap = 'round';
+            ctx.stroke();
+
+            // 릴리즈 파티클 잔상
+            ctx.fillStyle = 'rgba(254, 240, 138, 0.7)';
+            ctx.beginPath();
+            ctx.arc(hx + handDirX * 10 * s, hy + handDirY * 10 * s, 2.5 * s, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        ctx.restore();
+    }
+
+    /**
+     * 🧤 리얼 3D 가죽 투수 글러브 & 팔 (천연 가죽 질감, 입체 포켓, 바스켓 웹, 글러브 가죽끈 매듭)
+     */
+    drawArticulatedGloveArm(ctx, s, pSkin, sx, sy, ex, ey, wx, wy, gloveAngle) {
+        ctx.save();
+
+        // 1. 글러브 팔 상완
+        const d1x = ex - sx;
+        const d1y = ey - sy;
+        const ang1 = Math.atan2(d1y, d1x);
+        const perp1x = -Math.sin(ang1);
+        const perp1y = Math.cos(ang1);
+        const armThick1 = 7.0 * s;
+
+        const armGrad1 = ctx.createLinearGradient(
+            sx + perp1x * armThick1, sy + perp1y * armThick1,
+            sx - perp1x * armThick1, sy - perp1y * armThick1
+        );
+        armGrad1.addColorStop(0, '#f8fafc');
+        armGrad1.addColorStop(0.35, pSkin.jersey);
+        armGrad1.addColorStop(1, '#0f172a');
+        ctx.fillStyle = armGrad1;
+        ctx.beginPath();
+        ctx.moveTo(sx + perp1x * armThick1, sy + perp1y * armThick1);
+        ctx.lineTo(ex + perp1x * (armThick1 * 0.8), ey + perp1y * (armThick1 * 0.8));
+        ctx.lineTo(ex - perp1x * (armThick1 * 0.8), ey - perp1y * (armThick1 * 0.8));
+        ctx.lineTo(sx - perp1x * armThick1, sy - perp1y * armThick1);
+        ctx.closePath();
+        ctx.fill();
+
+        // 2. 팔꿈치
+        ctx.fillStyle = '#0f172a';
+        ctx.beginPath();
+        ctx.arc(ex, ey, 5.0 * s, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 3. 전완
+        const d2x = wx - ex;
+        const d2y = wy - ey;
+        const ang2 = Math.atan2(d2y, d2x);
+        const perp2x = -Math.sin(ang2);
+        const perp2y = Math.cos(ang2);
+        const foreThickStart = 5.8 * s;
+        const foreThickEnd = 4.4 * s;
+
+        const foreGrad = ctx.createLinearGradient(
+            ex + perp2x * foreThickStart, ey + perp2y * foreThickStart,
+            ex - perp2x * foreThickStart, ey - perp2y * foreThickStart
+        );
+        foreGrad.addColorStop(0, '#fde047');
+        foreGrad.addColorStop(0.5, '#ca8a04');
+        foreGrad.addColorStop(1, '#713f12');
+        ctx.fillStyle = foreGrad;
+        ctx.beginPath();
+        ctx.moveTo(ex + perp2x * foreThickStart, ey + perp2y * foreThickStart);
+        ctx.lineTo(wx + perp2x * foreThickEnd, wy + perp2y * foreThickEnd);
+        ctx.lineTo(wx - perp2x * foreThickEnd, wy - perp2y * foreThickEnd);
+        ctx.lineTo(ex - perp2x * foreThickStart, ey - perp2y * foreThickStart);
+        ctx.closePath();
+        ctx.fill();
+
+        // 4. 3D 명품 천연 소가죽 투수 글러브 (Leather Pitcher's Glove)
+        ctx.save();
+        ctx.translate(wx, wy);
+        ctx.rotate(gloveAngle);
+
+        const gw = 18 * s;
+        const gh = 22 * s;
+
+        // 글러브 본체 (엄지 패드 + 4손가락 포켓)
+        const leatherGrad = ctx.createRadialGradient(0, -gh * 0.2, 3 * s, 0, 0, gh * 0.8);
+        leatherGrad.addColorStop(0, '#b45309'); // 하이라이트 새들 브라운
+        leatherGrad.addColorStop(0.5, '#78350f'); // 깊은 가죽 톤
+        leatherGrad.addColorStop(1, '#451a03'); // 테두리 섀도우
+        ctx.fillStyle = leatherGrad;
+
+        ctx.beginPath();
+        ctx.ellipse(0, 0, gw * 0.55, gh * 0.52, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#292524';
+        ctx.lineWidth = 1.2 * s;
+        ctx.stroke();
+
+        // 글러브 안쪽 포켓 깊이 음영
+        ctx.fillStyle = '#1c1917';
+        ctx.beginPath();
+        ctx.ellipse(0, -gh * 0.08, gw * 0.34, gh * 0.32, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 2피스 솔리드 바스켓 가죽 웹 (Basket Weave Web)
+        ctx.strokeStyle = '#ca8a04';
+        ctx.lineWidth = 1.6 * s;
+        ctx.beginPath();
+        ctx.moveTo(-gw * 0.3, -gh * 0.35);
+        ctx.lineTo(gw * 0.3, -gh * 0.35);
+        ctx.moveTo(-gw * 0.3, -gh * 0.15);
+        ctx.lineTo(gw * 0.3, -gh * 0.15);
+        ctx.moveTo(-gw * 0.12, -gh * 0.42);
+        ctx.lineTo(-gw * 0.12, -gh * 0.05);
+        ctx.moveTo(gw * 0.12, -gh * 0.42);
+        ctx.lineTo(gw * 0.12, -gh * 0.05);
+        ctx.stroke();
+
+        // 글러브 외곽 가죽끈 스티치 (Rawhide Laces)
+        ctx.fillStyle = '#fef08a';
+        for (let a = 0; a < Math.PI * 2; a += 0.55) {
+            const lx = Math.cos(a) * gw * 0.52;
+            const ly = Math.sin(a) * gh * 0.48;
+            ctx.fillRect(lx - 0.7 * s, ly - 0.7 * s, 1.4 * s, 1.4 * s);
+        }
+
+        // 손목 스트랩 엠블럼 패치 (Red KBO / Wilson Patch)
+        ctx.fillStyle = '#dc2626';
+        ctx.fillRect(-gw * 0.28, gh * 0.32, gw * 0.56, 3.5 * s);
+        ctx.strokeStyle = '#fef08a';
+        ctx.lineWidth = 0.6 * s;
+        ctx.strokeRect(-gw * 0.28, gh * 0.32, gw * 0.56, 3.5 * s);
 
         ctx.restore();
         ctx.restore();
