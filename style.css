@@ -3378,7 +3378,7 @@ body.is-playing .concept-badge {
     border-color: #fde047;
 }
 
-/* 5. 투수 전용 하단 컨트롤 콘솔 (구종 + 볼/스트라이크 코스 선택) */
+/* 5. 투수 전용 하단 컨트롤 콘솔 (컴투스 프로야구 스타일 구종 선택 바) */
 .mlb-pitcher-bar {
     position: absolute;
     bottom: 16px;
@@ -3390,9 +3390,8 @@ body.is-playing .concept-badge {
     -webkit-backdrop-filter: blur(12px);
     border: 1.5px solid rgba(56, 189, 248, 0.4);
     border-radius: 16px;
-    padding: 10px 16px;
+    padding: 8px 16px;
     display: flex;
-    flex-direction: column;
     align-items: center;
     gap: 8px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.65), 0 0 16px rgba(56, 189, 248, 0.2);

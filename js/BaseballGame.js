@@ -707,16 +707,20 @@ class BaseballGame {
                 if (e.key === '4') this.selectPitchType('changeup');
                 if (e.key === '5') this.selectPitchType('knuckleball');
 
-                // WASD 및 방향키 코스 정밀 조준
+                // WASD 및 방향키로 과녁 정밀 이동 (키보드 장착 태블릿 완벽 지원)
                 let moved = false;
-                if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') { this.pitchAimX = Math.max(-34, this.pitchAimX - 5); moved = true; }
-                if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') { this.pitchAimX = Math.min(34, this.pitchAimX + 5); moved = true; }
-                if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') { this.pitchAimY = Math.min(74, this.pitchAimY + 5); moved = true; }
-                if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') { this.pitchAimY = Math.max(14, this.pitchAimY - 5); moved = true; }
-                if (moved) this.setPitchAim(this.pitchAimX, this.pitchAimY);
+                const step = (e.shiftKey) ? 7 : 3.5;
+                if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') { this.pitchAimX = Math.max(-36, this.pitchAimX - step); moved = true; }
+                if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') { this.pitchAimX = Math.min(36, this.pitchAimX + step); moved = true; }
+                if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') { this.pitchAimY = Math.min(76, this.pitchAimY + step); moved = true; }
+                if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') { this.pitchAimY = Math.max(10, this.pitchAimY - step); moved = true; }
+                if (moved) {
+                    e.preventDefault();
+                    this.setPitchAim(this.pitchAimX, this.pitchAimY);
+                }
 
-                // 투구 발사 (F 키 또는 Space)
-                if (e.code === 'KeyF' || e.code === 'Space') {
+                // 투구 발사 (Space, Enter, F 키)
+                if (e.code === 'KeyF' || e.code === 'Space' || e.code === 'Enter') {
                     e.preventDefault();
                     this.startPitchWindup();
                 }
@@ -740,18 +744,19 @@ class BaseballGame {
             }
         });
 
-        // 🖱️ 캔버스 마우스 클릭 / 터치 드래그로 직접 투구 위치 & 볼/스트라이크 코스 조준!
+        // 🖱️ 캔버스 마우스 클릭 / 터치 드래그로 직접 3D 과녁 조준! (태블릿 터치 스크린 지원)
         if (this.canvas) {
             let isAimDragging = false;
 
             const handlePointerPitchAim = (e) => {
                 if (this.userRole !== 'pitcher' || this.gameState !== 'aiming') return;
                 const rect = this.canvas.getBoundingClientRect();
-                // 📱 모바일/고해상도 터치 좌표를 캔버스 논리 해상도(this.width, this.height)로 1:1 완벽 보정
+                // 📱 태블릿 터치 좌표를 캔버스 논리 해상도(this.width, this.height)로 1:1 완벽 보정
                 const px = (e.clientX - rect.left) * (this.width / rect.width);
                 const py = (e.clientY - rect.top) * (this.height / rect.height);
-                // 투수 카메라 역투영 (z=380 홈플레이트 평면 기준)
-                const scale = this.camera.fov / (380 - this.camera.z);
+                // 🏏 컴투스 프로야구 포수 시점: cam.x=0, cam.y=56, cam.z=480 기준 홈플레이트(z=380) 역투영
+                const relZ = Math.max(15, this.camera.z - 380); // 480 - 380 = 100
+                const scale = this.camera.fov / relZ;           // 360 / 100 = 3.6
                 const aimX = this.camera.x + (px - this.width / 2) / scale;
                 const aimY = this.camera.y - (py - this.height * 0.54) / scale;
                 this.setPitchAim(Math.round(aimX), Math.round(aimY));
@@ -780,28 +785,6 @@ class BaseballGame {
                 isAimDragging = false;
             });
         }
-
-        // 🎯 3x3 9분할 스트라이크 존 그리드 셀 버튼들
-        const gridCells = document.querySelectorAll('.mlb-grid-cell');
-        gridCells.forEach(cell => {
-            cell.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.ensureAudio();
-                const gridIdx = parseInt(cell.getAttribute('data-grid'), 10);
-                if (!isNaN(gridIdx)) this.applyPitchGridIndex(gridIdx);
-            });
-        });
-
-        // 🎯 볼 / 스트라이크 판정 및 코스 빠른 선택 버튼들
-        const zoneBtns = document.querySelectorAll('.mlb-zone-quick-btn');
-        zoneBtns.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.ensureAudio();
-                const zoneKey = btn.getAttribute('data-zone');
-                if (zoneKey) this.applyPitchZonePreset(zoneKey);
-            });
-        });
 
         // 타자 스윙 원클릭 버튼
         const swingBtn = document.getElementById('btn-baseball-swing');
@@ -1249,20 +1232,11 @@ class BaseballGame {
     }
 
     resetCamera() {
-        if (this.userRole === 'batter') {
-            // 🏏 타자 시점: 포수/홈플레이트 뒤에서 투수 마운드를 정면으로 바라봄 (MLB The Show 26)
-            this.camera.x = 0;
-            this.camera.y = 56;
-            this.camera.z = 480;
-            this.camera.fov = 360;
-        } else {
-            // ⚾ 투수 시점: MLB The Show 방송 중계형 오프셋 투수 카메라
-            // 투수(x:0, z:80)의 어깨 너머로 홈플레이트와 스트라이크존, 타자를 100% 한눈에 선명하게 바라봄!
-            this.camera.x = 36;
-            this.camera.y = 70;
-            this.camera.z = -25;
-            this.camera.fov = 360;
-        }
+        // ⚾ 컴투스 프로야구 LIVE 정통 포수 시점: 투수/타자 모두 홈플레이트 뒤에서 마운드를 정면으로 바라봄!
+        this.camera.x = 0;
+        this.camera.y = 56;
+        this.camera.z = 480;
+        this.camera.fov = 360;
         this.camera.shake = 0;
     }
 
@@ -2762,26 +2736,20 @@ class BaseballGame {
         // 4. 3D 스트라이크존 박스 & 과녁
         this.renderStrikeZoneBox(ctx);
 
-        // 5. 캐릭터 및 볼 렌더링 (Z-Sort 순서로 카메라에 맞게 그리기)
+        // 5. 캐릭터 및 볼 렌더링 (컴투스 프로야구 포수 시점: 투수 z=80 정면 -> 볼 -> 타자 z=380)
         const isBatterRunning = this.activeRunners && this.activeRunners.some(r => r.isBatter && !r.isFinished);
 
-        if (this.userRole === 'batter') {
-            // 🏏 타자 시점 (포수 뒤 뷰):
-            // 투수(z=80 마운드 먼거리) -> 공 -> 스트라이크존 -> 타자(z=380 앞쪽 우타석)
-            this.renderPitcher(ctx, true); // 먼 거리 정면 투수
-            if (this.ball.active || (this.gameState === 'result_pause' && this.ball.trail && this.ball.trail.length > 4)) {
-                this.renderBall(ctx);
-            }
-            if (!isBatterRunning) this.renderBatter(ctx, true); // 근거리 타자 (MLB The Show)
-        } else {
-            // ⚾ 투수 시점 (마운드 뒤 뷰):
-            // 포수/심판(z=415) -> 타자(z=380) -> 공 -> 투수(z=80 마운드 앞)
-            this.renderCatcherAndUmpire(ctx);
-            if (!isBatterRunning) this.renderBatter(ctx, false);
-            if (this.ball.active || (this.gameState === 'result_pause' && this.ball.trail && this.ball.trail.length > 4)) {
-                this.renderBall(ctx);
-            }
-            this.renderPitcher(ctx, false);
+        // 마운드 위 정면 투수 (투구 폼 & 와인드업 애니메이션)
+        this.renderPitcher(ctx, true);
+
+        // 비행 중인 야구공
+        if (this.ball.active || (this.gameState === 'result_pause' && this.ball.trail && this.ball.trail.length > 4)) {
+            this.renderBall(ctx);
+        }
+
+        // 홈플레이트 옆 타자 (타자 모드 시 본인 타자, 투수 모드 시 상대 타자)
+        if (!isBatterRunning) {
+            this.renderBatter(ctx, true);
         }
 
         // 6. 파티클 & 불꽃놀이
@@ -2794,27 +2762,16 @@ class BaseballGame {
     }
 
     /**
-     * 3D 좌표 -> 2D 화면 투영 (타자 시점 vs 투수 시점 완벽 분기)
+     * 3D 좌표 -> 2D 화면 투영 (컴투스 프로야구 정통 포수 시점)
      */
     project(x, y, z) {
         const cam = this.camera;
-        let scale = 1.0;
-
-        if (this.userRole === 'batter') {
-            // 🏏 타자 시점: 카메라가 z=480(포수 뒤)에 있고 z=80(투수)을 정면으로 바라봄
-            const relZ = Math.max(15, cam.z - z);
-            scale = cam.fov / relZ;
-            const screenX = this.width / 2 + (x - cam.x) * scale;
-            const screenY = this.height * 0.54 - (y - cam.y) * scale;
-            return { x: screenX, y: screenY, scale: scale };
-        } else {
-            // ⚾ 투수 시점: 카메라가 z=-75에 있고 z=380(홈플레이트)을 바라봄
-            const relZ = Math.max(15, z - cam.z);
-            scale = cam.fov / relZ;
-            const screenX = this.width / 2 + (x - cam.x) * scale;
-            const screenY = this.height * 0.54 - (y - cam.y) * scale;
-            return { x: screenX, y: screenY, scale: scale };
-        }
+        // 🏏 포수/홈플레이트 뒤 시점: 카메라가 z=480에 있고 투수(z=80) 및 외야(z=-270)를 정면으로 바라봄
+        const relZ = Math.max(15, cam.z - z);
+        const scale = cam.fov / relZ;
+        const screenX = this.width / 2 + (x - cam.x) * scale;
+        const screenY = this.height * 0.54 - (y - cam.y) * scale;
+        return { x: screenX, y: screenY, scale: scale };
     }
 
     renderStadiumAtmosphere(ctx) {
@@ -3977,71 +3934,149 @@ class BaseballGame {
             // BR
             ctx.beginPath(); ctx.moveTo(szBR.x - bLen, szBR.y); ctx.lineTo(szBR.x, szBR.y); ctx.lineTo(szBR.x, szBR.y - bLen); ctx.stroke();
 
-            // 🧤 투수 조준 포수 미트 & 실시간 스트라이크/볼 판정 타겟팅
-            if (this.gameState === 'aiming') {
+            // 🎯 [컴투스 프로야구 LIVE 정통 포수 시점] 3D 인터랙티브 과녁 (Touch & Keyboard Bullseye Reticle)
+            if (this.gameState === 'aiming' || this.gameState === 'windup') {
                 const aimPt = this.project(this.pitchAimX, this.pitchAimY, 380);
                 const inAimZone = (Math.abs(this.pitchAimX) <= 24 && this.pitchAimY >= 22 && this.pitchAimY <= 66);
-                const targetColor = inAimZone ? '#22c55e' : '#f59e0b';
+                const themeColor = inAimZone ? '#22c55e' : '#f59e0b';
                 const s = aimPt.scale;
+                const now = Date.now();
+                const pulse = 1.0 + Math.sin(now / 160) * 0.08;
 
-                // [1] 포수 가죽 미트 (Mitt)
                 ctx.save();
                 ctx.translate(aimPt.x, aimPt.y);
 
-                // 미트 가죽 바디
-                ctx.fillStyle = '#78350f';
+                // [1] 외곽 회전 타겟 링 (Outer Radar Ring with Tick Marks)
+                ctx.strokeStyle = themeColor;
+                ctx.lineWidth = 2.2 * s;
+                ctx.shadowColor = themeColor;
+                ctx.shadowBlur = 14;
+
+                const rotAngle = (now / 1000) % (Math.PI * 2);
+                ctx.save();
+                ctx.rotate(rotAngle);
                 ctx.beginPath();
-                ctx.ellipse(0, 0, 16 * s, 14 * s, -0.15, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.strokeStyle = '#451a03';
-                ctx.lineWidth = 1.8 * s;
+                ctx.arc(0, 0, 26 * s * pulse, 0, Math.PI * 2);
                 ctx.stroke();
 
-                // 미트 포켓 (볼 받는 중앙 홀)
-                ctx.fillStyle = '#451a03';
-                ctx.beginPath();
-                ctx.arc(-2 * s, 0, 8 * s, 0, Math.PI * 2);
-                ctx.fill();
-
-                // 가죽 끈 스티치
-                ctx.strokeStyle = '#d97706';
-                ctx.lineWidth = 1.2 * s;
-                [-8 * s, -4 * s, 0, 4 * s, 8 * s].forEach(ly => {
+                // 4방향 코너 꺾쇠 브래킷
+                const bRad = 31 * s * pulse;
+                const bSpan = 5 * s;
+                for (let a = 0; a < 4; a++) {
+                    const ang = (a * Math.PI) / 2;
+                    const bx = Math.cos(ang) * bRad;
+                    const by = Math.sin(ang) * bRad;
                     ctx.beginPath();
-                    ctx.moveTo(-12 * s, ly);
-                    ctx.lineTo(-7 * s, ly);
-                    ctx.stroke();
-                });
+                    ctx.arc(bx, by, bSpan, 0, Math.PI * 2);
+                    ctx.fillStyle = themeColor;
+                    ctx.fill();
+                }
+                ctx.restore();
 
-                // [2] 포켓 중앙 타겟팅 조준경 & 십자선 (초록: 스트라이크 / 주황: 볼)
-                ctx.strokeStyle = targetColor;
-                ctx.fillStyle = inAimZone ? 'rgba(34, 197, 94, 0.3)' : 'rgba(245, 158, 11, 0.3)';
-                ctx.lineWidth = 2 * s;
-                ctx.shadowColor = targetColor;
-                ctx.shadowBlur = 12;
-
+                // [2] 중간 과녁 원형 타겟 (Concentric Middle Target Ring)
+                ctx.strokeStyle = inAimZone ? 'rgba(34, 197, 94, 0.75)' : 'rgba(245, 158, 11, 0.75)';
+                ctx.fillStyle = inAimZone ? 'rgba(34, 197, 94, 0.16)' : 'rgba(245, 158, 11, 0.16)';
+                ctx.lineWidth = 1.6 * s;
                 ctx.beginPath();
-                ctx.arc(0, 0, 9 * s, 0, Math.PI * 2);
+                ctx.arc(0, 0, 16 * s, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.stroke();
 
+                // [3] 중앙 불스아이 코어 (Center Bullseye & Laser Crosshairs)
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 1.8 * s;
                 ctx.beginPath();
-                ctx.moveTo(-15 * s, 0); ctx.lineTo(15 * s, 0);
-                ctx.moveTo(0, -15 * s); ctx.lineTo(0, 15 * s);
+                ctx.moveTo(-22 * s, 0); ctx.lineTo(22 * s, 0);
+                ctx.moveTo(0, -22 * s); ctx.lineTo(0, 22 * s);
                 ctx.stroke();
 
-                // [3] 스트라이크 코스 vs 유인구 볼 코스 상태 텍스트
-                ctx.font = `bold ${Math.max(9, Math.round(11 * s))}px sans-serif`;
-                ctx.textAlign = 'center';
-                ctx.fillStyle = targetColor;
-                ctx.shadowBlur = 8;
-                const statusLabel = inAimZone ? '🎯 스트라이크 코스' : '⚠️ 볼 / 유인구 코스';
-                ctx.fillText(statusLabel, 0, -22 * s);
-
-                // 조작 안내 미니 배지
-                ctx.font = `800 ${Math.max(8, Math.round(9 * s))}px monospace`;
+                // 중심 발광 도트
                 ctx.fillStyle = '#ffffff';
-                ctx.fillText('[클릭/버튼/WASD 조준] [Space 투구]', 0, 24 * s);
+                ctx.beginPath();
+                ctx.arc(0, 0, 4.5 * s, 0, Math.PI * 2);
+                ctx.fill();
+
+                // [4] 🌀 구종별 궤적 변화구 가이드 화살표 (Break Trajectory Arrow)
+                const pType = this.selectedPitchType;
+                ctx.save();
+                ctx.lineWidth = 3.0 * s;
+                ctx.strokeStyle = '#38bdf8';
+                ctx.shadowColor = '#38bdf8';
+                ctx.shadowBlur = 10;
+                ctx.fillStyle = '#38bdf8';
+
+                if (pType === 'fastball') {
+                    // 직구: 라이징 홉 수직 상승 화살표 (↑)
+                    ctx.beginPath();
+                    ctx.moveTo(0, 10 * s); ctx.lineTo(0, -18 * s);
+                    ctx.lineTo(-4 * s, -12 * s); ctx.moveTo(0, -18 * s); ctx.lineTo(4 * s, -12 * s);
+                    ctx.stroke();
+                } else if (pType === 'curve') {
+                    // 12-6 커브: 수직 폭포수 급낙차 곡선 (⤹)
+                    ctx.beginPath();
+                    ctx.arc(10 * s, 10 * s, 18 * s, Math.PI * 1.1, Math.PI * 1.8, false);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(10 * s, 28 * s); ctx.lineTo(5 * s, 20 * s); ctx.lineTo(15 * s, 20 * s);
+                    ctx.closePath(); ctx.fill();
+                } else if (pType === 'slider') {
+                    // 슬라이더: 날카로운 횡방향 와이프아웃 화살표 (➔)
+                    ctx.beginPath();
+                    ctx.moveTo(-16 * s, 4 * s); ctx.lineTo(20 * s, 4 * s);
+                    ctx.lineTo(14 * s, -1 * s); ctx.moveTo(20 * s, 4 * s); ctx.lineTo(14 * s, 9 * s);
+                    ctx.stroke();
+                } else if (pType === 'changeup') {
+                    // 체인지업: 서서히 가라앉는 싱커 화살표 (⇊)
+                    ctx.beginPath();
+                    ctx.moveTo(0, -6 * s); ctx.lineTo(0, 20 * s);
+                    ctx.lineTo(-4 * s, 14 * s); ctx.moveTo(0, 20 * s); ctx.lineTo(4 * s, 14 * s);
+                    ctx.stroke();
+                } else if (pType === 'knuckleball') {
+                    // 너클볼: 카오스 무회전 물결 곡선 (〰️)
+                    ctx.beginPath();
+                    ctx.moveTo(-16 * s, 0);
+                    ctx.bezierCurveTo(-8 * s, -10 * s, -4 * s, 10 * s, 0, 0);
+                    ctx.bezierCurveTo(4 * s, -10 * s, 8 * s, 10 * s, 16 * s, 0);
+                    ctx.stroke();
+                }
+                ctx.restore();
+
+                // [5] 상단 컴프야 스타일 콜 배지 (STRIKE / BALL & 구종 정보)
+                const callText = inAimZone ? '🎯 STRIKE' : '⚪ BALL';
+                const pChar = this.getCurrentPitcher();
+                const pSpeed = pChar.fastballSpeed || 156;
+                const pMap = {
+                    fastball: `⚡ 직구 ${pSpeed}k`,
+                    curve: '🌀 12-6 커브 112k',
+                    slider: '🌪️ 슬라이더 136k',
+                    changeup: '🐢 체인지업 118k',
+                    knuckleball: '🔮 너클볼 94k'
+                };
+                const fullLabel = `${callText} • ${pMap[pType] || 'FASTBALL'}`;
+
+                ctx.font = `bold ${Math.max(10, Math.round(11 * s))}px sans-serif`;
+                ctx.textAlign = 'center';
+                const textWidth = ctx.measureText(fullLabel).width;
+
+                // 배지 배경 필
+                ctx.fillStyle = inAimZone ? 'rgba(22, 163, 74, 0.92)' : 'rgba(2, 132, 199, 0.92)';
+                ctx.beginPath();
+                ctx.roundRect(-textWidth / 2 - 8, -38 * s, textWidth + 16, 17 * s, 6);
+                ctx.fill();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 1.0;
+                ctx.stroke();
+
+                ctx.fillStyle = '#ffffff';
+                ctx.shadowBlur = 0;
+                ctx.fillText(fullLabel, 0, -26 * s);
+
+                // [6] 하단 태블릿 터치 / 키보드 가이드 안내
+                ctx.font = `800 ${Math.max(8.5, Math.round(9.5 * s))}px sans-serif`;
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                ctx.shadowColor = '#000000';
+                ctx.shadowBlur = 6;
+                ctx.fillText('📱 터치·드래그 / ⌨️ [WASD·방향키] 조준  |  [Space/F] 투구', 0, 36 * s);
 
                 ctx.restore();
             }
@@ -5835,49 +5870,11 @@ class BaseballGame {
     }
 
     /**
-     * 🎯 투수 조준 위치 & 볼/스트라이크 판정 실시간 갱신 및 3x3 패드/볼 버튼 상태 동기화
+     * 🎯 [컴투스 프로야구] 3D 과녁 투수 조준 위치 실시간 갱신 (터치 & 키보드)
      */
-    setPitchAim(aimX, aimY, customLabel = null) {
+    setPitchAim(aimX, aimY) {
         this.pitchAimX = Math.max(-36, Math.min(36, aimX));
         this.pitchAimY = Math.max(10, Math.min(76, aimY));
-
-        const inZone = (Math.abs(this.pitchAimX) <= 24 && this.pitchAimY >= 22 && this.pitchAimY <= 66);
-        const callBadge = document.getElementById('mlb-pitcher-call-badge');
-        if (callBadge) {
-            if (inZone) {
-                callBadge.className = 'pitcher-current-call-badge strike';
-                callBadge.textContent = customLabel || '🎯 스트라이크 존 [포수 미트]';
-            } else {
-                callBadge.className = 'pitcher-current-call-badge ball';
-                callBadge.textContent = customLabel || '⚪ 볼 / 유인구 코스';
-            }
-        }
-
-        // 3x3 9분할 그리드 셀 및 4방향 유인구 버튼 UI 활성화 동기화
-        const gridCells = document.querySelectorAll('.mlb-grid-cell');
-        const ballBtns = document.querySelectorAll('.mlb-zone-quick-btn');
-
-        if (inZone) {
-            ballBtns.forEach(btn => btn.classList.remove('active'));
-            const col = this.pitchAimX < -8 ? 0 : (this.pitchAimX > 8 ? 2 : 1);
-            const row = this.pitchAimY > 51 ? 0 : (this.pitchAimY < 37 ? 2 : 1);
-            const activeIdx = row * 3 + col;
-            gridCells.forEach(cell => {
-                const cIdx = parseInt(cell.getAttribute('data-grid'), 10);
-                cell.classList.toggle('active', cIdx === activeIdx);
-            });
-        } else {
-            gridCells.forEach(cell => cell.classList.remove('active'));
-            ballBtns.forEach(btn => {
-                const zKey = btn.getAttribute('data-zone');
-                let match = false;
-                if (zKey === 'high-ball' && this.pitchAimY > 66) match = true;
-                else if (zKey === 'dirt-ball' && this.pitchAimY < 22) match = true;
-                else if (zKey === 'inside-ball' && this.pitchAimX < -24) match = true;
-                else if (zKey === 'outside-ball' && this.pitchAimX > 24) match = true;
-                btn.classList.toggle('active', match);
-            });
-        }
     }
 
     /**
