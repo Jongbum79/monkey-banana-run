@@ -21357,7 +21357,7 @@ class BaseballGame {
     }
 
     /**
-     * 🪵 [컴투스 프로야구 2026] 번트 타구 컨택트 및 진루/아웃 처리
+     * 🪵 [컴투스 프로야구 2026] 번트 타구 컨택트 및 진루/아웃 처리 (병살타/쓰리번트아웃/팝플라이/희생번트 완벽 구현)
      */
     executeBuntHit(b) {
         b.isHit = true;
@@ -21369,43 +21369,129 @@ class BaseballGame {
 
         // 번트 타구 사운드 ("툭-!" 데드볼 소리)
         this.playBuntSound();
-        this.camera.shake = 6;
-
-        // 번트 타구 물리: 내야 잔디에 툭 떨어져 천천히 굴러가는 타구
-        const dir = (Math.random() < 0.5) ? -1 : 1; // 3루선 또는 1루선
-        b.vx = dir * (40 + Math.random() * 25);
-        b.vy = 12 + Math.random() * 8;
-        b.vz = -110 - Math.random() * 45;
-        b.hitDist = Math.round(18 + Math.random() * 14);
-
-        // 내야수(투수, 3루수, 1루수) 돌진 수비 배정
-        const buntFielderRole = (dir < 0) ? '3B' : '1B';
-        this.assignFielderForBall(buntFielderRole);
 
         const prevBases = { ...this.bases };
-        const hasRunners = (this.bases[1] || this.bases[2] || this.bases[3]);
+        const runnerOnFirst = !!this.bases[1];
+        const runnerOnSecond = !!this.bases[2];
+        const hasRunners = (runnerOnFirst || runnerOnSecond || !!this.bases[3]);
 
-        if (hasRunners) {
-            // 희생 번트 성공! 주자들 전원 1베이스씩 안전하게 진루!
-            const scoredRuns = this.advanceRunnersOnHit('single');
-            this.spawnBaseRunners('bunt', prevBases);
-            if (scoredRuns > 0) this.addScore(scoredRuns, 'single');
+        // [규칙 1] 2스트라이크 상황에서 번트 파울/실패 -> 쓰리번트 아웃 (K!)
+        if (this.strikes >= 2 && Math.random() < 0.32) {
+            b.vz = 45; // 뒤로 튀는 파울
+            b.vy = 28;
+            b.vx = (Math.random() - 0.5) * 60;
+            this.camera.shake = 12;
+            this.playBatHitSound('foul');
+            this.recordOut('⚠️ 2스트라이크 쓰리번트 파울! 자동 삼진 아웃! (K!)');
+            this.showResultBanner('⚡ 쓰리번트 파울 삼진 아웃!!', '2스트라이크 이후 번트 파울은 자동 삼진 규정 적용', '#ef4444');
+            return;
+        }
+
+        // [규칙 2] 팝플라이 뜬공 번트 (16% 확률) -> 포수/투수 다이빙 캐치 아웃!
+        const isPopUp = Math.random() < 0.16;
+        if (isPopUp) {
+            b.vy = 75 + Math.random() * 25;
+            b.vz = -45 - Math.random() * 25;
+            b.vx = (Math.random() - 0.5) * 35;
+            b.hitType = 'out';
+            b.isFlyOut = true;
+            this.camera.shake = 8;
+            this.assignFielderForBall('P');
+            setTimeout(() => {
+                this.recordOut('🧤 빗맞은 번트 팝플라이! 투수 다이빙 포구 아웃!');
+                this.showResultBanner('🧤 번트 뜬공 포구 아웃!!', '공중으로 뜬 번트 타구를 놓치지 않고 아웃!', '#ef4444');
+            }, 1200);
+            return;
+        }
+
+        // [규칙 3] 1루에 주자가 있을 때: 투수/내야수 정면 번트 병살타 (BUNT DOUBLE PLAY!) (45% 확률)
+        // 번트가 너무 강하게 굴러가거나 투수 바로 앞으로 가면 1-6-3 / 1-4-3 병살타!
+        if (runnerOnFirst && Math.random() < 0.45) {
+            b.vx = (Math.random() - 0.5) * 16; // 투수 정면 직선 궤적
+            b.vy = 8 + Math.random() * 6;
+            b.vz = -130 - Math.random() * 30;
+            b.hitDist = 16;
+            this.camera.shake = 18;
+
+            // 투수가 달려들어 포구
+            this.assignFielderForBall('P');
+            b.isDoublePlay = true;
+
+            // 1. 투수 -> 2루수/유격수 2루 송구 (선행 주자 포스 아웃)
+            const ssFielder = this.fielders.find(f => f.role === 'SS' || f.role === '2B');
+            const firstBaseman = this.fielders.find(f => f.role === '1B');
+
+            this.fieldingThrow = {
+                active: true,
+                startX: 0,
+                startY: 12,
+                startZ: 280,
+                targetX: ssFielder ? ssFielder.x : 0,
+                targetY: 16,
+                targetZ: ssFielder ? ssFielder.z : 120,
+                x: 0,
+                y: 12,
+                z: 280,
+                progress: 0,
+                speed: 4.2,
+                catcher: ssFielder,
+                isRelayDoublePlay: true,
+                finalTarget: firstBaseman
+            };
+
+            // 주자 상황: 1루 주자 아웃, 타자 주자도 아웃 (2아웃 증가!)
+            this.bases[1] = null;
+            this.outs += 2;
+            this.camera.shake = 22;
+            this.playCatchSound();
             this.resetAtBatCount(false);
-            this.showResultBanner('🪵 [컴프야] 완벽한 희생 번트 작전 성공!!', (scoredRuns > 0 ? `주자 홈인! (+${scoredRuns}점 득점)` : '주자 1베이스씩 전원 안전 진루 성공!'), '#22c55e');
+
+            this.showResultBanner('⚡ [컴프야] 투수 앞 번트 병살타 작렬!! (DOUBLE PLAY)', '투수 ➔ 2루 ➔ 1루 전광석화 릴레이 병살타 완성! (2아웃)', '#ef4444');
+            return;
+        }
+
+        // [규칙 4] 주자가 있을 때 성공적인 희생 번트 (SACRIFICE BUNT)
+        // 타자는 1루에서 아웃되지만, 주자들은 1베이스씩 전원 안전하게 진루!
+        if (hasRunners) {
+            const dir = (Math.random() < 0.5) ? -1 : 1;
+            b.vx = dir * (42 + Math.random() * 22);
+            b.vy = 10 + Math.random() * 6;
+            b.vz = -95 - Math.random() * 30;
+            b.hitDist = 20;
+
+            const buntFielderRole = (dir < 0) ? '3B' : '1B';
+            this.assignFielderForBall(buntFielderRole);
+
+            // 주자들 1루씩 진루 (단 타자는 1루 아웃)
+            if (this.bases[3]) { this.bases[3] = null; this.addScore(1, 'bunt'); }
+            if (this.bases[2]) { this.bases[3] = this.bases[2]; this.bases[2] = null; }
+            if (this.bases[1]) { this.bases[2] = this.bases[1]; this.bases[1] = null; }
+
+            this.outs += 1;
+            this.spawnBaseRunners('bunt_sac', prevBases);
+            this.resetAtBatCount(false);
+            this.showResultBanner('🪵 [컴프야] 완벽한 희생 번트 작전 성공!!', '타자 1루 아웃, 주자 전원 득점권 안전 진루 성공! (1아웃)', '#22c55e');
+            return;
+        }
+
+        // [규칙 5] 주자 없을 때의 기습 번트 (DRAG BUNT)
+        // 25% 확률로 절묘한 코스 1루 세이프 안타, 75% 1루수/투수 포구 아웃
+        const dir = (Math.random() < 0.5) ? -1 : 1;
+        b.vx = dir * (38 + Math.random() * 26);
+        b.vy = 10 + Math.random() * 6;
+        b.vz = -105 - Math.random() * 35;
+        b.hitDist = 22;
+
+        const isSafe = Math.random() < 0.25; // 25% 성공률
+        if (isSafe) {
+            this.bases[1] = '타자';
+            this.spawnBaseRunners('single', prevBases);
+            this.resetAtBatCount(true);
+            this.showResultBanner('⚡ [컴프야] 3루선 타고 흐르는 기습 번트 내야 안타!!', '총알같은 전력 질주로 1루에서 간발의 차 세이프!', '#38bdf8');
         } else {
-            // 주자 없을 때의 기습 번트 (Drag Bunt): 35% 확률로 1루 세이프 안타, 65% 아웃
-            const isSafe = Math.random() < 0.35;
-            if (isSafe) {
-                const scoredRuns = this.advanceRunnersOnHit('single');
-                this.spawnBaseRunners('single', prevBases);
-                this.resetAtBatCount(true);
-                this.showResultBanner('⚡ [컴프야] 허를 찌르는 기습 번트 내야 안타!!', '빠른 발로 1루에서 세이프 판정!', '#38bdf8');
-            } else {
-                this.spawnBaseRunners('bunt_out', prevBases);
-                this.recordOut();
-                this.resetAtBatCount(false);
-                this.showResultBanner('🛡️ 기습 번트 타구 1루수 포구 아웃!', '아쉽게 1루에서 아웃되었습니다.', '#ef4444');
-            }
+            this.spawnBaseRunners('bunt_out', prevBases);
+            this.recordOut('🛡️ 기습 번트 타구 1루수 빠른 포구 송구 아웃!');
+            this.showResultBanner('🛡️ 기습 번트 1루 땅볼 아웃!', '수비수의 빠른 대쉬로 1루에서 아웃되었습니다.', '#ef4444');
         }
     }
 
@@ -22117,7 +22203,30 @@ class BaseballGame {
                     if (ft.catcher) {
                         ft.catcher.action = 'stretching'; // 베이스 위 글러브 포구 자세
                     }
-                    if (this.ball && this.ball.hitType === 'out') {
+
+                    // ⚡ [컴프야] 번트 병살타 2단 릴레이 송구 (2루 ➔ 1루)
+                    if (ft.isRelayDoublePlay && ft.finalTarget) {
+                        this.fieldingThrow = {
+                            active: true,
+                            startX: ft.targetX,
+                            startY: 18,
+                            startZ: ft.targetZ,
+                            targetX: ft.finalTarget.x,
+                            targetY: 16,
+                            targetZ: ft.finalTarget.z,
+                            x: ft.targetX,
+                            y: 18,
+                            z: ft.targetZ,
+                            progress: 0,
+                            speed: 4.6,
+                            catcher: ft.finalTarget,
+                            isRelayDoublePlay: false,
+                            finalTarget: null
+                        };
+                        return;
+                    }
+
+                    if (this.ball && this.ball.hitType === 'out' && !b.isDoublePlay) {
                         const srcName = ft.sourceFielder ? ft.sourceFielder.name : '내야수';
                         this.recordOut(`🛡️ ${srcName} 포구 & 1루 총알 송구 아웃!`);
                     }
@@ -23562,24 +23671,41 @@ class BaseballGame {
             legKickY = -h * 0.38 * Math.sin(windupProg * Math.PI);
         }
 
-        // 지지 다리 (오른다리)
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(w * 0.05, -h * 0.42, w * 0.36, h * 0.42);
+        // 지지 다리 (오른다리 - 3D 입체 원기둥)
+        const pLegGradR = ctx.createLinearGradient(w * 0.05, 0, w * 0.41, 0);
+        pLegGradR.addColorStop(0, '#f1f5f9');
+        pLegGradR.addColorStop(0.35, '#ffffff');
+        pLegGradR.addColorStop(1, '#475569');
+        ctx.fillStyle = pLegGradR;
+        ctx.beginPath();
+        ctx.roundRect(w * 0.05, -h * 0.42, w * 0.36, h * 0.42, 4 * s);
+        ctx.fill();
         ctx.fillStyle = pSkin.jersey;
         ctx.fillRect(w * 0.05, -h * 0.2, w * 0.36, h * 0.1);
         ctx.fillStyle = '#1e293b';
         ctx.fillRect(w * 0.02, -h * 0.06, w * 0.42, h * 0.06);
 
-        // 킥하는 앞다리 (왼다리)
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(-w * 0.45, -h * 0.42 + legKickY, w * 0.36, h * 0.42 - legKickY);
+        // 킥하는 앞다리 (왼다리 - 3D 입체 원기둥)
+        const pLegGradL = ctx.createLinearGradient(-w * 0.45, 0, -w * 0.09, 0);
+        pLegGradL.addColorStop(0, '#cbd5e1');
+        pLegGradL.addColorStop(0.3, '#ffffff');
+        pLegGradL.addColorStop(1, '#64748b');
+        ctx.fillStyle = pLegGradL;
+        ctx.beginPath();
+        ctx.roundRect(-w * 0.45, -h * 0.42 + legKickY, w * 0.36, h * 0.42 - legKickY, 4 * s);
+        ctx.fill();
         ctx.fillStyle = pSkin.jersey;
         ctx.fillRect(-w * 0.45, -h * 0.2 + legKickY, w * 0.36, h * 0.1);
         ctx.fillStyle = '#1e293b';
         ctx.fillRect(-w * 0.48, -h * 0.06 + legKickY, w * 0.42, h * 0.06);
 
-        // 2. 상체 유니폼 (저지)
-        ctx.fillStyle = pSkin.jersey;
+        // 2. 상체 유니폼 (3D 저지 볼륨 그라데이션)
+        const pJerseyGrad = ctx.createLinearGradient(-w * 0.48, 0, w * 0.48, 0);
+        pJerseyGrad.addColorStop(0, pSkin.jersey);
+        pJerseyGrad.addColorStop(0.3, '#ffffff');
+        pJerseyGrad.addColorStop(0.6, pSkin.jersey);
+        pJerseyGrad.addColorStop(1, '#020617');
+        ctx.fillStyle = pJerseyGrad;
         ctx.beginPath();
         ctx.roundRect(-w * 0.48, -h * 0.82, w * 0.96, h * 0.44, 8 * s);
         ctx.fill();
@@ -23710,10 +23836,25 @@ class BaseballGame {
             weightShiftY = Math.sin(idleCycle) * 1.2 * s;
         }
 
-        // 다리 & 유니폼 바지 (스탠스에 따른 스트라이드 이동)
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(-w * 0.46 + strideX, -h * 0.42 + weightShiftY, w * 0.38, h * 0.42 - weightShiftY);
-        ctx.fillRect(w * 0.06, -h * 0.42 + weightShiftY, w * 0.38, h * 0.42 - weightShiftY);
+        // 3D 입체 원기둥 음영 다리 & 유니폼 바지 (스탠스에 따른 스트라이드 이동)
+        const leftLegGrad = ctx.createLinearGradient(-w * 0.46 + strideX, 0, -w * 0.08 + strideX, 0);
+        leftLegGrad.addColorStop(0, '#cbd5e1');
+        leftLegGrad.addColorStop(0.3, '#ffffff');
+        leftLegGrad.addColorStop(0.8, '#f1f5f9');
+        leftLegGrad.addColorStop(1, '#64748b');
+        ctx.fillStyle = leftLegGrad;
+        ctx.beginPath();
+        ctx.roundRect(-w * 0.46 + strideX, -h * 0.42 + weightShiftY, w * 0.38, h * 0.42 - weightShiftY, 4 * s);
+        ctx.fill();
+
+        const rightLegGrad = ctx.createLinearGradient(w * 0.06, 0, w * 0.44, 0);
+        rightLegGrad.addColorStop(0, '#f1f5f9');
+        rightLegGrad.addColorStop(0.4, '#ffffff');
+        rightLegGrad.addColorStop(1, '#475569');
+        ctx.fillStyle = rightLegGrad;
+        ctx.beginPath();
+        ctx.roundRect(w * 0.06, -h * 0.42 + weightShiftY, w * 0.38, h * 0.42 - weightShiftY, 4 * s);
+        ctx.fill();
 
         // 유니폼 파이핑 라인 (측면 스트라이프)
         ctx.fillStyle = bSkin.jersey;
@@ -23728,15 +23869,21 @@ class BaseballGame {
         ctx.fillRect(-w * 0.49 + strideX, -h * 0.06, w * 0.44, h * 0.06);
         ctx.fillRect(w * 0.03, -h * 0.06, w * 0.44, h * 0.06);
 
-        // 상체 저지 (회전 포함)
+        // 상체 저지 (3D 볼륨 회전체 렌더링)
         ctx.save();
         ctx.translate(strideX * 0.3, weightShiftY);
         ctx.rotate(hipAngle);
-        ctx.fillStyle = bSkin.jersey;
+
+        const jerseyGrad = ctx.createLinearGradient(-w * 0.48, 0, w * 0.48, 0);
+        jerseyGrad.addColorStop(0, bSkin.jersey);
+        jerseyGrad.addColorStop(0.25, '#ffffff'); // 입체 하이라이트 림
+        jerseyGrad.addColorStop(0.55, bSkin.jersey);
+        jerseyGrad.addColorStop(1, '#0f172a'); // 깊은 3D 앰비언트 오클루전
+        ctx.fillStyle = jerseyGrad;
         ctx.beginPath();
         ctx.roundRect(-w * 0.48, -h * 0.82, w * 0.96, h * 0.44, 8 * s);
         ctx.fill();
-        ctx.strokeStyle = '#0f172a';
+        ctx.strokeStyle = '#020617';
         ctx.lineWidth = 2 * s;
         ctx.stroke();
 
@@ -23759,8 +23906,13 @@ class BaseballGame {
         else if (bChar.id === 'penguin') this.drawPenguinFace(ctx, s, isCloseView, bSkin);
         else this.drawMonkeyFace(ctx, s, isCloseView, bSkin);
 
-        // 타자 헬멧 & 귀마개 (귀 보호대)
-        ctx.fillStyle = bSkin.cap;
+        // 타자 헬멧 (3D 볼륨 반구체 & 광택 반사광)
+        const helmetGrad = ctx.createRadialGradient(-4 * s, -12 * s, 2 * s, 0, -6 * s, 18 * s);
+        helmetGrad.addColorStop(0, '#ffffff'); // 태양광/조명탑 스펙큘러 하이라이트
+        helmetGrad.addColorStop(0.3, bSkin.cap);
+        helmetGrad.addColorStop(0.85, bSkin.cap);
+        helmetGrad.addColorStop(1, '#020617'); // 하단 깊은 3D 그림자
+        ctx.fillStyle = helmetGrad;
         ctx.beginPath();
         ctx.arc(0, -6 * s, 17 * s, Math.PI, Math.PI * 2);
         ctx.fill();
