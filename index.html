@@ -235,23 +235,35 @@
 
         <!-- ⚾ [투수 전용 조작부] 하단 투수 컨트롤 콘솔 (구종 + 볼/스트라이크 코스 선택기) -->
         <div class="mlb-pitcher-bar" id="mlb-pitcher-bar" style="display:none;">
-            <!-- [1] 볼 / 스트라이크 판정 & 투구 위치 빠른 선택기 -->
+            <!-- [1] 🎯 9분할 스트라이크 존 & 유인구 조준 패드 (9-Grid Pitch Target Pad) -->
             <div class="pitcher-zone-selector-wrap">
                 <div class="pitcher-zone-header">
-                    <span class="pitcher-zone-title">🎯 투구 위치 & 볼/스트라이크 선택:</span>
+                    <span class="pitcher-zone-title">🎯 투구 코스 조준 [9분할 패드 / 화면 터치]:</span>
                     <span class="pitcher-current-call-badge strike" id="mlb-pitcher-call-badge">🎯 스트라이크 [한가운데]</span>
                 </div>
-                <div class="pitcher-zone-buttons-row">
-                    <!-- 스트라이크 존 코스들 -->
-                    <button type="button" class="mlb-zone-quick-btn strike active" data-zone="center">🎯 한가운데</button>
-                    <button type="button" class="mlb-zone-quick-btn strike" data-zone="corner-strike">🎯 외곽 코너워크</button>
-                    <button type="button" class="mlb-zone-quick-btn strike" data-zone="low-strike">🎯 무릎 보더라인</button>
-                    <button type="button" class="mlb-zone-quick-btn strike" data-zone="high-strike">🎯 높은 존</button>
-                    <!-- 볼 / 유인구 코스들 -->
-                    <button type="button" class="mlb-zone-quick-btn ball" data-zone="outside-ball">⚪ 바깥쪽 유인구(볼)</button>
-                    <button type="button" class="mlb-zone-quick-btn ball" data-zone="dirt-ball">⚪ 원바운드 볼(흙)</button>
-                    <button type="button" class="mlb-zone-quick-btn ball" data-zone="high-ball">⚪ 높은 하이볼</button>
-                    <button type="button" class="mlb-zone-quick-btn ball" data-zone="inside-ball">⚪ 몸쪽 위협구</button>
+                <div class="pitcher-pad-layout">
+                    <!-- 상단 하이볼 유인구 -->
+                    <button type="button" class="mlb-zone-quick-btn ball top-ball-btn" data-zone="high-ball" title="높은 하이볼 유인구">⬆️ 높은 볼 (하이볼)</button>
+                    <div class="pitcher-pad-mid-row">
+                        <!-- 좌측 몸쪽볼 유인구 -->
+                        <button type="button" class="mlb-zone-quick-btn ball side-ball-btn" data-zone="inside-ball" title="몸쪽 깊은 볼">⬅️ 몸쪽 볼</button>
+                        <!-- 중앙 3x3 9분할 스트라이크 존 패드 -->
+                        <div class="pitcher-3x3-grid" id="mlb-pitcher-3x3-grid">
+                            <button type="button" class="mlb-grid-cell" data-grid="0" title="몸쪽 높은 스트라이크">1 ↖</button>
+                            <button type="button" class="mlb-grid-cell" data-grid="1" title="가운데 높은 스트라이크">2 ⬆</button>
+                            <button type="button" class="mlb-grid-cell" data-grid="2" title="바깥쪽 높은 스트라이크">3 ↗</button>
+                            <button type="button" class="mlb-grid-cell" data-grid="3" title="몸쪽 벨트 스트라이크">4 ◀</button>
+                            <button type="button" class="mlb-grid-cell active" data-grid="4" title="한가운데 실투 스트라이크">5 🎯</button>
+                            <button type="button" class="mlb-grid-cell" data-grid="5" title="바깥쪽 벨트 스트라이크">6 ▶</button>
+                            <button type="button" class="mlb-grid-cell" data-grid="6" title="몸쪽 낮은 보더라인">7 ↙</button>
+                            <button type="button" class="mlb-grid-cell" data-grid="7" title="가운데 낮은 보더라인">8 ⬇</button>
+                            <button type="button" class="mlb-grid-cell" data-grid="8" title="바깥쪽 칼날 제구">9 ↘</button>
+                        </div>
+                        <!-- 우측 바깥쪽볼 유인구 -->
+                        <button type="button" class="mlb-zone-quick-btn ball side-ball-btn" data-zone="outside-ball" title="바깥쪽 빠지는 볼">바깥쪽 볼 ➡️</button>
+                    </div>
+                    <!-- 하단 원바운드볼 유인구 -->
+                    <button type="button" class="mlb-zone-quick-btn ball bot-ball-btn" data-zone="dirt-ball" title="원바운드 흙 낮은 볼">⬇️ 원바운드 볼 (흙)</button>
                 </div>
             </div>
 

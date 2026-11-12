@@ -3452,6 +3452,77 @@ body.is-playing .concept-badge {
     box-shadow: 0 0 10px rgba(2, 132, 199, 0.6);
 }
 
+.pitcher-pad-layout {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    width: 100%;
+}
+
+.pitcher-pad-mid-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: center;
+}
+
+.pitcher-3x3-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 38px);
+    grid-template-rows: repeat(3, 28px);
+    gap: 3px;
+    padding: 3px;
+    background: rgba(15, 23, 42, 0.95);
+    border: 2px solid rgba(234, 179, 8, 0.85);
+    border-radius: 8px;
+    box-shadow: 0 0 12px rgba(234, 179, 8, 0.35);
+}
+
+.mlb-grid-cell {
+    font-size: 11px;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    cursor: pointer;
+    background: rgba(30, 41, 59, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #e2e8f0;
+    transition: all 0.12s ease;
+    padding: 0;
+}
+
+.mlb-grid-cell:hover {
+    background: rgba(56, 189, 248, 0.4);
+    border-color: #38bdf8;
+    transform: scale(1.06);
+}
+
+.mlb-grid-cell.active {
+    background: linear-gradient(135deg, #22c55e, #15803d);
+    color: #ffffff;
+    border-color: #4ade80;
+    box-shadow: 0 0 10px rgba(34, 197, 94, 0.85);
+    transform: scale(1.10);
+    z-index: 2;
+}
+
+.top-ball-btn, .bot-ball-btn {
+    font-size: 10px;
+    font-weight: 800;
+    padding: 2px 14px;
+    border-radius: 6px;
+}
+
+.side-ball-btn {
+    font-size: 10px;
+    font-weight: 800;
+    padding: 6px 8px;
+    border-radius: 6px;
+}
+
 .pitcher-zone-buttons-row {
     display: flex;
     align-items: center;
@@ -3998,23 +4069,35 @@ body.is-playing .concept-badge {
 
         <!-- ⚾ [투수 전용 조작부] 하단 투수 컨트롤 콘솔 (구종 + 볼/스트라이크 코스 선택기) -->
         <div class="mlb-pitcher-bar" id="mlb-pitcher-bar" style="display:none;">
-            <!-- [1] 볼 / 스트라이크 판정 & 투구 위치 빠른 선택기 -->
+            <!-- [1] 🎯 9분할 스트라이크 존 & 유인구 조준 패드 (9-Grid Pitch Target Pad) -->
             <div class="pitcher-zone-selector-wrap">
                 <div class="pitcher-zone-header">
-                    <span class="pitcher-zone-title">🎯 투구 위치 & 볼/스트라이크 선택:</span>
+                    <span class="pitcher-zone-title">🎯 투구 코스 조준 [9분할 패드 / 화면 터치]:</span>
                     <span class="pitcher-current-call-badge strike" id="mlb-pitcher-call-badge">🎯 스트라이크 [한가운데]</span>
                 </div>
-                <div class="pitcher-zone-buttons-row">
-                    <!-- 스트라이크 존 코스들 -->
-                    <button type="button" class="mlb-zone-quick-btn strike active" data-zone="center">🎯 한가운데</button>
-                    <button type="button" class="mlb-zone-quick-btn strike" data-zone="corner-strike">🎯 외곽 코너워크</button>
-                    <button type="button" class="mlb-zone-quick-btn strike" data-zone="low-strike">🎯 무릎 보더라인</button>
-                    <button type="button" class="mlb-zone-quick-btn strike" data-zone="high-strike">🎯 높은 존</button>
-                    <!-- 볼 / 유인구 코스들 -->
-                    <button type="button" class="mlb-zone-quick-btn ball" data-zone="outside-ball">⚪ 바깥쪽 유인구(볼)</button>
-                    <button type="button" class="mlb-zone-quick-btn ball" data-zone="dirt-ball">⚪ 원바운드 볼(흙)</button>
-                    <button type="button" class="mlb-zone-quick-btn ball" data-zone="high-ball">⚪ 높은 하이볼</button>
-                    <button type="button" class="mlb-zone-quick-btn ball" data-zone="inside-ball">⚪ 몸쪽 위협구</button>
+                <div class="pitcher-pad-layout">
+                    <!-- 상단 하이볼 유인구 -->
+                    <button type="button" class="mlb-zone-quick-btn ball top-ball-btn" data-zone="high-ball" title="높은 하이볼 유인구">⬆️ 높은 볼 (하이볼)</button>
+                    <div class="pitcher-pad-mid-row">
+                        <!-- 좌측 몸쪽볼 유인구 -->
+                        <button type="button" class="mlb-zone-quick-btn ball side-ball-btn" data-zone="inside-ball" title="몸쪽 깊은 볼">⬅️ 몸쪽 볼</button>
+                        <!-- 중앙 3x3 9분할 스트라이크 존 패드 -->
+                        <div class="pitcher-3x3-grid" id="mlb-pitcher-3x3-grid">
+                            <button type="button" class="mlb-grid-cell" data-grid="0" title="몸쪽 높은 스트라이크">1 ↖</button>
+                            <button type="button" class="mlb-grid-cell" data-grid="1" title="가운데 높은 스트라이크">2 ⬆</button>
+                            <button type="button" class="mlb-grid-cell" data-grid="2" title="바깥쪽 높은 스트라이크">3 ↗</button>
+                            <button type="button" class="mlb-grid-cell" data-grid="3" title="몸쪽 벨트 스트라이크">4 ◀</button>
+                            <button type="button" class="mlb-grid-cell active" data-grid="4" title="한가운데 실투 스트라이크">5 🎯</button>
+                            <button type="button" class="mlb-grid-cell" data-grid="5" title="바깥쪽 벨트 스트라이크">6 ▶</button>
+                            <button type="button" class="mlb-grid-cell" data-grid="6" title="몸쪽 낮은 보더라인">7 ↙</button>
+                            <button type="button" class="mlb-grid-cell" data-grid="7" title="가운데 낮은 보더라인">8 ⬇</button>
+                            <button type="button" class="mlb-grid-cell" data-grid="8" title="바깥쪽 칼날 제구">9 ↘</button>
+                        </div>
+                        <!-- 우측 바깥쪽볼 유인구 -->
+                        <button type="button" class="mlb-zone-quick-btn ball side-ball-btn" data-zone="outside-ball" title="바깥쪽 빠지는 볼">바깥쪽 볼 ➡️</button>
+                    </div>
+                    <!-- 하단 원바운드볼 유인구 -->
+                    <button type="button" class="mlb-zone-quick-btn ball bot-ball-btn" data-zone="dirt-ball" title="원바운드 흙 낮은 볼">⬇️ 원바운드 볼 (흙)</button>
                 </div>
             </div>
 
@@ -20005,6 +20088,107 @@ function safeSetStorage(key, value) {
     } catch (e) {}
 }
 
+/**
+ * 🌐 경량 표준 WebSocket MQTT 3.1.1 클라이언트 (단말 간 실시간 크로스 디바이스 1:1 대전)
+ */
+class SimpleMqttClient {
+    constructor(brokerUrls, onMessage, onStatusChange) {
+        this.brokerUrls = Array.isArray(brokerUrls) ? brokerUrls : [brokerUrls];
+        this.brokerIdx = 0;
+        this.ws = null;
+        this.onMessage = onMessage;
+        this.onStatusChange = onStatusChange;
+        this.clientId = 'bb_' + Math.random().toString(36).slice(2, 9);
+        this.connected = false;
+        this.subscribedTopics = new Set();
+        this.connect();
+    }
+
+    connect() {
+        if (typeof WebSocket === 'undefined') return;
+        const url = this.brokerUrls[this.brokerIdx % this.brokerUrls.length];
+        try {
+            this.ws = new WebSocket(url, ['mqtt']);
+            this.ws.binaryType = 'arraybuffer';
+            this.ws.onopen = () => {
+                this.sendConnect();
+            };
+            this.ws.onmessage = (e) => {
+                this.handlePacket(new Uint8Array(e.data));
+            };
+            this.ws.onerror = () => {
+                this.connected = false;
+                if (this.onStatusChange) this.onStatusChange(false, 'error');
+            };
+            this.ws.onclose = () => {
+                this.connected = false;
+                if (this.onStatusChange) this.onStatusChange(false, 'closed');
+            };
+        } catch (err) {
+            if (this.onStatusChange) this.onStatusChange(false, 'failed');
+        }
+    }
+
+    sendConnect() {
+        const proto = [0x00, 0x04, 0x4D, 0x51, 0x54, 0x54, 0x04, 0x02, 0x00, 0x3C];
+        const idBytes = new TextEncoder().encode(this.clientId);
+        const payload = [idBytes.length >> 8, idBytes.length & 0xFF, ...idBytes];
+        const body = [...proto, ...payload];
+        const packet = new Uint8Array([0x10, body.length, ...body]);
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(packet.buffer);
+        }
+    }
+
+    subscribe(topic) {
+        this.subscribedTopics.add(topic);
+        if (!this.connected || !this.ws || this.ws.readyState !== WebSocket.OPEN) return;
+        const tBytes = new TextEncoder().encode(topic);
+        const body = [0x00, 0x01, tBytes.length >> 8, tBytes.length & 0xFF, ...tBytes, 0x00];
+        const packet = new Uint8Array([0x82, body.length, ...body]);
+        this.ws.send(packet.buffer);
+    }
+
+    publish(topic, dataObj) {
+        if (!this.connected || !this.ws || this.ws.readyState !== WebSocket.OPEN) return;
+        const tBytes = new TextEncoder().encode(topic);
+        const mBytes = new TextEncoder().encode(typeof dataObj === 'string' ? dataObj : JSON.stringify(dataObj));
+        const body = [tBytes.length >> 8, tBytes.length & 0xFF, ...tBytes, ...mBytes];
+        const packet = new Uint8Array([0x30, body.length, ...body]);
+        this.ws.send(packet.buffer);
+    }
+
+    handlePacket(buf) {
+        if (!buf || buf.length < 2) return;
+        const packetType = buf[0] >> 4;
+        if (packetType === 2) {
+            this.connected = true;
+            if (this.onStatusChange) this.onStatusChange(true, 'connected');
+            for (const topic of this.subscribedTopics) {
+                this.subscribe(topic);
+            }
+        } else if (packetType === 3) {
+            const topicLen = (buf[2] << 8) | buf[3];
+            const topic = new TextDecoder().decode(buf.subarray(4, 4 + topicLen));
+            const payloadStr = new TextDecoder().decode(buf.subarray(4 + topicLen));
+            try {
+                const parsed = JSON.parse(payloadStr);
+                if (this.onMessage) this.onMessage(topic, parsed);
+            } catch (e) {
+                if (this.onMessage) this.onMessage(topic, payloadStr);
+            }
+        }
+    }
+
+    close() {
+        if (this.ws) {
+            try { this.ws.close(); } catch (e) {}
+            this.ws = null;
+        }
+        this.connected = false;
+    }
+}
+
 class BaseballGame {
     constructor(soundManager) {
         this.sound = soundManager;
@@ -20262,10 +20446,14 @@ class BaseballGame {
         this.maxDistance = 0;
         this.difficulty = 'normal'; // 'easy' (초보자) | 'normal' (표준) | 'pro' (프로)
 
-        // 🌐 서버 매칭 상태 머신
+        // 🌐 서버 매칭 상태 머신 & 크로스 디바이스 1:1 대전 네트워크
         this.isMatching = false;
         this.matchCountdown = 10;
         this.matchTimerId = null;
+        this.myPeerId = 'bb_peer_' + Math.random().toString(36).slice(2, 9);
+        this.activeRoom = null;
+        this.isMultiplayer = false;
+        this.mqttClient = null;
         this.broadcastChannel = null;
         try {
             if (typeof window !== 'undefined' && window.BroadcastChannel) {
@@ -20420,22 +20608,130 @@ class BaseballGame {
         this.broadcastChannel.onmessage = (event) => {
             const data = event.data;
             if (!data) return;
-
-            // 상대 유저가 매칭 대기 중인 경우 실시간 피어 매칭 성사!
-            if (data.type === 'FIND_RIVAL' && this.isMatching) {
-                if (data.role !== this.userRole) {
-                    this.completeMatchmaking(data.userName, data.char, data.skin, false);
-                    this.broadcastChannel.postMessage({
-                        type: 'MATCH_ACCEPTED',
-                        userName: this.p1.name,
-                        char: this.p1.char,
-                        skin: this.p1.skin
-                    });
-                }
-            } else if (data.type === 'MATCH_ACCEPTED' && this.isMatching) {
-                this.completeMatchmaking(data.userName, data.char, data.skin, false);
-            }
+            this.handleNetworkMessage('smile_baseball/lobby', data);
         };
+    }
+
+    /**
+     * 🌐 크로스 디바이스 글로벌 실시간 대전 네트워크 초기화 (EMQX & HiveMQ 다중 브로커)
+     */
+    initNetwork() {
+        if (!this.mqttClient) {
+            const brokers = [
+                'wss://broker.emqx.io:8084/mqtt',
+                'wss://broker.hivemq.com:8884/mqtt'
+            ];
+            this.mqttClient = new SimpleMqttClient(
+                brokers,
+                (topic, data) => this.handleNetworkMessage(topic, data),
+                (connected) => {
+                    const statusEl = document.getElementById('mlb-radar-status');
+                    if (connected && this.isMatching && statusEl) {
+                        statusEl.textContent = '⚡ 서버 접속 성공! 상대 유저 매칭 대기 중...';
+                    }
+                }
+            );
+        }
+        if (this.mqttClient) {
+            this.mqttClient.subscribe('smile_baseball/lobby');
+        }
+    }
+
+    sendNetworkMessage(topic, obj) {
+        if (!obj) return;
+        obj.senderPeerId = this.myPeerId;
+        if (this.mqttClient && this.mqttClient.connected) {
+            this.mqttClient.publish(topic, obj);
+        }
+        if (this.broadcastChannel) {
+            this.broadcastChannel.postMessage(obj);
+        }
+    }
+
+    /**
+     * 🌐 글로벌 실시간 매칭 & 인게임 실시간 데이터 핸들러
+     */
+    handleNetworkMessage(topic, data) {
+        if (!data || typeof data !== 'object') return;
+
+        // [1] 로비 매칭 단계
+        if (topic === 'smile_baseball/lobby') {
+            if (!this.isMatching || this.activeRoom) return;
+
+            // 상대 단말이 매칭 요청(FIND_RIVAL)을 보냈을 때
+            if (data.type === 'FIND_RIVAL' && data.peerId !== this.myPeerId) {
+                // peerId가 더 작은 쪽이 방장(Coordinator)이 되어 방을 개설하고 역할을 배정
+                if (this.myPeerId < data.peerId) {
+                    const roomId = 'room_' + this.myPeerId.slice(-6) + '_' + data.peerId.slice(-6);
+                    this.activeRoom = roomId;
+                    this.isMultiplayer = true;
+
+                    // 역할 배정 (둘 다 같은 역할을 골랐어도 무조건 한 명은 투수, 한 명은 타자로 자동 배정하여 100% 매칭 성사!)
+                    let hostRole = this.userRole;
+                    let guestRole = data.role;
+                    if (hostRole === guestRole) {
+                        guestRole = (hostRole === 'pitcher') ? 'batter' : 'pitcher';
+                    }
+
+                    const invite = {
+                        type: 'MATCH_INVITE',
+                        hostPeerId: this.myPeerId,
+                        guestPeerId: data.peerId,
+                        room: roomId,
+                        hostRole: hostRole,
+                        guestRole: guestRole,
+                        hostName: this.p1.name,
+                        hostChar: this.p1.char,
+                        hostSkin: this.p1.skin
+                    };
+                    this.sendNetworkMessage('smile_baseball/lobby', invite);
+
+                    // 룸 토픽 구독 및 매칭 완료
+                    if (this.mqttClient) this.mqttClient.subscribe('smile_baseball/' + roomId);
+                    this.completeMatchmaking(data.userName, data.char, data.skin, false);
+                }
+            } else if (data.type === 'MATCH_INVITE' && data.guestPeerId === this.myPeerId) {
+                // 방장으로부터 초대를 받은 게스트 단말!
+                this.activeRoom = data.room;
+                this.isMultiplayer = true;
+                this.userRole = data.guestRole;
+                this.resetCamera();
+                this.updateHUD();
+
+                const accept = {
+                    type: 'MATCH_ACCEPT',
+                    hostPeerId: data.hostPeerId,
+                    guestPeerId: this.myPeerId,
+                    room: data.room,
+                    guestName: this.p1.name,
+                    guestChar: this.p1.char,
+                    guestSkin: this.p1.skin
+                };
+                this.sendNetworkMessage('smile_baseball/lobby', accept);
+
+                if (this.mqttClient) this.mqttClient.subscribe('smile_baseball/' + data.room);
+                this.completeMatchmaking(data.hostName, data.hostChar, data.hostSkin, false);
+            } else if (data.type === 'MATCH_ACCEPT' && data.hostPeerId === this.myPeerId && data.room === this.activeRoom) {
+                // 방장이 수락 확인 완료
+                if (this.mqttClient) this.mqttClient.subscribe('smile_baseball/' + data.room);
+            }
+            return;
+        }
+
+        // [2] 룸 실시간 인게임 플레이 동기화 (투구, 타격, 스윙)
+        if (this.activeRoom && topic === 'smile_baseball/' + this.activeRoom) {
+            if (data.senderPeerId === this.myPeerId) return; // 본인 패킷 무시
+
+            if (data.type === 'REMOTE_PITCH') {
+                if (this.userRole === 'batter') {
+                    this.applyRemotePitch(data);
+                }
+            } else if (data.type === 'REMOTE_SWING') {
+                if (this.userRole === 'pitcher') {
+                    this.triggerBatterSwing();
+                }
+            }
+        }
     }
 
     bindEvents() {
@@ -20496,8 +20792,9 @@ class BaseballGame {
             const handlePointerPitchAim = (e) => {
                 if (this.userRole !== 'pitcher' || this.gameState !== 'aiming') return;
                 const rect = this.canvas.getBoundingClientRect();
-                const px = e.clientX - rect.left;
-                const py = e.clientY - rect.top;
+                // 📱 모바일/고해상도 터치 좌표를 캔버스 논리 해상도(this.width, this.height)로 1:1 완벽 보정
+                const px = (e.clientX - rect.left) * (this.width / rect.width);
+                const py = (e.clientY - rect.top) * (this.height / rect.height);
                 // 투수 카메라 역투영 (z=380 홈플레이트 평면 기준)
                 const scale = this.camera.fov / (380 - this.camera.z);
                 const aimX = this.camera.x + (px - this.width / 2) / scale;
@@ -20528,6 +20825,17 @@ class BaseballGame {
                 isAimDragging = false;
             });
         }
+
+        // 🎯 3x3 9분할 스트라이크 존 그리드 셀 버튼들
+        const gridCells = document.querySelectorAll('.mlb-grid-cell');
+        gridCells.forEach(cell => {
+            cell.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.ensureAudio();
+                const gridIdx = parseInt(cell.getAttribute('data-grid'), 10);
+                if (!isNaN(gridIdx)) this.applyPitchGridIndex(gridIdx);
+            });
+        });
 
         // 🎯 볼 / 스트라이크 판정 및 코스 빠른 선택 버튼들
         const zoneBtns = document.querySelectorAll('.mlb-zone-quick-btn');
@@ -20715,6 +21023,8 @@ class BaseballGame {
         if (this.isMatching) return;
         this.isMatching = true;
         this.matchCountdown = 10;
+        this.activeRoom = null;
+        this.isMultiplayer = false;
 
         const matchBox = document.getElementById('mlb-matchmaking-box');
         const timerEl = document.getElementById('mlb-match-timer');
@@ -20724,19 +21034,26 @@ class BaseballGame {
         if (matchBox) matchBox.style.display = 'block';
         if (rivalPreview) rivalPreview.style.display = 'none';
         if (timerEl) timerEl.textContent = '00:10';
-        if (statusEl) statusEl.textContent = '📡 서버 매칭 탐색 중... [10초 후 AI 자동 매칭]';
+        if (statusEl) statusEl.textContent = '📡 글로벌 서버 매칭 탐색 중... [10초 후 AI 자동 매칭]';
 
-        // 다른 탭에 매칭 신호 브로드캐스팅
-        if (this.broadcastChannel) {
-            this.broadcastChannel.postMessage({
+        this.initNetwork();
+
+        // 실시간 매칭 신호 (MQTT 브로커 및 브로드캐스트 채널 다중 송신)
+        const broadcastPing = () => {
+            if (!this.isMatching) return;
+            const payload = {
                 type: 'FIND_RIVAL',
+                peerId: this.myPeerId,
                 role: this.userRole,
                 userName: this.p1.name,
                 char: this.p1.char,
-                skin: this.p1.skin
-            });
-        }
+                skin: this.p1.skin,
+                time: Date.now()
+            };
+            this.sendNetworkMessage('smile_baseball/lobby', payload);
+        };
 
+        broadcastPing();
         this.playUmpireWhistle(600, 0.15);
 
         // 10초 카운트다운 타이머 시작
@@ -20747,6 +21064,9 @@ class BaseballGame {
                 timerEl.textContent = `00:${this.matchCountdown < 10 ? '0' : ''}${this.matchCountdown}`;
             }
 
+            // 매 초마다 핑을 전송하여 상대가 조금 늦게 들어와도 즉시 상호 매칭!
+            broadcastPing();
+
             if (this.matchCountdown <= 0) {
                 clearInterval(this.matchTimerId);
                 this.matchTimerId = null;
@@ -20755,6 +21075,17 @@ class BaseballGame {
                 this.completeMatchmaking(this.p2.name, this.p2.char, this.p2.skin, true);
             }
         }, 1000);
+    }
+
+    applyRemotePitch(data) {
+        if (!data || this.gameState !== 'aiming') return;
+        this.selectedPitchType = data.pType || 'fastball';
+        this.startPitchWindup();
+        setTimeout(() => {
+            if (this.gameState === 'windup') {
+                this.releasePitch(data);
+            }
+        }, 720);
     }
 
     completeMatchmaking(rivalName, rivalChar, rivalSkin, isAI = false) {
@@ -21081,9 +21412,9 @@ class BaseballGame {
         this.startPitchWindup();
     }
 
-    releasePitch() {
+    releasePitch(remoteData = null) {
         const pitcherChar = this.getCurrentPitcher();
-        const pType = this.selectedPitchType;
+        const pType = (remoteData && remoteData.pType) ? remoteData.pType : this.selectedPitchType;
 
         // ⚾ 현실적인 KBO/MLB 프로 구속 계산 (광속 직구 154~160km/h, 극대화된 슬로우 변화구)
         let baseSpeed = pitcherChar.fastballSpeed || 156;
@@ -21092,13 +21423,18 @@ class BaseballGame {
         if (pType === 'changeup') baseSpeed = 118; // 118km/h 체인지업 (직구 대비 38km/h 오프스피드!)
         if (pType === 'knuckleball') baseSpeed = 94; // 너클볼: 90~96km/h의 초슬로우 마구!
 
-        const finalSpeed = Math.round(baseSpeed + (Math.random() - 0.5) * 6);
+        const finalSpeed = (remoteData && typeof remoteData.speedKm === 'number')
+            ? remoteData.speedKm
+            : Math.round(baseSpeed + (Math.random() - 0.5) * 6);
 
         // 🎯 [유저 직접 제구 & 볼/스트라이크 판정 100% 결정권]
         let actualTargetX = this.pitchAimX;
         let actualTargetY = this.pitchAimY;
 
-        if (this.userRole === 'pitcher') {
+        if (remoteData && typeof remoteData.aimX === 'number' && typeof remoteData.aimY === 'number') {
+            actualTargetX = remoteData.aimX;
+            actualTargetY = remoteData.aimY;
+        } else if (this.userRole === 'pitcher') {
             const inZoneAim = (Math.abs(this.pitchAimX) <= 24 && this.pitchAimY >= 22 && this.pitchAimY <= 66);
             if (inZoneAim) {
                 // 스트라이크 의도: 100% 스트라이크 존 안쪽으로 정밀 안착 보장!
@@ -21119,17 +21455,33 @@ class BaseballGame {
         }
 
         // ⚾ [구종별 비행 시간 - 직구는 초광속(0.44s), 변화구는 강력한 슬로우 오프스피드(0.72s~0.88s)]
-        // 보통(Normal): 직구 0.44초 (~156km/h 불꽃 강속구), 체인지업 0.72초, 커브 0.78초, 너클볼 0.88초
         let diffFactor = 1.0;
         if (this.difficulty === 'easy') diffFactor = 1.25;
         else if (this.difficulty === 'pro') diffFactor = 0.86;
 
-        let flightDuration = 0.44 * diffFactor;
-        if (pType === 'fastball') flightDuration = (156 / finalSpeed) * 0.44 * diffFactor;
-        else if (pType === 'slider') flightDuration = 0.54 * diffFactor;
-        else if (pType === 'changeup') flightDuration = 0.72 * diffFactor;
-        else if (pType === 'curve') flightDuration = 0.78 * diffFactor;
-        else if (pType === 'knuckleball') flightDuration = 0.88 * diffFactor;
+        let flightDuration = (remoteData && typeof remoteData.flightDuration === 'number')
+            ? remoteData.flightDuration
+            : (0.44 * diffFactor);
+
+        if (!remoteData) {
+            if (pType === 'fastball') flightDuration = (156 / finalSpeed) * 0.44 * diffFactor;
+            else if (pType === 'slider') flightDuration = 0.54 * diffFactor;
+            else if (pType === 'changeup') flightDuration = 0.72 * diffFactor;
+            else if (pType === 'curve') flightDuration = 0.78 * diffFactor;
+            else if (pType === 'knuckleball') flightDuration = 0.88 * diffFactor;
+        }
+
+        // 🌐 [크로스 디바이스 1:1 대전] 투수가 던진 공 정보 상대 타자 단말로 실시간 브로드캐스팅
+        if (!remoteData && this.isMultiplayer && this.userRole === 'pitcher' && this.activeRoom) {
+            this.sendNetworkMessage('smile_baseball/' + this.activeRoom, {
+                type: 'REMOTE_PITCH',
+                pType: pType,
+                speedKm: finalSpeed,
+                aimX: actualTargetX,
+                aimY: actualTargetY,
+                flightDuration: flightDuration
+            });
+        }
 
         // 4대 투구폼별 리얼 3D 릴리즈 포인트 좌표 (오버핸드/쓰리쿼터/사이드암/언더핸드 잠수함)
         const pChar = this.getCurrentPitcher();
@@ -21193,27 +21545,62 @@ class BaseballGame {
         };
         this.showRadarGun(finalSpeed, pNameMap[pType] || 'FASTBALL');
 
-        // 투수 모드일 때: 상대 AI 타자의 선구안 및 스윙 (실제 야구다운 볼/스트라이크 판별!)
-        if (this.userRole === 'pitcher') {
+        // 🤖 [AI 타자 리밸런싱 - 삼진, 헛스윙, 루킹 스트라이크, 범타 유도 가능!]
+        if (this.userRole === 'pitcher' && !this.isMultiplayer) {
             const isStrikePitch = (Math.abs(actualTargetX) <= 24 && actualTargetY >= 22 && actualTargetY <= 66);
             let aiWillSwing = false;
             let aiSwingTimingOffset = 0; // 초 단위 타이밍 오차
 
             const isEasy = (this.difficulty === 'easy');
+            const isPro = (this.difficulty === 'pro');
+            const isBorderline = (Math.abs(actualTargetX) >= 16 || actualTargetY <= 28 || actualTargetY >= 58);
+
             if (isStrikePitch) {
-                // 스트라이크 코스는 적극 타격!
-                aiWillSwing = isEasy ? (Math.random() < 0.65) : (Math.random() < 0.85);
-                aiSwingTimingOffset = (finalSpeed >= 152) ? 0.08 + Math.random() * 0.06 : (Math.random() - 0.5) * 0.04;
+                // 스트라이크 코스:
+                // 가운데 실투가 아닌 보더라인/코너워크 공은 지켜보는 '루킹 스트라이크(Take)' 대폭 발생!
+                let swingChance = isEasy ? 0.48 : (isPro ? 0.72 : 0.58);
+                if (isBorderline) swingChance *= 0.68; // 코너워크 시 40% 이상 확률로 멀뚱히 지켜보다 루킹 스트라이크!
+
+                aiWillSwing = (Math.random() < swingChance);
+
+                // 구종별 인간형 타이밍 오차:
+                // 1) 체인지업/너클볼: 직구 타이밍에 속아 너무 일찍 배트를 돌려 헛스윙 삼진 또는 빗맞은 땅볼!
+                if (pType === 'changeup' || pType === 'knuckleball') {
+                    aiSwingTimingOffset = -0.16 - Math.random() * 0.12;
+                }
+                // 2) 12-6 커브: 큰 낙차 타이밍을 못 맞춰 이른 헛스윙 삼진!
+                else if (pType === 'curve') {
+                    aiSwingTimingOffset = -0.12 - Math.random() * 0.10;
+                }
+                // 3) 150km 이상 파이어볼러 직구: 구속에 밀려 늦은 헛스윙 삼진!
+                else if (finalSpeed >= 150) {
+                    aiSwingTimingOffset = 0.08 + Math.random() * 0.12;
+                }
+                // 4) 일반 스트라이크
+                else {
+                    aiSwingTimingOffset = (Math.random() - 0.5) * 0.14;
+                }
             } else {
-                // ⚾ 존 바깥의 볼 코스: AI 타자도 선구안을 발휘하여 78~85% 확률로 볼을 골라냄 (Take!)
-                // 2스트라이크(2S) 상황에서만 유인구에 속아 배트를 낼 확률 증가 (Chase)
-                const chaseProb = (this.strikes === 2) ? (isEasy ? 0.40 : 0.32) : (isEasy ? 0.18 : 0.14);
+                // ⚾ 존 바깥의 볼/유인구 코스:
+                // 2스트라이크 상황에서는 삼진을 면하기 위해 바깥 슬라이더/원바운드에 방망이가 헛도는 체이스(Chase) 확률 55~65%!
+                let chaseProb = 0.15;
+                if (this.strikes === 2) {
+                    chaseProb = isEasy ? 0.65 : (isPro ? 0.46 : 0.58);
+                } else {
+                    chaseProb = isEasy ? 0.22 : (isPro ? 0.10 : 0.15);
+                }
                 aiWillSwing = (Math.random() < chaseProb);
-                aiSwingTimingOffset = (pType === 'changeup' || pType === 'curve') ? -0.18 : 0.08;
+
+                // 유인구에 속았을 때는 대부분 헛스윙 삼진 유도
+                if (pType === 'slider' || pType === 'curve') {
+                    aiSwingTimingOffset = -0.15 + (Math.random() - 0.5) * 0.08;
+                } else {
+                    aiSwingTimingOffset = 0.12 + Math.random() * 0.10;
+                }
             }
 
             if (aiWillSwing) {
-                const swingDelay = Math.max(0.25, (flightDuration * 0.88) + aiSwingTimingOffset);
+                const swingDelay = Math.max(0.18, (flightDuration * 0.88) + aiSwingTimingOffset);
                 setTimeout(() => {
                     if (this.isRunning && this.gameState === 'in_flight' && !this.ball.isHit) {
                         this.triggerBatterSwing();
@@ -21336,6 +21723,13 @@ class BaseballGame {
         // ⚾ 현재 투구에 스윙 시도 플래그 영구 기록 (이후 어떤 판정이 오더라도 헛스윙 스트라이크 보장)
         if (this.ball) {
             this.ball.hasSwung = true;
+        }
+
+        // 🌐 [크로스 디바이스 1:1 대전] 타자의 스윙 타이밍을 상대 투수 단말에 실시간 전송
+        if (this.isMultiplayer && this.userRole === 'batter' && this.activeRoom) {
+            this.sendNetworkMessage('smile_baseball/' + this.activeRoom, {
+                type: 'REMOTE_SWING'
+            });
         }
 
         if (this.gameState === 'in_flight' && this.ball && this.ball.active && !this.ball.isHit) {
@@ -25486,7 +25880,7 @@ class BaseballGame {
     }
 
     /**
-     * 🎯 투수 조준 위치 & 볼/스트라이크 판정 실시간 갱신
+     * 🎯 투수 조준 위치 & 볼/스트라이크 판정 실시간 갱신 및 3x3 패드/볼 버튼 상태 동기화
      */
     setPitchAim(aimX, aimY, customLabel = null) {
         this.pitchAimX = Math.max(-36, Math.min(36, aimX));
@@ -25503,6 +25897,63 @@ class BaseballGame {
                 callBadge.textContent = customLabel || '⚪ 볼 / 유인구 코스';
             }
         }
+
+        // 3x3 9분할 그리드 셀 및 4방향 유인구 버튼 UI 활성화 동기화
+        const gridCells = document.querySelectorAll('.mlb-grid-cell');
+        const ballBtns = document.querySelectorAll('.mlb-zone-quick-btn');
+
+        if (inZone) {
+            ballBtns.forEach(btn => btn.classList.remove('active'));
+            const col = this.pitchAimX < -8 ? 0 : (this.pitchAimX > 8 ? 2 : 1);
+            const row = this.pitchAimY > 51 ? 0 : (this.pitchAimY < 37 ? 2 : 1);
+            const activeIdx = row * 3 + col;
+            gridCells.forEach(cell => {
+                const cIdx = parseInt(cell.getAttribute('data-grid'), 10);
+                cell.classList.toggle('active', cIdx === activeIdx);
+            });
+        } else {
+            gridCells.forEach(cell => cell.classList.remove('active'));
+            ballBtns.forEach(btn => {
+                const zKey = btn.getAttribute('data-zone');
+                let match = false;
+                if (zKey === 'high-ball' && this.pitchAimY > 66) match = true;
+                else if (zKey === 'dirt-ball' && this.pitchAimY < 22) match = true;
+                else if (zKey === 'inside-ball' && this.pitchAimX < -24) match = true;
+                else if (zKey === 'outside-ball' && this.pitchAimX > 24) match = true;
+                btn.classList.toggle('active', match);
+            });
+        }
+    }
+
+    /**
+     * 🎯 3x3 9분할 스트라이크 존 코스 적용 (0 ~ 8)
+     */
+    applyPitchGridIndex(idx) {
+        // row 0: 상단 (y=58), row 1: 중단 (y=44), row 2: 하단 (y=30)
+        // col 0: 좌측 몸쪽 (x=-16), col 1: 중앙 (x=0), col 2: 우측 바깥쪽 (x=16)
+        const row = Math.floor(idx / 3);
+        const col = idx % 3;
+
+        const xCoords = [-16, 0, 16];
+        const yCoords = [58, 44, 30];
+
+        const x = xCoords[col];
+        const y = yCoords[row];
+
+        const labels = [
+            '🎯 1번 [몸쪽 높은 스트라이크]',
+            '🎯 2번 [가운데 높은 하이패스트볼]',
+            '🎯 3번 [바깥쪽 높은 스트라이크]',
+            '🎯 4번 [몸쪽 벨트높이 스트라이크]',
+            '🎯 5번 [한가운데 정면 스트라이크]',
+            '🎯 6번 [바깥쪽 벨트높이 스트라이크]',
+            '🎯 7번 [몸쪽 낮은 코너워크]',
+            '🎯 8번 [가운데 낮은 무릎 보더라인]',
+            '🎯 9번 [바깥쪽 낮은 칼날 제구]'
+        ];
+
+        this.setPitchAim(x, y, labels[idx] || `🎯 ${idx + 1}번 스트라이크 존`);
+        this.playUmpireWhistle(900, 0.06);
     }
 
     /**
