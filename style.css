@@ -281,31 +281,43 @@ body.is-playing .concept-badge {
     position: absolute;
     top: 18px;
     right: 18px;
-    background: rgba(255, 252, 245, 0.95);
-    border: 3px solid #1a1612;
+    background: linear-gradient(145deg, #0b132b, #1c2541);
+    border: 2px solid #f59e0b;
     border-radius: 16px;
-    padding: 10px;
+    padding: 10px 14px;
     text-align: center;
     pointer-events: auto;
-    box-shadow: 4px 4px 0px #1a1612;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 16px rgba(245, 158, 11, 0.35);
 }
 
-.concept-badge img {
-    width: 112px;
-    height: 112px;
-    object-fit: cover;
-    border-radius: 10px;
-    border: 2px solid #1a1612;
-    display: block;
-    margin: 0 auto 5px;
+.com2us-badge-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 3px;
 }
 
-.concept-badge span {
-    font-size: 13px;
+.com2us-badge-icon {
+    font-size: 20px;
+    filter: drop-shadow(0 0 6px #facc15);
+}
+
+.com2us-badge-title {
+    font-size: 16px;
+    font-weight: 900;
+    color: #facc15;
+    letter-spacing: 0.5px;
+    text-shadow: 0 0 8px rgba(250, 204, 21, 0.6);
+}
+
+.com2us-badge-sub {
+    font-size: 11px;
     font-weight: 700;
-    color: #1a1612;
+    color: #93c5fd;
     display: block;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
+    letter-spacing: 0.2px;
 }
 
 .rank-open-btn {
@@ -3050,14 +3062,15 @@ body.is-playing .concept-badge {
 }
 
 .bug-league-tag {
-    background: linear-gradient(135deg, #0284c7, #0369a1);
+    background: linear-gradient(135deg, #d97706, #f59e0b 50%, #dc2626);
     color: #ffffff;
     font-size: 11px;
     font-weight: 900;
-    padding: 2px 6px;
+    padding: 2px 7px;
     border-radius: 5px;
     letter-spacing: 0.5px;
-    box-shadow: 0 0 8px rgba(2, 132, 199, 0.5);
+    border: 1px solid rgba(254, 240, 138, 0.6);
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.6);
 }
 
 .bug-inning {

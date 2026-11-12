@@ -61,12 +61,14 @@ class BaseballGame {
         // 🎮 나의 플레이 역할: 'batter' (타자) | 'pitcher' (투수)
         this.userRole = safeGetStorage('smilegames_bb_user_role', 'batter');
 
-        // 🐾 4종 캐릭터 스펙 & 타자/투수 고유 특화(Perk)
+        // 🐾 4종 컴투스 프로야구 2026 KBO 시그니처 선수 카드 스펙 & 9분할 핫/콜드존
         this.characters = {
             tiger: {
                 id: 'tiger',
                 name: '호걸이',
-                roleName: 'KIA 타이거즈 4번 파워 슬러거',
+                roleName: 'KIA 타이거즈 4번 [시그니처 OVR 99]',
+                cardGrade: '시그니처',
+                ovr: 99,
                 emoji: '🐯',
                 pitchStyle: 'overhand',
                 pitchStyleName: '오버핸드 (162km/h 강속구)',
@@ -78,10 +80,12 @@ class BaseballGame {
                 powerBonus: 25,
                 speedBonus: 1.15,
                 doubleBonus: 1.0,
-                fastballSpeed: 152,
+                fastballSpeed: 154,
                 controlSpread: 20,
                 curveBonus: 1.1,
                 sliderBonus: 1.1,
+                hotZones: [3, 4, 7], // 몸쪽 중간, 한가운데, 낮은 코스 (0..8)
+                coldZones: [2],      // 바깥쪽 높은 코스
                 skins: {
                     classic: { id: 'classic', name: '타이거즈 홈 화이트', jersey: '#ea580c', cap: '#1e293b', stripe: '#f8fafc', icon: '🐅' },
                     away: { id: 'away', name: '타이거즈 원정 레드', jersey: '#dc2626', cap: '#0f172a', stripe: '#fca5a5', icon: '🔴' },
@@ -91,7 +95,9 @@ class BaseballGame {
             frog: {
                 id: 'frog',
                 name: '개구리',
-                roleName: '정밀 타격 & 안타 제조기',
+                roleName: 'KBO 골든글러브 정밀 컨택트 머신 [OVR 95]',
+                cardGrade: '골든글러브',
+                ovr: 95,
                 emoji: '🐸',
                 pitchStyle: 'threequarter',
                 pitchStyleName: '쓰리쿼터 (낙폭 2.2배 커브)',
@@ -107,6 +113,8 @@ class BaseballGame {
                 controlSpread: 8,
                 curveBonus: 2.2,
                 sliderBonus: 1.3,
+                hotZones: [1, 2, 5], // 높은 가운데, 바깥쪽 높은/중간
+                coldZones: [6],      // 몸쪽 낮은 코스
                 skins: {
                     classic: { id: 'classic', name: '에메랄드 핀스트라이프', jersey: '#16a34a', cap: '#14532d', stripe: '#bbf7d0', icon: '🟢' },
                     cyber: { id: 'cyber', name: '네온 사이버 유니폼', jersey: '#06b6d4', cap: '#0e7490', stripe: '#a5f3fc', icon: '⚡' },
@@ -116,7 +124,9 @@ class BaseballGame {
             penguin: {
                 id: 'penguin',
                 name: '펭귄',
-                roleName: '초고속 스프레이 히터',
+                roleName: 'KBO MVP 라이징 스프레이 히터 [OVR 93]',
+                cardGrade: 'MVP',
+                ovr: 93,
                 emoji: '🐧',
                 pitchStyle: 'sidearm',
                 pitchStyleName: '사이드암 (스위핑 슬라이더)',
@@ -132,6 +142,8 @@ class BaseballGame {
                 controlSpread: 12,
                 curveBonus: 1.2,
                 sliderBonus: 2.3,
+                hotZones: [0, 1, 4], // 몸쪽 높은, 가운데 높은, 한가운데
+                coldZones: [8],      // 바깥쪽 낮은 코스
                 skins: {
                     classic: { id: 'classic', name: '호스 딥 네이비', jersey: '#1e3a8a', cap: '#0f172a', stripe: '#60a5fa', icon: '🔵' },
                     frost: { id: 'frost', name: '프로스트 실버 아이스', jersey: '#475569', cap: '#1e293b', stripe: '#e2e8f0', icon: '❄️' },
@@ -141,7 +153,9 @@ class BaseballGame {
             monkey: {
                 id: 'monkey',
                 name: '원숭이',
-                roleName: '황금 5툴 올라운더 타격왕',
+                roleName: 'KBO 레전드 올스타 5툴 플레이어 [OVR 96]',
+                cardGrade: '레전드',
+                ovr: 96,
                 emoji: '🐵',
                 pitchStyle: 'windup',
                 pitchStyleName: '클래식 윈드업 (완전 육각형)',
@@ -153,10 +167,12 @@ class BaseballGame {
                 powerBonus: 16,
                 speedBonus: 1.08,
                 doubleBonus: 1.35,
-                fastballSpeed: 148,
+                fastballSpeed: 150,
                 controlSpread: 12,
                 curveBonus: 1.35,
                 sliderBonus: 1.35,
+                hotZones: [1, 3, 4, 5, 7], // 십자형 전방위 핫존
+                coldZones: [],
                 skins: {
                     classic: { id: 'classic', name: '골든 바나나 스트라이프', jersey: '#facc15', cap: '#854d0e', stripe: '#1a1612', icon: '🍌' },
                     stealth: { id: 'stealth', name: '블랙 옵스 스텔스', jersey: '#1e293b', cap: '#020617', stripe: '#ea580c', icon: '⚫' },
@@ -1387,6 +1403,12 @@ class BaseballGame {
         const prevBases = { ...this.bases };
         const absDiffZ = Math.abs(diffZ);
 
+        // 🎯 컴투스 프로야구 핫존(Hot Zone) 공략 여부 판정
+        const cellCol = (b.x < -8) ? 0 : (b.x > 8 ? 2 : 1);
+        const cellRow = (b.y > 51) ? 0 : (b.y < 37 ? 2 : 1);
+        const zoneIdx = cellRow * 3 + cellCol;
+        const isHotZone = (batterChar.hotZones && batterChar.hotZones.includes(zoneIdx)) || false;
+
         const hrTiming = isEasy ? 22 : (isPro ? 10 : 14);
         const hrDist = isEasy ? 20 : (isPro ? 10 : 13);
 
@@ -1396,7 +1418,7 @@ class BaseballGame {
         // [1] 💥 PERFECT CONTACT: 초특대형 홈런!
         if (absDiffZ <= hrTiming && distXY <= hrDist) {
             b.hitType = 'homerun';
-            let dist = Math.round(128 + (lineupItem.powerBonus || 0) + (batterChar.powerBonus || 0) + Math.random() * 24);
+            let dist = Math.round(132 + (lineupItem.powerBonus || 0) + (batterChar.powerBonus || 0) + (isHotZone ? 18 : 0) + Math.random() * 24);
             if (b.type === 'knuckleball') dist += 8;
 
             b.hitDist = dist;
@@ -1407,13 +1429,13 @@ class BaseballGame {
             this.addScore(scoredRuns, 'homerun');
             this.resetAtBatCount(true);
 
-            b.vz = -570 - Math.random() * 80;
-            b.vy = 340 + Math.random() * 60;
+            b.vz = -580 - Math.random() * 80;
+            b.vy = 350 + Math.random() * 60;
             b.vx = (b.x * 2.2) + (Math.random() - 0.5) * 120;
 
-            this.camera.shake = 22;
-            this.playBatHitSound('homerun');
-            this.triggerHomeRunCelebration(dist, scoredRuns);
+            this.camera.shake = isHotZone ? 32 : 24;
+            this.playBatHitSound('homerun', isHotZone);
+            this.triggerHomeRunCelebration(dist, scoredRuns, isHotZone);
         }
         // [2] 🎯 GREAT CONTACT: 2루타 / 3루타 / 1루타
         else if (absDiffZ <= hitTiming && distXY <= hitDist) {
@@ -3207,6 +3229,37 @@ class BaseballGame {
 
         ctx.save();
 
+        // 🎯 [컴투스 프로야구 2026] 9분할 핫/콜드 존 (Hot / Cold Strike Zone) 타일 렌더링
+        const curBatter = this.getCurrentBatter();
+        const hotZones = (curBatter && curBatter.hotZones) ? curBatter.hotZones : [];
+        const coldZones = (curBatter && curBatter.coldZones) ? curBatter.coldZones : [];
+
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        for (let r = 0; r < 3; r++) {
+            for (let c = 0; c < 3; c++) {
+                const idx = r * 3 + c;
+                const cellX = szTL.x + c * (szW / 3);
+                const cellY = szTL.y + r * (szH / 3);
+                const cellW = szW / 3;
+                const cellH = szH / 3;
+
+                if (hotZones.includes(idx)) {
+                    ctx.fillStyle = 'rgba(239, 68, 68, 0.22)';
+                    ctx.fillRect(cellX + 1, cellY + 1, cellW - 2, cellH - 2);
+                    ctx.fillStyle = 'rgba(248, 113, 113, 0.75)';
+                    ctx.font = 'bold 10px sans-serif';
+                    ctx.fillText('🔥 HOT', cellX + cellW / 2, cellY + cellH / 2);
+                } else if (coldZones.includes(idx)) {
+                    ctx.fillStyle = 'rgba(59, 130, 246, 0.16)';
+                    ctx.fillRect(cellX + 1, cellY + 1, cellW - 2, cellH - 2);
+                    ctx.fillStyle = 'rgba(147, 197, 253, 0.70)';
+                    ctx.font = 'bold 9px sans-serif';
+                    ctx.fillText('❄️ COLD', cellX + cellW / 2, cellY + cellH / 2);
+                }
+            }
+        }
+
         if (this.userRole === 'pitcher') {
             // ⚾ 투수 시점: 선명한 네온 3D 스트라이크 존 박스 & 코너 브래킷
             ctx.strokeStyle = 'rgba(56, 189, 248, 0.95)';
@@ -4194,7 +4247,7 @@ class BaseballGame {
         this.bannerAlpha = 1.0;
     }
 
-    triggerHomeRunCelebration(dist, pts) {
+    triggerHomeRunCelebration(dist, pts, isHotZone = false) {
         for (let i = 0; i < 4; i++) {
             const parts = [];
             const cx = (Math.random() - 0.5) * 220;
@@ -4217,7 +4270,9 @@ class BaseballGame {
             this.fireworks.push({ particles: parts, life: 1.6 });
         }
 
-        const tag = (pts >= 4) ? '💥 GRAND SLAM 만루홈런!!' : `💥 ${pts}점 홈런 작렬!!`;
+        const tag = isHotZone 
+            ? ((pts >= 4) ? '🔥 [컴프야] HOT ZONE 만루홈런 대폭발!!' : `🔥 [컴프야] HOT ZONE CRITICAL!! ${pts}점 홈런!!`)
+            : ((pts >= 4) ? '💥 GRAND SLAM 만루홈런!!' : `💥 ${pts}점 홈런 작렬!!`);
         this.showResultBanner(tag, `비거리 ${dist}m 장외 초대형 홈런! (+${pts}점)`, '#facc15');
     }
 
@@ -4608,34 +4663,67 @@ class BaseballGame {
         } catch (e) {}
     }
 
-    playBatHitSound(type) {
+    playBatHitSound(type, isHotZone = false) {
         const ctx = this.getAudioCtx();
         if (!ctx) return;
         try {
             const now = ctx.currentTime;
-            const ping = ctx.createOscillator();
-            const pGain = ctx.createGain();
-            ping.type = 'triangle';
-            ping.frequency.setValueAtTime((type === 'homerun') ? 1450 : 1100, now);
-            ping.frequency.exponentialRampToValueAtTime(260, now + 0.28);
-            pGain.gain.setValueAtTime((type === 'homerun') ? 0.45 : 0.28, now);
-            pGain.gain.exponentialRampToValueAtTime(0.01, now + 0.28);
-            ping.connect(pGain);
-            pGain.connect(ctx.destination);
-            ping.start(now);
-            ping.stop(now + 0.28);
 
-            const thud = ctx.createOscillator();
-            const tGain = ctx.createGain();
-            thud.type = 'sine';
-            thud.frequency.setValueAtTime(180, now);
-            thud.frequency.exponentialRampToValueAtTime(45, now + 0.15);
-            tGain.gain.setValueAtTime(0.35, now);
-            tGain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
-            thud.connect(tGain);
-            tGain.connect(ctx.destination);
-            thud.start(now);
-            thud.stop(now + 0.15);
+            // 1. 컴투스 프로야구 특유의 리얼 목재 배트 파열음 (High-energy Crack Transient)
+            const crackLen = Math.floor(ctx.sampleRate * 0.05);
+            const noiseBuf = ctx.createBuffer(1, crackLen, ctx.sampleRate);
+            const data = noiseBuf.getChannelData(0);
+            for (let i = 0; i < crackLen; i++) {
+                data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (crackLen * 0.25));
+            }
+            const noiseSrc = ctx.createBufferSource();
+            noiseSrc.buffer = noiseBuf;
+
+            const bandpass = ctx.createBiquadFilter();
+            bandpass.type = 'bandpass';
+            bandpass.frequency.setValueAtTime((type === 'homerun' || isHotZone) ? 2300 : 1850, now);
+            bandpass.Q.setValueAtTime(8.0, now);
+
+            const nGain = ctx.createGain();
+            nGain.gain.setValueAtTime((type === 'homerun' || isHotZone) ? 0.95 : 0.65, now);
+            nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+
+            noiseSrc.connect(bandpass);
+            bandpass.connect(nGain);
+            nGain.connect(ctx.destination);
+            noiseSrc.start(now);
+
+            // 2. 묵직한 나무 중심 코어 공명음 (Wooden Body Resonance)
+            const wood = ctx.createOscillator();
+            const wGain = ctx.createGain();
+            wood.type = 'triangle';
+            const baseFreq = (type === 'homerun') ? 740 : (isHotZone ? 680 : 580);
+            wood.frequency.setValueAtTime(baseFreq, now);
+            wood.frequency.exponentialRampToValueAtTime(260, now + 0.22);
+            wGain.gain.setValueAtTime((type === 'homerun' || isHotZone) ? 0.75 : 0.45, now);
+            wGain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+            wood.connect(wGain);
+            wGain.connect(ctx.destination);
+            wood.start(now);
+            wood.stop(now + 0.24);
+
+            // 3. 심장을 울리는 서브 베이스 타격 펀치 (Sub-Bass Punch)
+            const sub = ctx.createOscillator();
+            const sGain = ctx.createGain();
+            sub.type = 'sine';
+            sub.frequency.setValueAtTime((type === 'homerun') ? 95 : 75, now);
+            sub.frequency.exponentialRampToValueAtTime(25, now + 0.18);
+            sGain.gain.setValueAtTime((type === 'homerun') ? 0.85 : 0.50, now);
+            sGain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+            sub.connect(sGain);
+            sGain.connect(ctx.destination);
+            sub.start(now);
+            sub.stop(now + 0.18);
+
+            // 4. 홈런 시 관중들의 거대한 3D 폭발 함성
+            if (type === 'homerun' || isHotZone) {
+                this.playCrowdRoar(2.8);
+            }
         } catch (e) {}
     }
 
@@ -4644,17 +4732,70 @@ class BaseballGame {
         if (!ctx) return;
         try {
             const now = ctx.currentTime;
+            // 포수 가죽 미트에 꽂히는 묵직한 포구음 (Leather Thud + Compression Pop)
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
             osc.type = 'triangle';
-            osc.frequency.setValueAtTime(240, now);
-            osc.frequency.exponentialRampToValueAtTime(60, now + 0.1);
-            gain.gain.setValueAtTime(0.28, now);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+            osc.frequency.setValueAtTime(320, now);
+            osc.frequency.exponentialRampToValueAtTime(55, now + 0.13);
+            gain.gain.setValueAtTime(0.58, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
             osc.connect(gain);
             gain.connect(ctx.destination);
             osc.start(now);
-            osc.stop(now + 0.1);
+            osc.stop(now + 0.13);
+
+            // 가죽 공기 압축 스냅
+            const snapLen = Math.floor(ctx.sampleRate * 0.035);
+            const snapBuf = ctx.createBuffer(1, snapLen, ctx.sampleRate);
+            const d = snapBuf.getChannelData(0);
+            for (let i = 0; i < snapLen; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (snapLen * 0.3));
+            const sSrc = ctx.createBufferSource();
+            sSrc.buffer = snapBuf;
+            const flt = ctx.createBiquadFilter();
+            flt.type = 'lowpass';
+            flt.frequency.setValueAtTime(750, now);
+            const sGain = ctx.createGain();
+            sGain.gain.setValueAtTime(0.4, now);
+            sGain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
+            sSrc.connect(flt);
+            flt.connect(sGain);
+            sGain.connect(ctx.destination);
+            sSrc.start(now);
+        } catch (e) {}
+    }
+
+    playCrowdRoar(duration = 2.4) {
+        const ctx = this.getAudioCtx();
+        if (!ctx) return;
+        try {
+            const now = ctx.currentTime;
+            const bufferSize = Math.floor(ctx.sampleRate * duration);
+            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+            const noise = ctx.createBufferSource();
+            noise.buffer = buffer;
+
+            const bandpass = ctx.createBiquadFilter();
+            bandpass.type = 'bandpass';
+            bandpass.frequency.setValueAtTime(800, now);
+            bandpass.frequency.linearRampToValueAtTime(1400, now + duration * 0.35);
+            bandpass.frequency.linearRampToValueAtTime(650, now + duration);
+            bandpass.Q.setValueAtTime(1.4, now);
+
+            const gain = ctx.createGain();
+            gain.gain.setValueAtTime(0.01, now);
+            gain.gain.linearRampToValueAtTime(0.42, now + 0.3);
+            gain.gain.linearRampToValueAtTime(0.32, now + duration * 0.65);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+            noise.connect(bandpass);
+            bandpass.connect(gain);
+            gain.connect(ctx.destination);
+            noise.start(now);
         } catch (e) {}
     }
 
