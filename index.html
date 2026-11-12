@@ -246,23 +246,28 @@
             </div>
         </div>
 
-        <!-- 🏏 [타자 전용 조작부] 하단 우측 풀스윙 & 번트 컨트롤 콘솔 -->
+        <!-- 🏏 [타자 전용 조작부] 하단 우측 풀스윙 & 번트 & 도루 컨트롤 콘솔 -->
         <div class="mlb-batter-bar" id="mlb-batter-bar" style="display:none;">
             <button type="button" class="mlb-swing-action-btn" id="btn-baseball-swing">
                 <span class="swing-hero-icon">🏏</span>
                 <span class="swing-hero-title">SWING!</span>
-                <span class="swing-hero-key">[Enter / Click]</span>
+                <span class="swing-hero-key">[Enter / 클릭]</span>
             </button>
-            <button type="button" class="mlb-swing-action-btn mlb-bunt-action-btn" id="btn-baseball-bunt" title="번트 자세 토글 (B 키)">
+            <button type="button" class="mlb-swing-action-btn mlb-bunt-action-btn" id="btn-baseball-bunt" title="번트 자세 토글 (B 키, 60% 성공)">
                 <span class="swing-hero-icon">🪵</span>
-                <span class="swing-hero-title">BUNT</span>
+                <span class="swing-hero-title">BUNT (60%)</span>
                 <span class="swing-hero-key">[B 키 / 번트]</span>
+            </button>
+            <button type="button" class="mlb-swing-action-btn mlb-steal-action-btn" id="btn-baseball-steal" title="루상 주자 도루 시도 (S 키: 1루 50%, 2루 30%, 홈스틸 5%)">
+                <span class="swing-hero-icon">🏃</span>
+                <span class="swing-hero-title">STEAL</span>
+                <span class="swing-hero-key">[S 키 / 도루]</span>
             </button>
         </div>
 
         <!-- 🎯 하단 미니 조작 가이드 팁 -->
         <div class="mlb-mini-tip" id="mlb-mini-tip">
-            ⚾ <strong>조작 팁:</strong> 타자 [Enter 타격 스윙 / B 키 기습 번트] | 투수 [WASD 코스 조준 + 1~5 구종 + Space 투구]
+            ⚾ <strong>조작 팁:</strong> 타자 [Enter 타격 / B 번트(60%) / S 도루(1루 50%, 2루 30%, 홈 5%)] | 투수 [터치·WASD 조준 + 1~5 구종 + Space 투구]
         </div>
     </div>
 
@@ -451,21 +456,21 @@
                     <button type="button" class="hub-card-play-btn hub-btn-space">🚀 우주선 슈팅 시작하기 ▶</button>
                 </div>
 
-                <!-- 4. 컴투스 프로야구 2026 LIVE (야구 대작전) 카드 -->
+                <!-- 4. 스마일 홈런 더비 3D 카드 -->
                 <div class="hub-game-card hub-card-baseball" id="hub-select-baseball">
-                    <div class="hub-card-badge baseball-badge">🔥 [시그니처] 컴투스 프로야구 2026 LIVE</div>
+                    <div class="hub-card-badge baseball-badge">🔥 [시그니처] 3D 스마일 홈런 더비</div>
                     <div class="hub-card-icon">⚾</div>
-                    <h3 class="hub-card-title">컴투스 프로야구 2026 LIVE</h3>
+                    <h3 class="hub-card-title">스마일 홈런 더비 3D</h3>
                     <p class="hub-card-desc">
-                        KBO 공식 중계 스타일의 초실감 3D 야구 시뮬레이션! 155km/h 불꽃 직구, 9분할 핫/콜드 존, 배트가 쪼개지는 리얼 타격감과 관중 함성을 만끽하세요!
+                        천연 잔디 다이아몬드 야구장에서 펼쳐지는 초실감 3D 야구 대작전! 155km/h 불꽃 직구, 5대 마구, 묵직한 타격감과 호쾌한 장외 홈런을 터뜨려보세요!
                     </p>
                     <ul class="hub-card-features">
-                        <li>✔️ [시그니처 카드] 🐯KIA 호걸이(OVR 99), 🐵손오공(OVR 96), 🐸개구리, 🐧펭귄</li>
-                        <li>✔️ 컴프야 9분할 핫/콜드 존 타겟팅 & 5대 마구(직구·커브·슬라이더·체인지업·너클볼)</li>
-                        <li>✔️ 묵직한 목재 배트 타격감, 장외 150m 홈런포 & KBO 공식 중계 전광판</li>
-                        <li>✔️ 1:1 투타 맞대결 (타자 모드 / 투수 모드 원클릭 전환)</li>
+                        <li>✔️ [선수 라인업] 🐯KIA 호걸이(OVR 99), 🐵손오공(OVR 96), 🐸개구리, 🐧펭귄</li>
+                        <li>✔️ 컴팩트 3D 과녁 & 5대 마구 (직구·커브·슬라이더·체인지업·너클볼)</li>
+                        <li>✔️ 60% 성공률의 기습 번트 & 스릴 넘치는 도루 시스템(1루 50%, 2루 30%, 홈 5%)</li>
+                        <li>✔️ 1:1 투타 맞대결 (타자 모드 / 투수 모드 원클릭 전환 & 실시간 서버 대전)</li>
                     </ul>
-                    <button type="button" class="hub-card-play-btn hub-btn-baseball">⚾ 컴프야 2026 시작하기 ▶</button>
+                    <button type="button" class="hub-card-play-btn hub-btn-baseball">⚾ 홈런 더비 시작하기 ▶</button>
                 </div>
             </div>
         </div>
@@ -774,13 +779,13 @@
         </div>
     </div>
 
-    <!-- ⚾ 5. 컴투스 프로야구 2026 LIVE 온라인 1:1 대결 매칭 & 역할(투수/타자) 선택 모달 -->
+    <!-- ⚾ 5. 스마일 홈런 더비 3D 온라인 1:1 대결 매칭 & 역할(투수/타자) 선택 모달 -->
     <div class="modal-backdrop" id="baseball-batter-modal">
         <div class="modal-card baseball-modal-card mlb-modal-card">
-            <span class="company-tag" style="background:#0284c7; color:#ffffff;">⚾ COM2US PRO BASEBALL 2026 LIVE</span>
-            <h2 style="font-size:26px; margin-top:4px; color:#0f172a;">⚾ 컴투스 프로야구 2026 LIVE 라인업 매칭</h2>
+            <span class="company-tag" style="background:#0284c7; color:#ffffff;">⚾ SMILE HOME RUN DERBY 3D</span>
+            <h2 style="font-size:26px; margin-top:4px; color:#0f172a;">⚾ 스마일 홈런 더비 3D 대결 설정</h2>
             <p style="font-size:14px; color:#475569; margin-bottom:12px;">
-                플레이할 <strong>역할(투수/타자)</strong>과 <strong>KBO 시그니처 선수 카드</strong>를 선택하고 대전에 참가하세요!
+                플레이할 <strong>역할(투수/타자)</strong>과 <strong>선수 카드</strong>를 선택하고 대전에 참가하세요!
             </p>
 
             <!-- 1. 역할 선택 (투수 vs 타자) -->
