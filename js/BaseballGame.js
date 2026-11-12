@@ -277,15 +277,15 @@ class BaseballGame {
         ];
         this.lineupIndex = 0;
 
-        // 🛡️ 7인제 3D 정밀 수비수 배치 (Fielders)
+        // 🛡️ 7인제 3D 정밀 수비수 배치 (현실적인 메이저리그 외야 수비 깊이 설정)
         this.fielders = [
             { role: '1B', name: '1루수', x: 140, y: 0, z: 235, defaultX: 140, defaultZ: 235, baseAngle: -0.2, action: 'ready', runTimer: 0, isAssigned: false },
             { role: '2B', name: '2루수', x: 65, y: 0, z: 155, defaultX: 65, defaultZ: 155, baseAngle: -0.1, action: 'ready', runTimer: 0, isAssigned: false },
             { role: 'SS', name: '유격수', x: -65, y: 0, z: 155, defaultX: -65, defaultZ: 155, baseAngle: 0.1, action: 'ready', runTimer: 0, isAssigned: false },
             { role: '3B', name: '3루수', x: -140, y: 0, z: 235, defaultX: -140, defaultZ: 235, baseAngle: 0.2, action: 'ready', runTimer: 0, isAssigned: false },
-            { role: 'LF', name: '좌익수', x: -210, y: 0, z: -30, defaultX: -210, defaultZ: -30, baseAngle: 0.15, action: 'ready', runTimer: 0, isAssigned: false },
-            { role: 'CF', name: '중견수', x: 0, y: 0, z: -55, defaultX: 0, defaultZ: -55, baseAngle: 0, action: 'ready', runTimer: 0, isAssigned: false },
-            { role: 'RF', name: '우익수', x: 210, y: 0, z: -30, defaultX: 210, defaultZ: -30, baseAngle: -0.15, action: 'ready', runTimer: 0, isAssigned: false }
+            { role: 'LF', name: '좌익수', x: -210, y: 0, z: -130, defaultX: -210, defaultZ: -130, baseAngle: 0.15, action: 'ready', runTimer: 0, isAssigned: false },
+            { role: 'CF', name: '중견수', x: 0, y: 0, z: -170, defaultX: 0, defaultZ: -170, baseAngle: 0, action: 'ready', runTimer: 0, isAssigned: false },
+            { role: 'RF', name: '우익수', x: 210, y: 0, z: -130, defaultX: 210, defaultZ: -130, baseAngle: -0.15, action: 'ready', runTimer: 0, isAssigned: false }
         ];
         this.fieldingThrow = null;
 
@@ -2148,76 +2148,76 @@ class BaseballGame {
                     const dz = b.z - assigned.z;
                     const dist = Math.sqrt(dx * dx + dz * dz);
 
-                    // 공을 향해 전력 질주 (230 units/s)
-                    const sprintSpeed = (assigned.role === 'CF' || assigned.role === 'SS') ? 250 : 220;
-                    if (dist > 8 && assigned.action === 'pursuing') {
+                    // 공을 향해 현실적인 프로야구 선수 주력 질주 (초인적 순간이동 속도 대폭 정상화: 115~120 units/s)
+                    const sprintSpeed = (assigned.role === 'CF') ? 122 : ((assigned.role === 'SS' || assigned.role === '2B') ? 116 : 110);
+                    if (dist > 6 && assigned.action === 'pursuing') {
                         assigned.x += (dx / dist) * Math.min(dist, sprintSpeed * dt);
                         assigned.z += (dz / dist) * Math.min(dist, sprintSpeed * dt);
                     }
 
-                    // 수비 인터셉트 / 포구 체크
+                    // 수비 인터셉트 / 포구 체크 (비현실적 진공청소기 수비 제거 및 리얼 판정)
                     if (b.active) {
                         if (b.hitType === 'out') {
                             if (b.isFlyOut) {
-                                // 🧤 외야/내야 플라이 낙하지점 점핑 캐치!
-                                if (dist < 32 && b.y <= 42) {
+                                // 🧤 외야/내야 플라이 낙하지점 정밀 포구: 공이 충분히 내려오고(b.y <= 18, b.vy < 0) 수비수가 실제 낙하지점 반경 13 이내에 도달했을 때만 포구!
+                                if (dist < 13 && b.y <= 18 && b.vy < 0) {
                                     b.active = false;
                                     assigned.action = 'jumping';
-                                    assigned.y = 16;
+                                    assigned.y = 8;
                                     this.playCatchSound();
-                                    this.createCatchSparks(assigned.x, assigned.y + 16, assigned.z);
-                                    this.showResultBanner(`🧤 ${assigned.name} 점핑 캐치 호수비!`, `공중에서 타구를 낚아채 아웃!`, '#ef4444');
+                                    this.createCatchSparks(assigned.x, assigned.y + 12, assigned.z);
+                                    this.showResultBanner(`🧤 ${assigned.name} 안정적인 뜬공 포구!`, `정확한 낙하지점 위치 선정으로 아웃!`, '#ef4444');
                                     setTimeout(() => {
                                         this.recordOut(`🧤 ${assigned.name} 플라이볼 포구 아웃!`);
                                     }, 850);
                                 }
                             } else {
-                                // 🛡️ 내야 땅볼 포구 & 1루 총알 송구 (6-4-3 / 5-3 / 4-3)
-                                if (dist < 28 && b.y <= 18 && assigned.action === 'pursuing') {
+                                // 🛡️ 내야 땅볼 포구 & 1루 송구 (반경 15 이내, 지면 8 이하)
+                                if (dist < 15 && b.y <= 8 && assigned.action === 'pursuing') {
                                     b.active = false;
                                     assigned.action = 'throwing';
                                     this.playCatchSound();
-                                    this.createCatchSparks(assigned.x, assigned.y + 12, assigned.z);
-                                    this.showResultBanner(`🧤 ${assigned.name} 깔끔한 포구!`, `1루로 총알 송구!`, '#facc15');
+                                    this.createCatchSparks(assigned.x, assigned.y + 10, assigned.z);
+                                    this.showResultBanner(`🧤 ${assigned.name} 깔끔한 땅볼 포구!`, `1루로 빠르고 정확한 송구!`, '#facc15');
 
-                                    // 1루수에게 총알 레이저 송구 발사!
+                                    // 1루수에게 송구
                                     const firstBaseman = this.fielders.find(f => f.role === '1B');
                                     this.fieldingThrow = {
                                         active: true,
                                         startX: assigned.x,
-                                        startY: assigned.y + 18,
+                                        startY: assigned.y + 14,
                                         startZ: assigned.z,
                                         targetX: firstBaseman ? firstBaseman.x : 140,
                                         targetY: 16,
                                         targetZ: firstBaseman ? firstBaseman.z : 235,
                                         x: assigned.x,
-                                        y: assigned.y + 18,
+                                        y: assigned.y + 14,
                                         z: assigned.z,
                                         progress: 0,
-                                        speed: 3.4,
+                                        speed: 3.2,
                                         catcher: firstBaseman,
                                         sourceFielder: assigned
                                     };
                                 }
                             }
                         } else if (b.hitType === 'single' || b.hitType === 'double' || b.hitType === 'triple') {
-                            // 안타 타구 외야수 컷오프 수비 및 2루 중계 송구
-                            if (dist < 32 && b.y <= 12 && assigned.action === 'pursuing') {
+                            // ⚾ 안타 타구: 절대 공중에서 가로채지 않음! 공이 잔디에 바운드된 후 지면에 굴러갈 때만(b.y <= 3) 수비수가 회수하여 2루 중계 송구!
+                            if (dist < 18 && b.y <= 3 && assigned.action === 'pursuing') {
                                 b.active = false;
                                 assigned.action = 'throwing';
                                 this.playCatchSound();
-                                this.createCatchSparks(assigned.x, assigned.y + 14, assigned.z);
+                                this.createCatchSparks(assigned.x, assigned.y + 10, assigned.z);
                                 const cutoffFielder = this.fielders.find(f => f.role === 'SS' || f.role === '2B');
                                 this.fieldingThrow = {
                                     active: true,
                                     startX: assigned.x,
-                                    startY: assigned.y + 18,
+                                    startY: assigned.y + 14,
                                     startZ: assigned.z,
                                     targetX: cutoffFielder ? cutoffFielder.x : 0,
                                     targetY: 16,
                                     targetZ: cutoffFielder ? cutoffFielder.z : 155,
                                     x: assigned.x,
-                                    y: assigned.y + 18,
+                                    y: assigned.y + 14,
                                     z: assigned.z,
                                     progress: 0,
                                     speed: 2.8,
@@ -2768,9 +2768,8 @@ class BaseballGame {
         ctx.lineTo(this.width * 0.95, pBL.y + wtH);
         ctx.stroke();
 
-        // 💎 KBO/MLB 명품 다이아몬드 교차 잔디 (Diamond-Cut Cross-Mowed Lawn Pattern)
-        const stripeCount = 12;
-        // 1) 세로 깎기 줄무늬
+        // 🌿 메이저리그/KBO 공식 수직 원근 잔디 깎기 줄무늬 (원근감 살린 스트레이트 모어 라인)
+        const stripeCount = 14;
         for (let i = 0; i < stripeCount; i++) {
             if (i % 2 === 0) {
                 const x0 = pBL.x + (pBR.x - pBL.x) * (i / stripeCount);
@@ -2778,7 +2777,7 @@ class BaseballGame {
                 const bx0 = this.width * (i / stripeCount);
                 const bx1 = this.width * ((i + 1) / stripeCount);
 
-                ctx.fillStyle = 'rgba(34, 197, 94, 0.09)';
+                ctx.fillStyle = 'rgba(34, 197, 94, 0.08)'; // 자연스러운 태양광 반사 잔디결
                 ctx.beginPath();
                 ctx.moveTo(x0, pBL.y + wtH);
                 ctx.lineTo(x1, pBL.y + wtH);
@@ -2788,23 +2787,10 @@ class BaseballGame {
                 ctx.fill();
             }
         }
-        // 2) 45도 대각선 교차 빗살 롤러 줄무늬 (Cross-Diagonal Rolling Stripes)
-        for (let d = -stripeCount; d < stripeCount * 2; d += 2) {
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.035)';
-            ctx.beginPath();
-            const sx0 = (this.width / stripeCount) * d;
-            const sx1 = (this.width / stripeCount) * (d + 1);
-            ctx.moveTo(sx0, pBL.y + wtH);
-            ctx.lineTo(sx1, pBL.y + wtH);
-            ctx.lineTo(sx1 + this.width * 0.45, this.height);
-            ctx.lineTo(sx0 + this.width * 0.45, this.height);
-            ctx.closePath();
-            ctx.fill();
-        }
     }
 
     /**
-     * 💎 야구 다이아몬드 베이스 (홈, 1루, 2루, 3루 흙 주로 & 베이스백)
+     * 💎 야구 다이아몬드 베이스 (홈, 1루, 2루, 3루 흙 주로, 거대 부채꼴 내야 스킨 & 베이스백)
      */
     renderDiamondAndBases(ctx) {
         // 다이아몬드 주요 좌표:
@@ -2813,38 +2799,74 @@ class BaseballGame {
         const p1B   = this.project(130, 0, 230);
         const p2B   = this.project(0, 0, 90);
         const p3B   = this.project(-130, 0, 230);
+        const wallZ = (this.userRole === 'batter') ? -270 : 520;
+        const pLeftPole  = this.project(-240, 0, wallZ);
+        const pRightPole = this.project(240, 0, wallZ);
 
-        // 1. 내야 클레이 흙 다이아몬드 아치 (Clay Infield Skin)
         ctx.save();
+
+        // 1. 🏟️ 프로야구 공식 거대 부채꼴 내야 클레이 스킨 (Infield Clay Arc - 화살표 느낌 완전 제거!)
+        // 홈플레이트에서 1루/3루 바깥쪽을 감싸고 2루 뒤편까지 웅장하게 펼쳐지는 부채꼴 흙 그라운드
         ctx.fillStyle = '#b45309';
         ctx.beginPath();
         ctx.moveTo(pHome.x, pHome.y);
-        ctx.lineTo(p1B.x, p1B.y);
-        ctx.lineTo(p2B.x, p2B.y);
-        ctx.lineTo(p3B.x, p3B.y);
-        ctx.closePath();
-        ctx.lineWidth = 18 * pHome.scale;
-        ctx.strokeStyle = '#b45309';
-        ctx.stroke();
-
-        // 2. 내야 잔디 중앙 다이아몬드 서클
-        ctx.fillStyle = '#14532d';
-        ctx.beginPath();
-        ctx.moveTo(pHome.x, pHome.y);
-        ctx.lineTo(p1B.x, p1B.y);
-        ctx.lineTo(p2B.x, p2B.y);
-        ctx.lineTo(p3B.x, p3B.y);
+        const arcSteps = 24;
+        for (let i = 0; i <= arcSteps; i++) {
+            const angle = Math.PI - (i / arcSteps) * Math.PI; // PI(3루 외곽) -> 0(1루 외곽)
+            const ax = Math.cos(angle) * 175;
+            const az = 175 - Math.sin(angle) * 135;
+            const ap = this.project(ax, 0, az);
+            if (ap) ctx.lineTo(ap.x, ap.y);
+        }
         ctx.closePath();
         ctx.fill();
 
-        // 3. 백색 파울라인 (홈 -> 1루 -> 외야 / 홈 -> 3루 -> 외야)
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
-        ctx.lineWidth = 2.4 * pHome.scale;
-        ctx.shadowColor = '#ffffff';
-        ctx.shadowBlur = 4;
+        // 2. 내야 잔디 다이아몬드 아일랜드 (내야수들이 밟는 중앙 잔디 섬)
+        ctx.fillStyle = '#15803d';
+        ctx.beginPath();
+        const pGrassHome = this.project(0, 0, 345);
+        const pGrass1B = this.project(105, 0, 230);
+        const pGrass2B = this.project(0, 0, 115);
+        const pGrass3B = this.project(-105, 0, 230);
+        ctx.moveTo(pGrassHome.x, pGrassHome.y);
+        ctx.lineTo(pGrass1B.x, pGrass1B.y);
+        ctx.lineTo(pGrass2B.x, pGrass2B.y);
+        ctx.lineTo(pGrass3B.x, pGrass3B.y);
+        ctx.closePath();
+        ctx.fill();
+
+        // 3. 베이스별 흙 슬라이딩 피트 (Sliding Pits at 1B, 2B, 3B)
+        [p1B, p2B, p3B].forEach(bp => {
+            if (bp) {
+                ctx.fillStyle = '#9a3412';
+                ctx.beginPath();
+                ctx.ellipse(bp.x, bp.y, 22 * bp.scale, 8 * bp.scale, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        });
+
+        // 4. 홈 -> 1루 / 홈 -> 3루 흙 베이스러닝 주로 (Basepaths Dirt Lanes)
+        ctx.strokeStyle = '#b45309';
+        ctx.lineWidth = 14 * pHome.scale;
         ctx.beginPath();
         ctx.moveTo(pHome.x, pHome.y); ctx.lineTo(p1B.x, p1B.y);
         ctx.moveTo(pHome.x, pHome.y); ctx.lineTo(p3B.x, p3B.y);
+        ctx.stroke();
+
+        // 5. 🌟 프로야구 공식 풀-렝스 백색 파울라인 (홈 -> 1루/3루 통과 -> 외야 끝 파울폴까지 시원하게 뻗음!)
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)';
+        ctx.lineWidth = 2.4 * pHome.scale;
+        ctx.shadowColor = '#ffffff';
+        ctx.shadowBlur = 5;
+        ctx.beginPath();
+        if (pLeftPole) {
+            ctx.moveTo(pHome.x, pHome.y);
+            ctx.lineTo(pLeftPole.x, pLeftPole.y);
+        }
+        if (pRightPole) {
+            ctx.moveTo(pHome.x, pHome.y);
+            ctx.lineTo(pRightPole.x, pRightPole.y);
+        }
         ctx.stroke();
         ctx.shadowBlur = 0;
 
@@ -4442,7 +4464,7 @@ class BaseballGame {
     }
 
     /**
-     * 3D 자연스러운 타자 렌더링 & 유려한 MLB 다관절 스윙
+     * 3D 자연스러운 타자 렌더링 & 유려한 3D MLB 다관절 스윙 (3D 배트 높이/스윙 플레인 & 투구 높이 추적 & 양팔 다관절)
      * @param {boolean} isCloseView - 타자 시점(MLB The Show)일 때는 바로 앞에서 역동적인 스윙을 보여줌
      */
     renderBatter(ctx, isCloseView) {
@@ -4470,47 +4492,89 @@ class BaseballGame {
         ctx.ellipse(0, 4 * s, w * 0.65, 8 * s, 0, 0, Math.PI * 2);
         ctx.fill();
 
+        // ⚾ 상대적 투구 높이 측정 (-1.0: 무릎 낮은 코스, 0.0: 벨트 가운데, +1.0: 가슴 높은 코스)
+        const ballY = (this.ball && this.ball.active) ? this.ball.y : 44;
+        const pitchHeightRel = Math.max(-1.0, Math.min(1.0, (ballY - 44) / 22));
+
         // 🏃‍♂️ 유려한 3D MLB 타격 메커니즘 (스탠스 웨글 -> 스트라이드 & 로딩 -> 힙 턴 & 배트 래그 -> 임팩트 익스텐션 -> 하이 팔로스루)
         const prog = b.swingProgress;
         let strideX = 0;
         let hipAngle = 0;
         let batAngle = 0;
         let weightShiftY = 0;
+        let kneeBendY = 0;
+
+        let knobX = w * 0.14;
+        let knobY = -h * 0.72;
+        let batElevation = 0.35; // 3D 높이 각도 (배트 헤드의 Z/Y 높낮이)
 
         if (b.isSwinging) {
+            // 낮은 공일 때는 타자가 무릎을 굽히며 상체를 낮춰 낮은 코스 배트 플레인 형성!
+            if (pitchHeightRel < 0) {
+                kneeBendY = -pitchHeightRel * 6.5 * s;
+            }
+
             if (prog < 0.22) {
                 // 1. 스트라이드 & 코일링 (앞발 내딛기 & 중심 뒤로 모으기)
                 const p = prog / 0.22;
-                strideX = -10 * s * p;
-                weightShiftY = 2 * s * p;
-                hipAngle = -0.20 * (1 - p * 0.5);
-                batAngle = 0.88 + 0.15 * p; // 뒤로 젖혀지는 테이크백
-            } else if (prog < 0.55) {
-                // 2. 파워 언코일링 & 배트 래그 (골반 회전 폭발 & 그립 먼저 끌고 내려옴)
-                const p = (prog - 0.22) / 0.33;
-                strideX = -10 * s;
-                weightShiftY = 2 * s;
-                hipAngle = -0.10 + p * 0.85; // 힙 턴 오픈
-                batAngle = 1.03 - p * 2.35;  // 배트 래그를 통한 벼락 스윙
+                strideX = -12 * s * p;
+                weightShiftY = 2 * s * p + kneeBendY * p;
+                hipAngle = -0.18 * (1 - p * 0.5);
+                knobX = w * 0.16 + 5 * s * p;
+                knobY = -h * 0.74 - 4 * s * p + weightShiftY;
+                batAngle = 0.86 + 0.14 * p; // 뒤로 젖혀지는 테이크백
+                batElevation = 0.40;
+            } else if (prog < 0.54) {
+                // 2. 파워 언코일링 & 배트 래그 (골반 회전 폭발 & 그립이 볼 높이로 급강하!)
+                const p = (prog - 0.22) / 0.32;
+                strideX = -12 * s;
+                weightShiftY = 2 * s + kneeBendY;
+                hipAngle = -0.09 + p * 0.88; // 힙 턴 오픈
+                // 그립이 투구 높이에 맞춰 3D 공간으로 전진
+                knobX = (w * 0.21) - p * (w * 0.46);
+                knobY = (-h * 0.78 + weightShiftY) + p * (h * 0.22 - pitchHeightRel * 10 * s);
+                batAngle = 1.00 - p * 1.68;  // 배트 래그를 통한 벼락 스윙 (헤드가 뒤에 머뭄)
+                batElevation = 0.30 - p * 0.35; // 수평 타격면으로 배트 레벨 진입
+            } else if (prog < 0.74) {
+                // 3. 임팩트 & 완전한 양팔 익스텐션 (Full Extension & Launch Attack Angle)
+                const p = (prog - 0.54) / 0.20;
+                strideX = -12 * s;
+                weightShiftY = 2 * s + kneeBendY;
+                hipAngle = 0.79;
+                // 양팔이 앞으로 쭉 뻗어나가며 투구 높이에 정확히 배트 정렬
+                knobX = -w * 0.25 - 12 * s * Math.sin(p * Math.PI);
+                knobY = -h * 0.56 + weightShiftY - pitchHeightRel * 12 * s + (p * 5 * s);
+                batAngle = -0.68 - p * 1.15;
+                batElevation = -0.05 + pitchHeightRel * 0.25; // 투구 높이에 따른 3D 입체 타격 각도!
             } else {
-                // 3. 풀 익스텐션 & 어깨 위 하이 팔로스루
-                const p = (prog - 0.55) / 0.45;
-                strideX = -10 * s;
-                hipAngle = 0.75;
-                batAngle = -1.32 - p * 0.55; // 어깨 위로 넘어가는 완성도 높은 피니시
+                // 4. 어깨 위로 넘어가는 완성도 높은 MLB 하이 팔로스루
+                const p = (prog - 0.74) / 0.26;
+                strideX = -12 * s;
+                weightShiftY = 2 * s;
+                hipAngle = 0.79;
+                knobX = -w * 0.25 + p * (w * 0.16);
+                knobY = -h * 0.51 + weightShiftY - p * (h * 0.18);
+                batAngle = -1.83 - p * 0.72; // 목 뒤로 완전히 감겨 올라가는 호쾌한 피니시
+                batElevation = 0.45 * p;
             }
         } else if (b.isBunting) {
-            // 🪵 [컴투스 프로야구 2026] 리얼 번트 스탠스: 몸을 홈플레이트로 돌리고 수평 배트 뻗기
+            // 🪵 [컴투스 프로야구 2026] 리얼 번트 스탠스: 몸을 투수 방향으로 돌리고 투구 높이에 배트 수평 정렬!
             const breathe = Math.sin(b.idleTimer * 4.0) * 0.8 * s;
             strideX = -8 * s;
             weightShiftY = 3 * s + breathe;
             hipAngle = 0.38;
-            batAngle = -0.06; // 완전 수평 번트 각도
+            knobX = -w * 0.08;
+            knobY = -h * 0.58 + weightShiftY - pitchHeightRel * 8 * s; // 공의 높이에 맞춰 배트 높이 완벽 조절!
+            batAngle = -0.06;
+            batElevation = 0;
         } else {
             // 대기 자세 (부드러운 배트 웨글 리듬과 체중 록킹)
             const idleCycle = b.idleTimer * 3.5;
-            batAngle = 0.72 + Math.sin(idleCycle) * 0.12;
             weightShiftY = Math.sin(idleCycle) * 1.2 * s;
+            knobX = w * 0.14 + Math.sin(idleCycle) * 1.5 * s;
+            knobY = -h * 0.72 + weightShiftY + Math.cos(idleCycle) * 1.5 * s;
+            batAngle = 0.72 + Math.sin(idleCycle) * 0.10;
+            batElevation = 0.35;
         }
 
         // 3D 입체 원기둥 음영 다리 & 유니폼 바지 (스탠스에 따른 스트라이드 이동)
@@ -4604,59 +4668,166 @@ class BaseballGame {
         ctx.fill();
         ctx.restore();
 
-        // 🏏 배트 & 타격 스윙 (황금 원목 배트 & 네온 스윙 궤적)
+        // 🦾 리얼 3D 타자 양팔 (앞팔 & 뒷팔 다관절) & 3D 메이플 원목 배트
         const batLen = 68 * s;
-        ctx.save();
-        ctx.translate(-w * 0.2 + strideX * 0.6, -h * 0.65 + weightShiftY);
-        ctx.rotate(batAngle);
+        const shLX = -w * 0.35 + strideX * 0.3;
+        const shLY = -h * 0.74 + weightShiftY;
+        const shRX = w * 0.24 + strideX * 0.3;
+        const shRY = -h * 0.74 + weightShiftY;
 
-        // 스윙 네온 잔상 효과
+        this.drawBatterArmsAndBat(
+            ctx, s, bSkin, b,
+            shLX, shLY, shRX, shRY,
+            knobX, knobY, batAngle, batElevation, batLen,
+            pitchHeightRel
+        );
+
+        ctx.restore();
+    }
+
+    /**
+     * 🏏 리얼 3D 타자 양팔(리드암·트레일암) 및 3D 입체 원목 배트 렌더링
+     */
+    drawBatterArmsAndBat(ctx, s, bSkin, b, shLX, shLY, shRX, shRY, knobX, knobY, batAngle, batElevation, batLen, pitchHeightRel) {
+        ctx.save();
+
+        // 1. 배트 팁(끝단) 위치 계산
+        const tipX = knobX + Math.sin(batAngle) * batLen;
+        const tipY = knobY - Math.cos(batAngle) * batLen - batElevation * 18 * s;
+
+        // 2. 스윙 잔상 네온 리본 (Swinging Ribbon Trail)
         if (b.isSwinging) {
-            const trailGrad = ctx.createRadialGradient(0, 0, batLen * 0.5, 0, 0, batLen);
-            trailGrad.addColorStop(0, 'rgba(250, 204, 21, 0.6)');
-            trailGrad.addColorStop(0.7, 'rgba(56, 189, 248, 0.4)');
-            trailGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            const trailGrad = ctx.createLinearGradient(knobX, knobY, tipX, tipY);
+            trailGrad.addColorStop(0, 'rgba(250, 204, 21, 0.15)');
+            trailGrad.addColorStop(0.5, 'rgba(56, 189, 248, 0.45)');
+            trailGrad.addColorStop(1, 'rgba(255, 255, 255, 0.85)');
             ctx.fillStyle = trailGrad;
             ctx.beginPath();
-            ctx.arc(0, 0, batLen * 1.05, -1.1, 0.2);
-            ctx.lineTo(0, 0);
+            ctx.moveTo(knobX, knobY);
+            ctx.lineTo(tipX, tipY);
+            ctx.lineTo(tipX - Math.cos(batAngle) * 16 * s, tipY - Math.sin(batAngle) * 16 * s);
+            ctx.lineTo(knobX - Math.cos(batAngle) * 6 * s, knobY - Math.sin(batAngle) * 6 * s);
+            ctx.closePath();
             ctx.fill();
         }
 
-        // 타격 장갑 (Batting Gloves)
-        ctx.fillStyle = '#f8fafc';
+        // 3. 뒷팔 (오른팔 / Trail Arm) 렌더링
+        const elbRX = (shRX + knobX) * 0.5 + 8 * s;
+        const elbRY = (shRY + knobY) * 0.5 + 4 * s;
+
+        // 상완
+        ctx.strokeStyle = bSkin.jersey;
+        ctx.lineWidth = 6.8 * s;
+        ctx.lineCap = 'round';
         ctx.beginPath();
-        ctx.ellipse(0, -5 * s, 5 * s, 6 * s, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = '#334155';
-        ctx.lineWidth = 1 * s;
+        ctx.moveTo(shRX, shRY);
+        ctx.lineTo(elbRX, elbRY);
         ctx.stroke();
 
-        // 배트 손잡이 (그립 테이프)
-        ctx.fillStyle = '#1e293b';
-        ctx.fillRect(-2.5 * s, -12 * s, 5 * s, 12 * s);
-
-        // 배트 배럴 (황금빛 우드 배트 그라데이션)
-        const batGrad = ctx.createLinearGradient(-5 * s, 0, 5 * s, 0);
-        batGrad.addColorStop(0, '#f59e0b');
-        batGrad.addColorStop(0.4, '#fef08a');
-        batGrad.addColorStop(0.7, '#fbbf24');
-        batGrad.addColorStop(1, '#b45309');
-        ctx.fillStyle = batGrad;
+        // 전완근 & 손목
+        ctx.strokeStyle = '#fed7aa';
+        ctx.lineWidth = 5.2 * s;
         ctx.beginPath();
-        ctx.roundRect(-5 * s, -batLen, 10 * s, batLen - 12 * s, 4 * s);
+        ctx.moveTo(elbRX, elbRY);
+        ctx.lineTo(knobX + 3 * s, knobY + 2 * s);
+        ctx.stroke();
+
+        // 4. 앞팔 (왼팔 / Lead Arm) 렌더링
+        const elbLX = (shLX + knobX) * 0.5 - 6 * s;
+        const elbLY = (shLY + knobY) * 0.5 + 2 * s;
+
+        // 상완
+        ctx.strokeStyle = bSkin.jersey;
+        ctx.lineWidth = 6.8 * s;
+        ctx.beginPath();
+        ctx.moveTo(shLX, shLY);
+        ctx.lineTo(elbLX, elbLY);
+        ctx.stroke();
+
+        // 전완근
+        ctx.strokeStyle = '#fed7aa';
+        ctx.lineWidth = 5.2 * s;
+        ctx.beginPath();
+        ctx.moveTo(elbLX, elbLY);
+        ctx.lineTo(knobX, knobY);
+        ctx.stroke();
+
+        // 5. 3D 메이플 원목 배트 본체 (Knob -> Handle Grip -> Taper -> 3D Barrel -> Cupped End)
+        ctx.save();
+        ctx.translate(knobX, knobY);
+        ctx.rotate(batAngle);
+
+        // (1) 배트 노브 (Knob 금빛 메탈 링)
+        ctx.fillStyle = '#ca8a04';
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 4.5 * s, 3.2 * s, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // 번트 시 앞손 (배럴 위를 받치는 오른손 타격 장갑)
+        // (2) 그립 테이프 (Handle Grip Tape)
+        ctx.fillStyle = '#0f172a';
+        ctx.beginPath();
+        ctx.roundRect(-2.8 * s, -14 * s, 5.6 * s, 14 * s, 1.5 * s);
+        ctx.fill();
+        ctx.strokeStyle = '#334155';
+        ctx.lineWidth = 0.8 * s;
+        ctx.stroke();
+
+        // (3) 프로 타격 장갑 2개 (양손 그립)
+        ctx.fillStyle = '#f8fafc';
+        ctx.strokeStyle = '#64748b';
+        ctx.lineWidth = 1 * s;
+        // 밑손 (왼손)
+        ctx.beginPath();
+        ctx.ellipse(0, -4 * s, 4.8 * s, 3.8 * s, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        // 윗손 (오른손)
+        ctx.beginPath();
+        ctx.ellipse(0, -9 * s, 5.0 * s, 4.0 * s, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // 번트 시 앞손은 배럴 위를 지탱!
         if (b.isBunting) {
             ctx.fillStyle = '#f8fafc';
             ctx.beginPath();
-            ctx.ellipse(0, -batLen * 0.42, 6 * s, 6.5 * s, 0, 0, Math.PI * 2);
+            ctx.ellipse(0, -batLen * 0.45, 5.5 * s, 4.8 * s, 0, 0, Math.PI * 2);
             ctx.fill();
-            ctx.strokeStyle = '#334155';
-            ctx.lineWidth = 1 * s;
             ctx.stroke();
         }
+
+        // (4) 테이퍼 & 3D 원목 배럴 (Taper & Maple Barrel)
+        const barrelGrad = ctx.createLinearGradient(-6 * s, 0, 6 * s, 0);
+        barrelGrad.addColorStop(0, '#d97706'); // 원목 섀도우
+        barrelGrad.addColorStop(0.25, '#fde047'); // 3D 광택 하이라이트 림
+        barrelGrad.addColorStop(0.65, '#f59e0b'); // 메이플 골든 우드
+        barrelGrad.addColorStop(1, '#78350f'); // 하단 앰비언트 오클루전
+
+        ctx.fillStyle = barrelGrad;
+        ctx.beginPath();
+        // 테이퍼: -14s에서 -24s까지 두께 확장
+        ctx.moveTo(-2.8 * s, -14 * s);
+        ctx.lineTo(-5.5 * s, -26 * s);
+        // 배럴: -26s에서 -batLen까지 굵은 타구부
+        ctx.lineTo(-5.5 * s, -batLen);
+        ctx.lineTo(5.5 * s, -batLen);
+        ctx.lineTo(5.5 * s, -26 * s);
+        ctx.lineTo(2.8 * s, -14 * s);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = '#451a03';
+        ctx.lineWidth = 0.8 * s;
+        ctx.stroke();
+
+        // (5) 배럴 중심 KBO 골든 포일 엠블럼 로고
+        ctx.fillStyle = '#fef08a';
+        ctx.fillRect(-2 * s, -batLen * 0.62, 4 * s, 7 * s);
+
+        // (6) 배트 끝 컵 (Cupped End Cap)
+        ctx.fillStyle = '#451a03';
+        ctx.beginPath();
+        ctx.ellipse(0, -batLen, 5.5 * s, 2.2 * s, 0, 0, Math.PI * 2);
+        ctx.fill();
 
         ctx.restore();
         ctx.restore();
