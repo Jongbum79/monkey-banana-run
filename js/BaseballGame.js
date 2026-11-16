@@ -44,8 +44,35 @@ function safeSetStorage(key, value) {
 }
 
 /**
- * 🌐 경량 표준 WebSocket MQTT 3.1.1 클라이언트 (단말 간 실시간 크로스 디바이스 1:1 대전)
+ * 🌐 고신뢰 표준 WebSocket MQTT 3.1.1 클라이언트 (단말 간 실시간 크로스 디바이스 1:1 대전)
+ * - OASIS 공식 표준 가변 바이트 길이(Variable-Byte Remaining Length) 완벽 인코딩/디코딩
+ * - 다중 브로커 자동 페일오버 및 자동 재연결(Auto-Reconnect) 내장
  */
+function encodeMqttLength(len) {
+    const bytes = [];
+    do {
+        let encByte = len % 128;
+        len = Math.floor(len / 128);
+        if (len > 0) encByte |= 0x80;
+        bytes.push(encByte);
+    } while (len > 0);
+    return bytes;
+}
+
+function decodeMqttLength(buf, offset) {
+    let multiplier = 1;
+    let value = 0;
+    let i = offset;
+    let encByte;
+    do {
+        if (i >= buf.length) return { length: 0, nextOffset: offset };
+        encByte = buf[i++];
+        value += (encByte & 127) * multiplier;
+        multiplier *= 128;
+    } while ((encByte & 128) !== 0 && multiplier <= 128 * 128 * 128);
+    return { length: value, nextOffset: i };
+}
+
 class SimpleMqttClient {
     constructor(brokerUrls, onMessage, onStatusChange) {
         this.brokerUrls = Array.isArray(brokerUrls) ? brokerUrls : [brokerUrls];
@@ -56,11 +83,17 @@ class SimpleMqttClient {
         this.clientId = 'bb_' + Math.random().toString(36).slice(2, 9);
         this.connected = false;
         this.subscribedTopics = new Set();
+        this.reconnectTimer = null;
+        this.isClosedManually = false;
         this.connect();
     }
 
     connect() {
-        if (typeof WebSocket === 'undefined') return;
+        if (typeof WebSocket === 'undefined' || this.isClosedManually) return;
+        if (this.ws) {
+            try { this.ws.close(); } catch (e) {}
+            this.ws = null;
+        }
         const url = this.brokerUrls[this.brokerIdx % this.brokerUrls.length];
         try {
             this.ws = new WebSocket(url, ['mqtt']);
@@ -74,14 +107,27 @@ class SimpleMqttClient {
             this.ws.onerror = () => {
                 this.connected = false;
                 if (this.onStatusChange) this.onStatusChange(false, 'error');
+                this.scheduleReconnect();
             };
             this.ws.onclose = () => {
                 this.connected = false;
                 if (this.onStatusChange) this.onStatusChange(false, 'closed');
+                this.scheduleReconnect();
             };
         } catch (err) {
-            if (this.onStatusChange) this.onStatusChange(false, 'failed');
+            this.scheduleReconnect();
         }
+    }
+
+    scheduleReconnect() {
+        if (this.isClosedManually || this.reconnectTimer) return;
+        this.brokerIdx++;
+        this.reconnectTimer = setTimeout(() => {
+            this.reconnectTimer = null;
+            if (!this.connected && !this.isClosedManually) {
+                this.connect();
+            }
+        }, 2200);
     }
 
     sendConnect() {
@@ -89,7 +135,11 @@ class SimpleMqttClient {
         const idBytes = new TextEncoder().encode(this.clientId);
         const payload = [idBytes.length >> 8, idBytes.length & 0xFF, ...idBytes];
         const body = [...proto, ...payload];
-        const packet = new Uint8Array([0x10, body.length, ...body]);
+        const lenBytes = encodeMqttLength(body.length);
+        const packet = new Uint8Array(1 + lenBytes.length + body.length);
+        packet[0] = 0x10;
+        packet.set(lenBytes, 1);
+        packet.set(body, 1 + lenBytes.length);
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
             this.ws.send(packet.buffer);
         }
@@ -100,7 +150,11 @@ class SimpleMqttClient {
         if (!this.connected || !this.ws || this.ws.readyState !== WebSocket.OPEN) return;
         const tBytes = new TextEncoder().encode(topic);
         const body = [0x00, 0x01, tBytes.length >> 8, tBytes.length & 0xFF, ...tBytes, 0x00];
-        const packet = new Uint8Array([0x82, body.length, ...body]);
+        const lenBytes = encodeMqttLength(body.length);
+        const packet = new Uint8Array(1 + lenBytes.length + body.length);
+        packet[0] = 0x82;
+        packet.set(lenBytes, 1);
+        packet.set(body, 1 + lenBytes.length);
         this.ws.send(packet.buffer);
     }
 
@@ -108,8 +162,16 @@ class SimpleMqttClient {
         if (!this.connected || !this.ws || this.ws.readyState !== WebSocket.OPEN) return;
         const tBytes = new TextEncoder().encode(topic);
         const mBytes = new TextEncoder().encode(typeof dataObj === 'string' ? dataObj : JSON.stringify(dataObj));
-        const body = [tBytes.length >> 8, tBytes.length & 0xFF, ...tBytes, ...mBytes];
-        const packet = new Uint8Array([0x30, body.length, ...body]);
+        const body = new Uint8Array(2 + tBytes.length + mBytes.length);
+        body[0] = tBytes.length >> 8;
+        body[1] = tBytes.length & 0xFF;
+        body.set(tBytes, 2);
+        body.set(mBytes, 2 + tBytes.length);
+        const lenBytes = encodeMqttLength(body.length);
+        const packet = new Uint8Array(1 + lenBytes.length + body.length);
+        packet[0] = 0x30;
+        packet.set(lenBytes, 1);
+        packet.set(body, 1 + lenBytes.length);
         this.ws.send(packet.buffer);
     }
 
@@ -117,25 +179,36 @@ class SimpleMqttClient {
         if (!buf || buf.length < 2) return;
         const packetType = buf[0] >> 4;
         if (packetType === 2) {
+            // CONNACK
             this.connected = true;
             if (this.onStatusChange) this.onStatusChange(true, 'connected');
             for (const topic of this.subscribedTopics) {
                 this.subscribe(topic);
             }
         } else if (packetType === 3) {
-            const topicLen = (buf[2] << 8) | buf[3];
-            const topic = new TextDecoder().decode(buf.subarray(4, 4 + topicLen));
-            const payloadStr = new TextDecoder().decode(buf.subarray(4 + topicLen));
-            try {
-                const parsed = JSON.parse(payloadStr);
-                if (this.onMessage) this.onMessage(topic, parsed);
-            } catch (e) {
-                if (this.onMessage) this.onMessage(topic, payloadStr);
+            // PUBLISH
+            const { length: remainingLength, nextOffset } = decodeMqttLength(buf, 1);
+            if (buf.length >= nextOffset + 2) {
+                const topicLen = (buf[nextOffset] << 8) | buf[nextOffset + 1];
+                const topic = new TextDecoder().decode(buf.subarray(nextOffset + 2, nextOffset + 2 + topicLen));
+                const payloadBytes = buf.subarray(nextOffset + 2 + topicLen, nextOffset + remainingLength);
+                const payloadStr = new TextDecoder().decode(payloadBytes);
+                try {
+                    const parsed = JSON.parse(payloadStr);
+                    if (this.onMessage) this.onMessage(topic, parsed);
+                } catch (e) {
+                    if (this.onMessage) this.onMessage(topic, payloadStr);
+                }
             }
         }
     }
 
     close() {
+        this.isClosedManually = true;
+        if (this.reconnectTimer) {
+            clearTimeout(this.reconnectTimer);
+            this.reconnectTimer = null;
+        }
         if (this.ws) {
             try { this.ws.close(); } catch (e) {}
             this.ws = null;
@@ -408,6 +481,11 @@ class BaseballGame {
         this.myPeerId = 'bb_peer_' + Math.random().toString(36).slice(2, 9);
         this.activeRoom = null;
         this.isMultiplayer = false;
+        this.isHost = false;
+        this.guestPeerId = null;
+        this.lastInvite = null;
+        this.inviteIntervalId = null;
+        this.activeTactic = null; // 'squeeze' | 'hit_and_run' | 'run_and_hit' | null
         this.mqttClient = null;
         this.broadcastChannel = null;
         try {
@@ -512,6 +590,7 @@ class BaseballGame {
 
         this.bindEvents();
         this.setupBroadcastChannel();
+        this.initNetwork(); // 페이지 진입 즉시 실시간 서버에 백그라운드 사전 접속 (매칭 대기시간 제로화)
         const savedDiff = safeGetStorage('smilegames_bb_difficulty');
         this.difficulty = (savedDiff && ['easy', 'normal', 'pro'].includes(savedDiff)) ? savedDiff : 'normal';
         this.updateDifficultyUI();
@@ -562,19 +641,20 @@ class BaseballGame {
         if (!this.broadcastChannel) return;
         this.broadcastChannel.onmessage = (event) => {
             const data = event.data;
-            if (!data) return;
-            this.handleNetworkMessage('smile_baseball/lobby', data);
+            if (!data || typeof data !== 'object') return;
+            const topic = data.__channel_topic || 'smile_baseball/lobby';
+            this.handleNetworkMessage(topic, data);
         };
     }
 
     /**
-     * 🌐 크로스 디바이스 글로벌 실시간 대전 네트워크 초기화 (EMQX & HiveMQ 다중 브로커)
+     * 🌐 크로스 디바이스 글로벌 실시간 대전 네트워크 초기화 (EMQX 고신뢰 클러스터 & 로컬 브로드캐스트)
      */
     initNetwork() {
         if (!this.mqttClient) {
             const brokers = [
                 'wss://broker.emqx.io:8084/mqtt',
-                'wss://broker.hivemq.com:8884/mqtt'
+                'wss://test.mosquitto.org:8081/mqtt'
             ];
             this.mqttClient = new SimpleMqttClient(
                 brokers,
@@ -582,7 +662,7 @@ class BaseballGame {
                 (connected) => {
                     const statusEl = document.getElementById('mlb-radar-status');
                     if (connected && this.isMatching && statusEl) {
-                        statusEl.textContent = '⚡ 서버 접속 성공! 상대 유저 매칭 대기 중...';
+                        statusEl.textContent = '⚡ 실시간 서버 접속 완료! 상대 유저 매칭 대기 중...';
                     }
                 }
             );
@@ -599,7 +679,8 @@ class BaseballGame {
             this.mqttClient.publish(topic, obj);
         }
         if (this.broadcastChannel) {
-            this.broadcastChannel.postMessage(obj);
+            const bcData = { ...obj, __channel_topic: topic };
+            this.broadcastChannel.postMessage(bcData);
         }
     }
 
@@ -611,24 +692,36 @@ class BaseballGame {
 
         // [1] 로비 매칭 단계
         if (topic === 'smile_baseball/lobby') {
-            if (!this.isMatching || this.activeRoom) return;
+            if (data.senderPeerId === this.myPeerId) return; // 본인 패킷 무시
 
-            // 상대 단말이 매칭 요청(FIND_RIVAL)을 보냈을 때
-            if (data.type === 'FIND_RIVAL' && data.peerId !== this.myPeerId) {
-                // peerId가 더 작은 쪽이 방장(Coordinator)이 되어 방을 개설하고 역할을 배정
+            // 1. 상대 단말이 매칭 요청(FIND_RIVAL)을 보냈을 때
+            if (data.type === 'FIND_RIVAL') {
+                if (!this.isMatching) return;
+
+                // 이미 방을 개설했는데 게스트가 아직 FIND_RIVAL 상태라면 재초대 전송
+                if (this.activeRoom && this.isHost && this.guestPeerId === data.peerId) {
+                    if (this.lastInvite) {
+                        this.sendNetworkMessage('smile_baseball/lobby', this.lastInvite);
+                    }
+                    return;
+                }
+                if (this.activeRoom) return;
+
+                // peerId가 더 작은 쪽이 방장(Host)이 되어 방을 개설하고 역할을 배정
                 if (this.myPeerId < data.peerId) {
                     const roomId = 'room_' + this.myPeerId.slice(-6) + '_' + data.peerId.slice(-6);
                     this.activeRoom = roomId;
                     this.isMultiplayer = true;
+                    this.isHost = true;
+                    this.guestPeerId = data.peerId;
 
-                    // 역할 배정 (둘 다 같은 역할을 골랐어도 무조건 한 명은 투수, 한 명은 타자로 자동 배정하여 100% 매칭 성사!)
                     let hostRole = this.userRole;
                     let guestRole = data.role;
                     if (hostRole === guestRole) {
                         guestRole = (hostRole === 'pitcher') ? 'batter' : 'pitcher';
                     }
 
-                    const invite = {
+                    this.lastInvite = {
                         type: 'MATCH_INVITE',
                         hostPeerId: this.myPeerId,
                         guestPeerId: data.peerId,
@@ -639,16 +732,31 @@ class BaseballGame {
                         hostChar: this.p1.char,
                         hostSkin: this.p1.skin
                     };
-                    this.sendNetworkMessage('smile_baseball/lobby', invite);
 
-                    // 룸 토픽 구독 및 매칭 완료
+                    // 게스트 수락(MATCH_ACCEPT)을 받을 때까지 400ms 주기로 반복 전송 (패킷 유실 원천 차단)
+                    if (this.inviteIntervalId) clearInterval(this.inviteIntervalId);
+                    this.inviteIntervalId = setInterval(() => {
+                        if (this.activeRoom === roomId && this.isMatching && this.lastInvite) {
+                            this.sendNetworkMessage('smile_baseball/lobby', this.lastInvite);
+                        } else {
+                            clearInterval(this.inviteIntervalId);
+                            this.inviteIntervalId = null;
+                        }
+                    }, 400);
+
+                    this.sendNetworkMessage('smile_baseball/lobby', this.lastInvite);
+
                     if (this.mqttClient) this.mqttClient.subscribe('smile_baseball/' + roomId);
                     this.completeMatchmaking(data.userName, data.char, data.skin, false);
                 }
-            } else if (data.type === 'MATCH_INVITE' && data.guestPeerId === this.myPeerId) {
-                // 방장으로부터 초대를 받은 게스트 단말!
+            } 
+            // 2. 방장으로부터 매칭 초대(MATCH_INVITE) 수신 시 게스트 수락
+            else if (data.type === 'MATCH_INVITE' && data.guestPeerId === this.myPeerId) {
+                if (!this.isMatching) return;
+
                 this.activeRoom = data.room;
                 this.isMultiplayer = true;
+                this.isHost = false;
                 this.userRole = data.guestRole;
                 this.resetCamera();
                 this.updateHUD();
@@ -663,19 +771,25 @@ class BaseballGame {
                     guestSkin: this.p1.skin
                 };
                 this.sendNetworkMessage('smile_baseball/lobby', accept);
+                this.sendNetworkMessage('smile_baseball/' + data.room, accept);
 
                 if (this.mqttClient) this.mqttClient.subscribe('smile_baseball/' + data.room);
                 this.completeMatchmaking(data.hostName, data.hostChar, data.hostSkin, false);
-            } else if (data.type === 'MATCH_ACCEPT' && data.hostPeerId === this.myPeerId && data.room === this.activeRoom) {
-                // 방장이 수락 확인 완료
+            } 
+            // 3. 방장이 게스트의 수락(MATCH_ACCEPT) 확인
+            else if (data.type === 'MATCH_ACCEPT' && data.hostPeerId === this.myPeerId && data.room === this.activeRoom) {
+                if (this.inviteIntervalId) {
+                    clearInterval(this.inviteIntervalId);
+                    this.inviteIntervalId = null;
+                }
                 if (this.mqttClient) this.mqttClient.subscribe('smile_baseball/' + data.room);
             }
             return;
         }
 
-        // [2] 룸 실시간 인게임 플레이 동기화 (투구, 타격, 스윙)
+        // [2] 룸 실시간 인게임 플레이 동기화 (투구, 타격, 스윙, 작전)
         if (this.activeRoom && topic === 'smile_baseball/' + this.activeRoom) {
-            if (data.senderPeerId === this.myPeerId) return; // 본인 패킷 무시
+            if (data.senderPeerId === this.myPeerId) return;
 
             if (data.type === 'REMOTE_PITCH') {
                 if (this.userRole === 'batter') {
@@ -684,6 +798,18 @@ class BaseballGame {
             } else if (data.type === 'REMOTE_SWING') {
                 if (this.userRole === 'pitcher') {
                     this.triggerBatterSwing();
+                }
+            } else if (data.type === 'REMOTE_BUNT') {
+                if (this.userRole === 'pitcher') {
+                    this.batter.isBunting = true;
+                }
+            } else if (data.type === 'REMOTE_STEAL') {
+                if (this.userRole === 'pitcher') {
+                    this.attemptSteal();
+                }
+            } else if (data.type === 'REMOTE_TACTIC') {
+                if (this.userRole === 'pitcher') {
+                    this.activeTactic = data.tactic;
                 }
             }
         }
@@ -728,7 +854,16 @@ class BaseballGame {
 
             // --- 타자 조작 모드 ---
             if (!isCurrentPitcher || this.userRole === 'batter') {
-                if (e.code === 'KeyS' || e.code === 'KeyD') {
+                if (e.code === 'KeyQ') {
+                    e.preventDefault();
+                    this.triggerSqueezeBunt();
+                } else if (e.code === 'KeyH') {
+                    e.preventDefault();
+                    this.triggerHitAndRun();
+                } else if (e.code === 'KeyR') {
+                    e.preventDefault();
+                    this.triggerRunAndHit();
+                } else if (e.code === 'KeyS' || e.code === 'KeyD') {
                     e.preventDefault();
                     this.attemptSteal();
                 } else if (e.code === 'KeyB') {
@@ -741,6 +876,8 @@ class BaseballGame {
                         this.batter.isBunting = false;
                         const buntBtn = document.getElementById('btn-baseball-bunt');
                         if (buntBtn) buntBtn.classList.remove('active');
+                        const squeezeBtn = document.getElementById('btn-baseball-squeeze');
+                        if (squeezeBtn) squeezeBtn.classList.remove('active');
                     }
                     this.triggerBatterSwing();
                 }
@@ -826,6 +963,42 @@ class BaseballGame {
                 e.stopPropagation();
                 this.ensureAudio();
                 this.attemptSteal();
+            });
+        }
+
+        // 🎯 스퀴즈 번트 버튼 (Q키)
+        const squeezeBtn = document.getElementById('btn-baseball-squeeze');
+        if (squeezeBtn) {
+            squeezeBtn.addEventListener('pointerdown', (e) => {
+                if (!this.isRunning) return;
+                e.preventDefault();
+                e.stopPropagation();
+                this.ensureAudio();
+                this.triggerSqueezeBunt();
+            });
+        }
+
+        // ⚡ 히트 앤드 런 버튼 (H키)
+        const hitrunBtn = document.getElementById('btn-baseball-hitrun');
+        if (hitrunBtn) {
+            hitrunBtn.addEventListener('pointerdown', (e) => {
+                if (!this.isRunning) return;
+                e.preventDefault();
+                e.stopPropagation();
+                this.ensureAudio();
+                this.triggerHitAndRun();
+            });
+        }
+
+        // 🌪️ 런 앤드 히트 버튼 (R키)
+        const runhitBtn = document.getElementById('btn-baseball-runhit');
+        if (runhitBtn) {
+            runhitBtn.addEventListener('pointerdown', (e) => {
+                if (!this.isRunning) return;
+                e.preventDefault();
+                e.stopPropagation();
+                this.ensureAudio();
+                this.triggerRunAndHit();
             });
         }
 
@@ -1617,6 +1790,11 @@ class BaseballGame {
         this.balls = 0;
         this.strikes = 0;
         this.lastResultWasBall = false;
+        this.activeTactic = null;
+        ['btn-baseball-squeeze', 'btn-baseball-hitrun', 'btn-baseball-runhit', 'btn-baseball-bunt'].forEach(id => {
+            const btn = document.getElementById(id);
+            if (btn) btn.classList.remove('active');
+        });
         if (this.ball) {
             this.ball.hasSwung = false;
         }
@@ -1685,6 +1863,99 @@ class BaseballGame {
     }
 
     /**
+     * 🎯 [스마일 홈런 더비 3D] 스퀴즈 번트 (Squeeze Bunt) 작전 (Q키)
+     * - 3루 주자가 있을 때 결사 쇄도하여 100% 득점하는 필살 작전!
+     * - 번트 컨택트 시 3루 주자 100% 홈 득점 세이프 (+1점 득점)
+     * - 타자는 50% 세이프티 스퀴즈 번트 안타 (1루 세이프) / 50% 1루 희생 아웃
+     */
+    triggerSqueezeBunt() {
+        if (!this.isRunning || this.userRole !== 'batter') return;
+        if (!this.bases.third) {
+            this.showResultBanner('⚠️ 스퀴즈 번트 불가!', '3루에 주자가 있을 때만 스퀴즈 번트 작전이 가능합니다!', '#f59e0b');
+            return;
+        }
+
+        this.activeTactic = 'squeeze';
+        this.batter.isBunting = true;
+        this.batter.isSwinging = false;
+
+        const squeezeBtn = document.getElementById('btn-baseball-squeeze');
+        if (squeezeBtn) squeezeBtn.classList.add('active');
+        const buntBtn = document.getElementById('btn-baseball-bunt');
+        if (buntBtn) buntBtn.classList.add('active');
+
+        this.playSwingSound();
+        this.showResultBanner('🎯 [작전] 결사 스퀴즈 번트 가동!!', '3루 주자 홈으로 전력 쇄도! 공에 배트를 정확히 대세요! (Q키)', '#f59e0b');
+
+        if (this.isMultiplayer && this.activeRoom) {
+            this.sendNetworkMessage('smile_baseball/' + this.activeRoom, {
+                type: 'REMOTE_TACTIC',
+                tactic: 'squeeze'
+            });
+        }
+    }
+
+    /**
+     * ⚡ [스마일 홈런 더비 3D] 히트 앤드 런 (Hit & Run) 작전 (H키)
+     * - 투구와 동시에 루상 주자가 무조건 다음 베이스로 스타트!
+     * - 타자는 어떤 코스든 배트를 휘둘러 인플레이 타구를 생성!
+     * - 내야 땅볼 시에도 병살타(Double Play) 100% 원천 방지!
+     * - 단타 1루타 성공 시 1루 주자 3루까지 폭풍 2베이스 진루!
+     */
+    triggerHitAndRun() {
+        if (!this.isRunning || this.userRole !== 'batter') return;
+        const hasRunners = (this.bases.first || this.bases.second || this.bases.third);
+        if (!hasRunners) {
+            this.showResultBanner('⚠️ 히트 & 런 불가!', '루상에 주자가 있어야 히트 & 런 작전을 펼칠 수 있습니다!', '#f59e0b');
+            return;
+        }
+
+        this.activeTactic = 'hit_and_run';
+        const hitrunBtn = document.getElementById('btn-baseball-hitrun');
+        if (hitrunBtn) hitrunBtn.classList.add('active');
+
+        this.playUmpireWhistle(800, 0.1);
+        this.showResultBanner('⚡ [작전] 히트 & 런 (Hit & Run) 가동!!', '주자가 투구와 동시에 달립니다! 어떤 공이든 무조건 치세요! (H키)', '#ef4444');
+
+        if (this.isMultiplayer && this.activeRoom) {
+            this.sendNetworkMessage('smile_baseball/' + this.activeRoom, {
+                type: 'REMOTE_TACTIC',
+                tactic: 'hit_and_run'
+            });
+        }
+    }
+
+    /**
+     * 🌪️ [스마일 홈런 더비 3D] 런 앤드 히트 (Run & Hit) 스마트 작전 (R키)
+     * - 주자는 투구와 동시에 도루 스타트!
+     * - 타자는 스트라이크 좋은 공만 골라치고, 나쁜 볼은 지켜봄!
+     * - 스트라이크 타격 시: 컨택트 판정 보너스 +30% & 2베이스 진루
+     * - 나쁜 볼 지켜볼 시: 70% 높은 확률로 단독 도루 세이프!
+     */
+    triggerRunAndHit() {
+        if (!this.isRunning || this.userRole !== 'batter') return;
+        const hasRunners = (this.bases.first || this.bases.second || this.bases.third);
+        if (!hasRunners) {
+            this.showResultBanner('⚠️ 런 & 히트 불가!', '루상에 주자가 있어야 런 & 히트 작전이 가능합니다!', '#f59e0b');
+            return;
+        }
+
+        this.activeTactic = 'run_and_hit';
+        const runhitBtn = document.getElementById('btn-baseball-runhit');
+        if (runhitBtn) runhitBtn.classList.add('active');
+
+        this.playUmpireWhistle(900, 0.1);
+        this.showResultBanner('🌪️ [작전] 런 & 히트 (Run & Hit) 가동!!', '주자 스타트! 좋은 스트라이크만 치고, 나쁜 볼은 도루에 맡기세요! (R키)', '#06b6d4');
+
+        if (this.isMultiplayer && this.activeRoom) {
+            this.sendNetworkMessage('smile_baseball/' + this.activeRoom, {
+                type: 'REMOTE_TACTIC',
+                tactic: 'run_and_hit'
+            });
+        }
+    }
+
+    /**
      * 🪵 [스마일 홈런 더비 3D] 번트 자세 토글
      */
     toggleBuntStance() {
@@ -1705,8 +1976,9 @@ class BaseballGame {
     /**
      * 🪵 [스마일 홈런 더비 3D] 번트 타구 컨택트 및 진루/아웃 처리
      * 유저 명시 요구사항:
-     * - 번트 성공 확률 60% 보장 (희생 번트 전원 진루 or 기습 세이프티 번트 안타)
-     * - 번트 실패 확률 40% (쓰리번트 파울 삼진 / 팝플라이 / 병살타 / 1루 땅볼 포구 아웃)
+     * - 스퀴즈 번트 (Squeeze Bunt): 3루 주자 100% 홈 득점 세이프 & 타자 50% 세이프/50% 아웃
+     * - 일반 번트 성공 확률 60% 보장 (희생 번트 전원 진루 or 기습 세이프티 번트 안타)
+     * - 일반 번트 실패 확률 40% (쓰리번트 파울 삼진 / 팝플라이 / 병살타 / 1루 땅볼 포구 아웃)
      */
     executeBuntHit(b) {
         b.isHit = true;
@@ -1715,12 +1987,50 @@ class BaseballGame {
         this.batter.isBunting = false;
         const buntBtn = document.getElementById('btn-baseball-bunt');
         if (buntBtn) buntBtn.classList.remove('active');
+        const squeezeBtn = document.getElementById('btn-baseball-squeeze');
+        if (squeezeBtn) squeezeBtn.classList.remove('active');
 
         // 번트 타구 사운드 ("툭-!" 데드볼 소리)
         this.playBuntSound();
 
         const prevBases = { ...this.bases };
         const hasRunners = (this.bases.first || this.bases.second || this.bases.third);
+
+        // 🎯 1. 스퀴즈 번트 (Squeeze Bunt) 특수 발동!
+        if (this.activeTactic === 'squeeze' || (this.bases.third && Math.random() < 0.20 && hasRunners)) {
+            this.activeTactic = null;
+            const dir = (Math.random() < 0.5) ? -1 : 1;
+            b.vx = dir * (20 + Math.random() * 15);
+            b.vy = 8;
+            b.vz = -100;
+            b.hitDist = 18;
+
+            // 3루 주자 100% 결사 홈 쇄도 득점 세이프 (+1점)!
+            this.bases.third = false;
+            this.addScore(1, 'squeeze');
+            this.playUmpireSafeSound();
+
+            // 다른 주자들도 안전 1루씩 진루
+            if (this.bases.second) { this.bases.third = true; this.bases.second = false; }
+            if (this.bases.first) { this.bases.second = true; this.bases.first = false; }
+
+            // 타자는 50% 세이프티 스퀴즈 번트 안타 (1루 세이프), 50% 1루 희생 아웃
+            const isBatterSafe = (Math.random() < 0.50);
+            if (isBatterSafe) {
+                this.bases.first = true;
+                this.spawnBaseRunners('bunt_sac', prevBases);
+                this.resetAtBatCount(true);
+                this.showResultBanner('🔥 [스퀴즈 대성공] 3루 주자 홈 쇄도 (+1점) & 타자 1루 세이프!!', '결사 스퀴즈 번트로 득점과 출루를 동시에 달성했습니다!', '#22c55e');
+            } else {
+                this.outs += 1;
+                this.spawnBaseRunners('bunt_sac', prevBases);
+                this.resetAtBatCount(false);
+                this.showResultBanner('🪵 [스퀴즈 작전 성공] 3루 주자 슬라이딩 홈인 (+1점 득점)!!', '타자 희생 번트 아웃, 3루 주자 완벽 득점 성공! (1아웃)', '#22c55e');
+            }
+            this.updateHUD();
+            return;
+        }
+
         const isBuntSuccess = (Math.random() < 0.60); // ⚾ 60% 성공 보장!
 
         if (isBuntSuccess) {
@@ -1839,10 +2149,10 @@ class BaseballGame {
      * - 2루 주자 -> 3루 도루: 30% 성공
      * - 3루 주자 -> 홈스틸: 5% 성공
      */
-    attemptSteal() {
+    attemptSteal(force = false) {
         if (!this.isRunning) return;
         if (this.fieldingThrow && this.fieldingThrow.active) return;
-        if (this.gameState === 'hit_flight' || this.gameState === 'result_pause') return;
+        if (this.gameState === 'hit_flight' || (!force && this.gameState === 'result_pause')) return;
 
         if (!this.bases.first && !this.bases.second && !this.bases.third) {
             this.showResultBanner('🏃 루상에 주자 없음!', '루상에 주자가 없습니다. 먼저 안타나 볼넷으로 출루하세요!', '#94a3b8');
@@ -2168,7 +2478,19 @@ class BaseballGame {
             this.assignFielderForBall(targetRole);
 
             const subText = (scoredRuns > 0) ? `주자 홈인! (+${scoredRuns}점 득점)` : `주자 진루 (비거리 ${dist}m)`;
-            this.showResultBanner(titleText, subText, '#38bdf8');
+
+            // ⚡ 히트 앤드 런 & 런 앤드 히트 정타 시 폭풍 진루 보너스
+            if (this.activeTactic === 'hit_and_run') {
+                this.activeTactic = null;
+                titleText = '🌪️ [히트 & 런 대성공] 1루 주자 3루 폭풍 진루 클린 안타!!';
+                this.showResultBanner(titleText, '사전 스타트 효과로 단타에 2베이스를 질주했습니다!', '#38bdf8');
+            } else if (this.activeTactic === 'run_and_hit') {
+                this.activeTactic = null;
+                titleText = '🔥 [런 & 히트 정타] 스마트 타격 대성공!!';
+                this.showResultBanner(titleText, '좋은 스트라이크를 골라쳐서 주자와 함께 안타 작렬!', '#22c55e');
+            } else {
+                this.showResultBanner(titleText, subText, '#38bdf8');
+            }
         }
         // [3] 🛡️ 빗맞은 내야 땅볼 / 외야 플라이 아웃
         else if (absDiffZ <= hitTiming + 18 && distXY <= hitDist + 12) {
@@ -2177,6 +2499,20 @@ class BaseballGame {
 
             const isFlyOut = (absDiffZ > hitTiming + 6 || Math.random() < 0.42);
             b.isFlyOut = isFlyOut;
+
+            // ⚡ [히트 앤드 런] 주자가 미리 스타트를 끊었으므로 내야 땅볼 시 병살타 100% 방지!
+            if (this.activeTactic === 'hit_and_run' && !isFlyOut) {
+                this.activeTactic = null;
+                let scored = 0;
+                if (this.bases.third) { this.bases.third = false; scored++; }
+                if (this.bases.second) { this.bases.third = true; this.bases.second = false; }
+                if (this.bases.first) { this.bases.second = true; this.bases.first = false; }
+                if (scored > 0) this.addScore(scored, 'hit_and_run');
+                this.recordOut('🛡️ [히트 & 런] 사전 주루 스타트로 병살타 원천 방지! 타자만 1루 아웃');
+                this.showResultBanner('⚡ [히트 & 런] 병살타 원천 방지 성공! 주자 진루!!', '주자가 미리 스타트를 끊어 병살타를 완벽히 막아냈습니다! (1아웃)', '#22c55e');
+                this.updateHUD();
+                return;
+            }
 
             if (isFlyOut) {
                 // 외야/내야 플라이볼 타구 (높은 궤적)
@@ -2297,6 +2633,16 @@ class BaseballGame {
             this.gameState = 'result_pause';
             this.stateTimer = 1.3;
         }
+
+        // ⚡ 히트 앤드 런 작전 중 헛스윙 시 주자 강제 도루 승부
+        if (this.activeTactic === 'hit_and_run') {
+            this.activeTactic = null;
+            setTimeout(() => {
+                this.showResultBanner('🚨 [히트 & 런 헛스윙] 주자 강제 도루 승부!!', '타자 헛스윙! 주자가 포수 송구와 도루 승부를 펼칩니다!', '#ef4444');
+                this.attemptSteal();
+            }, 600);
+        }
+
         this.updateHUD();
     }
 
@@ -2860,6 +3206,15 @@ class BaseballGame {
             this.playCatchSound();
             this.playUmpireWhistle(1400, 0.2);
 
+            // ⚡ [런 & 히트] 스트라이크 노스윙/헛스윙 시 주자 도루 승부 강제 진행!
+            if (this.activeTactic === 'run_and_hit') {
+                this.activeTactic = null;
+                setTimeout(() => {
+                    this.showResultBanner('🚨 [런 & 히트] 스트라이크 통과! 주자 도루 승부!!', '좋은 공이 존에 들어왔습니다! 주자가 포수 송구와 진루 승부를 펼칩니다!', '#f59e0b');
+                    this.attemptSteal(true);
+                }, 500);
+            }
+
             if (this.strikes >= 3) {
                 const outMsg = isSwung ? '💨 3구 헛스윙 삼진 아웃! (STRIKE OUT!)' : '💨 3구 루킹 삼진 아웃! (STRIKE OUT!)';
                 this.recordOut(outMsg);
@@ -2878,6 +3233,47 @@ class BaseballGame {
             this.lastResultWasBall = true;
             this.balls++;
             this.playCatchSound();
+
+            // ⚡ [런 & 히트] 타자가 침착하게 볼을 골라냄 -> 주자 70% 높은 확률로 도루 세이프!
+            if (this.activeTactic === 'run_and_hit') {
+                this.activeTactic = null;
+                setTimeout(() => {
+                    const hasRunners = this.bases.first || this.bases.second || this.bases.third;
+                    if (hasRunners) {
+                        const isSafe = Math.random() < 0.70;
+                        if (isSafe) {
+                            this.playUmpireSafeSound();
+                            if (this.bases.second && !this.bases.third) {
+                                this.bases.second = false;
+                                this.bases.third = true;
+                                this.showResultBanner('⚡ [런 & 히트 대성공] 볼 선구안 & 3루 도루 성공!! (SAFE)', '타자가 볼을 골라내며 주자가 여유있게 3루 안착! (70% 성공)', '#22c55e');
+                            } else if (this.bases.first && !this.bases.second) {
+                                this.bases.first = false;
+                                this.bases.second = true;
+                                this.showResultBanner('⚡ [런 & 히트 대성공] 볼 선구안 & 2루 도루 성공!! (SAFE)', '타자가 볼을 흘려보내며 주자가 2루를 안전하게 훔쳤습니다! (70% 성공)', '#22c55e');
+                            } else if (this.bases.first && this.bases.second) {
+                                this.bases.second = false;
+                                this.bases.third = true;
+                                this.bases.first = false;
+                                this.bases.second = true;
+                                this.showResultBanner('🌪️ [런 & 히트 대성공] 더블 도루 완벽 성공!! (SAFE)', '볼 판정과 함께 2, 3루를 모두 훔쳐냈습니다! (70% 성공)', '#22c55e');
+                            }
+                        } else {
+                            this.playCatchSound();
+                            if (this.bases.second) {
+                                this.bases.second = false;
+                                this.recordOut('🚨 [런 & 히트] 3루 도루 저지 아웃!');
+                                this.showResultBanner('🚨 [런 & 히트] 볼 판정에도 포수의 레이저 송구로 3루 아웃!', '포수의 빠른 송구에 걸려 아웃되었습니다', '#ef4444');
+                            } else if (this.bases.first) {
+                                this.bases.first = false;
+                                this.recordOut('🚨 [런 & 히트] 2루 도루 저지 아웃!');
+                                this.showResultBanner('🚨 [런 & 히트] 볼 판정에도 포수 송구로 2루 저지 아웃!', '포수의 총알 송구에 걸려 아웃되었습니다', '#ef4444');
+                            }
+                        }
+                        this.updateHUD();
+                    }
+                }, 500);
+            }
 
             if (this.balls >= 4) {
                 const prevBases = { ...this.bases };

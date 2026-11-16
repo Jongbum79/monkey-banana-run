@@ -246,7 +246,7 @@
             </div>
         </div>
 
-        <!-- 🏏 [타자 전용 조작부] 하단 우측 풀스윙 & 번트 & 도루 컨트롤 콘솔 -->
+        <!-- 🏏 [타자 전용 조작부] 하단 우측 풀스윙 & 번트 & 도루 & 3대 작전(스퀴즈/히트앤런/런앤히트) 컨트롤 콘솔 -->
         <div class="mlb-batter-bar" id="mlb-batter-bar" style="display:none;">
             <button type="button" class="mlb-swing-action-btn" id="btn-baseball-swing">
                 <span class="swing-hero-icon">🏏</span>
@@ -263,11 +263,26 @@
                 <span class="swing-hero-title">STEAL</span>
                 <span class="swing-hero-key">[S 키 / 도루]</span>
             </button>
+            <button type="button" class="mlb-swing-action-btn mlb-squeeze-action-btn" id="btn-baseball-squeeze" title="스퀴즈 번트 (Q 키: 3루 주자 결사 홈 쇄도 100% 득점 & 타자 50% 세이프)">
+                <span class="swing-hero-icon">🎯</span>
+                <span class="swing-hero-title">SQUEEZE</span>
+                <span class="swing-hero-key">[Q 키 / 스퀴즈]</span>
+            </button>
+            <button type="button" class="mlb-swing-action-btn mlb-hitrun-action-btn" id="btn-baseball-hitrun" title="히트 앤드 런 (H 키: 주자 사전 스타트 + 강타 타격, 병살타 100% 방지)">
+                <span class="swing-hero-icon">⚡</span>
+                <span class="swing-hero-title">HIT & RUN</span>
+                <span class="swing-hero-key">[H 키 / 히트앤런]</span>
+            </button>
+            <button type="button" class="mlb-swing-action-btn mlb-runhit-action-btn" id="btn-baseball-runhit" title="런 앤드 히트 (R 키: 주자 스타트 + 스트라이크만 타격 / 볼이면 도루 세이프)">
+                <span class="swing-hero-icon">🌪️</span>
+                <span class="swing-hero-title">RUN & HIT</span>
+                <span class="swing-hero-key">[R 키 / 런앤히트]</span>
+            </button>
         </div>
 
         <!-- 🎯 하단 미니 조작 가이드 팁 -->
         <div class="mlb-mini-tip" id="mlb-mini-tip">
-            ⚾ <strong>조작 팁:</strong> 타자 [Enter 타격 / B 번트(60%) / S 도루(1루 50%, 2루 30%, 홈 5%)] | 투수 [터치·WASD 조준 + 1~5 구종 + Space 투구]
+            ⚾ <strong>조작 팁:</strong> 타자 [Enter 타격 | B 번트 | S 도루 | Q 스퀴즈 | H 히트앤런 | R 런앤히트] | 투수 [터치·WASD 조준 + 1~5 구종 + Space 투구]
         </div>
     </div>
 
