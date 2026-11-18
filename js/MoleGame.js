@@ -563,8 +563,8 @@ class MoleGame {
             }
         }, 1000);
 
-        // 첫 두더지 출현 시작
-        this.scheduleNextSpawn(500);
+        // 첫 두더지 출현 시작 (즉각 시작)
+        this.scheduleNextSpawn(180);
 
         if (this.sound) {
             this.sound.playCorrect();
@@ -581,10 +581,10 @@ class MoleGame {
         if (!this.isRunning) return;
 
         if (delay === null) {
-            // 두더지 출현 빈도 완화: 너무 자주 나오지 않고 여유 있고 쾌적한 아케이드 템포 (1.1초 ~ 2.2초)
+            // ⚡ 두더지 출현 속도 대폭 상향: 0.25초 ~ 0.65초 간격으로 초스피드 연타감 제공
             const progress = (120 - this.timer) / 120; // 0.0 ~ 1.0
-            const minDelay = 1100;
-            const maxDelay = 2200 - (progress * 600); // 2200ms -> 1600ms
+            const minDelay = Math.max(220, 380 - (progress * 160)); // 380ms -> 220ms
+            const maxDelay = Math.max(380, 700 - (progress * 280)); // 700ms -> 420ms
             delay = Math.random() * (maxDelay - minDelay) + minDelay;
         }
 
@@ -600,10 +600,24 @@ class MoleGame {
         const emptyHoles = this.holes.filter(h => h.state === 'empty');
         if (emptyHoles.length === 0) return;
 
-        // 과도한 동시 다발 출현 방지: 기본 1마리씩 등장, 60초 이후에만 간헐적 2마리 등장
+        // ⚡ 동시 출현 마리수 대폭 상향: 초반 2~3마리, 중후반 3~5마리 동시 다발 팝업!
         const elapsed = 120 - this.timer;
-        let count = 1;
-        if (elapsed > 60 && Math.random() < 0.25) count = 2;
+        let count = 2; // 기본 2마리 동시 출현
+
+        if (elapsed < 30) {
+            // 초반 (0~30초): 45% 확률로 3마리
+            if (Math.random() < 0.45) count = 3;
+        } else if (elapsed < 75) {
+            // 중반 (30~75초): 기본 2~3마리, 35% 확률로 4마리
+            count = (Math.random() < 0.55) ? 3 : 2;
+            if (Math.random() < 0.35) count = 4;
+        } else {
+            // 후반 피버 타임 (75~120초): 3~5마리 와르르 폭풍 등장!
+            const r = Math.random();
+            if (r < 0.40) count = 3;
+            else if (r < 0.75) count = 4;
+            else count = 5;
+        }
 
         // 셔플 후 선택
         const shuffled = [...emptyHoles].sort(() => Math.random() - 0.5);
@@ -632,9 +646,9 @@ class MoleGame {
         hole.moleEl.innerHTML = this.getMoleSVG(type);
         hole.moleEl.className = `mole-actor mole-visible mole-${type}`;
 
-        // 머무는 시간 계산 (충분히 보고 칠 수 있도록 0.9초 ~ 1.6초 제공)
+        // ⚡ 머무는 시간 대폭 단축 (0.5초 ~ 0.85초 사이로 신속하게 드나듦)
         const progress = (120 - this.timer) / 120;
-        const stayTime = Math.max(900, 1600 - (progress * 450) + (Math.random() * 250));
+        const stayTime = Math.max(480, 850 - (progress * 280) + (Math.random() * 180));
 
         // 팝 사운드
         this.playPopSound();
@@ -662,7 +676,7 @@ class MoleGame {
             setTimeout(() => {
                 hole.state = 'empty';
                 hole.moleEl.className = 'mole-actor mole-hidden';
-            }, 250);
+            }, 130);
         } else {
             hole.state = 'empty';
             if (hole.moleEl) {
@@ -770,10 +784,10 @@ class MoleGame {
 
             this.updateScoreboard();
 
-            // 기절 후 굴로 들어가기
+            // 기절 후 굴로 빠르게 들어가기 (빠른 회전율 보장)
             setTimeout(() => {
                 this.hideMole(hole, true);
-            }, 550);
+            }, 300);
 
         } else {
             // ❌ 빈 구멍 헛스윙! (유저 요청: 계속 헛스윙해도 포인트 깎이는 게 없는 문제 해결!)

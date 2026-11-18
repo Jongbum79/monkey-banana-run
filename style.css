@@ -1532,7 +1532,7 @@ body.is-playing .concept-badge {
     transform: translateX(-50%) translateY(120%);
     width: 104px;
     height: 118px;
-    transition: transform 0.16s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: transform 0.10s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     pointer-events: none;
 }
 
@@ -1542,11 +1542,11 @@ body.is-playing .concept-badge {
 
 .mole-actor.mole-hiding {
     transform: translateX(-50%) translateY(120%);
-    transition: transform 0.22s ease-in;
+    transition: transform 0.13s ease-in;
 }
 
 .mole-actor.mole-bonked {
-    animation: moleBonkSquash 0.55s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    animation: moleBonkSquash 0.30s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
 @keyframes moleBonkSquash {
