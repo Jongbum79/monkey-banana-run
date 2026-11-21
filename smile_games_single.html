@@ -22221,8 +22221,8 @@ class BaseballGame {
                 // 📱 태블릿 터치 좌표를 캔버스 논리 해상도(this.width, this.height)로 1:1 완벽 보정
                 const px = (e.clientX - rect.left) * (this.width / rect.width);
                 const py = (e.clientY - rect.top) * (this.height / rect.height);
-                // ⚾ 투수 시점 (cam.z=-30) vs 타자 시점 (cam.z=460) 기준 홈플레이트(z=380) 역투영
-                const relZ = (this.userRole === 'pitcher') ? Math.max(15, 380 - this.camera.z) : Math.max(15, this.camera.z - 380);
+                // ⚾ 포수 시점 홈플레이트(z=380) 기준 화면 좌표 역투영
+                const relZ = Math.max(15, this.camera.z - 380);
                 const scale = this.camera.fov / relZ;
                 const aimX = this.camera.x + (px - this.width / 2) / scale;
                 const aimY = this.camera.y - (py - this.height * 0.54) / scale;
@@ -22750,19 +22750,11 @@ class BaseballGame {
     }
 
     resetCamera() {
-        if (this.userRole === 'pitcher') {
-            // ⚾ [컴투스 프로야구 투수 화면 (GIF 원작)] 투수 등 뒤 백뷰 (마운드 뒤에서 홈플레이트 응시)
-            this.camera.x = 18;
-            this.camera.y = 66;
-            this.camera.z = -30;
-            this.camera.fov = 360;
-        } else {
-            // 🏏 [스마일 홈런 더비 타자 화면] 홈플레이트 뒤에서 투수 마운드 응시
-            this.camera.x = 0;
-            this.camera.y = 56;
-            this.camera.z = 460;
-            this.camera.fov = 360;
-        }
+        // 🏟️ [컴투스 프로야구 / 스마일 홈런 더비 3D] 포수 시점 (그라운드, 내야 다이아몬드, 7인제 수비수, 마운드 투수 응시)
+        this.camera.x = 0;
+        this.camera.y = 56;
+        this.camera.z = 460;
+        this.camera.fov = 360;
         this.camera.shake = 0;
     }
 
@@ -23027,81 +23019,80 @@ class BaseballGame {
             const isHotZone = (currBatter.hotZones && currBatter.hotZones.includes(zoneIdx)) || false;
 
             let aiWillSwing = false;
-            let aiSwingTimingOffset = 0; // 초 단위 타이밍 오차
+            let aiSwingTimingRatio = 0.88; // 0.88이 홈플레이트(z=380) 스윗스팟 정확한 정타 타이밍
 
             if (isMeatball) {
-                // 💥 [한가운데 실투 (Meatball)]: 투수가 한가운데로 던지면 절대 놓치지 않는 프로 타자 본능!
-                // 92% 확률로 호쾌한 스윙! (핫존이거나 중심타선이면 98% 스윙)
-                const swingChance = (isHotZone || (currLineup && currLineup.order <= 4)) ? 0.98 : 0.92;
-                aiWillSwing = (Math.random() < swingChance);
-
-                // 완벽한 타이밍 배트 스윗스팟 컨택! (타구 속도 165~180km/h 장타/홈런 폭발!)
-                aiSwingTimingOffset = (Math.random() - 0.5) * 0.016;
+                // 💥 [한가운데 실투 (Meatball)]: 92% 확률로 호쾌한 스윙! (홈런/장타)
+                aiWillSwing = (Math.random() < 0.92);
+                aiSwingTimingRatio = 0.88 + (Math.random() - 0.5) * 0.02;
 
             } else if (isHotZone && isStrikePitch) {
-                // 🔥 [핫존 스트라이크]: 타자가 노리고 있는 킬러 코스!
-                aiWillSwing = (Math.random() < 0.88);
-                aiSwingTimingOffset = (Math.random() - 0.5) * 0.024;
+                // 🔥 [핫존 스트라이크]: 타자 선호 코스
+                aiWillSwing = (Math.random() < 0.85);
+                aiSwingTimingRatio = 0.88 + (Math.random() - 0.5) * 0.03;
 
             } else if (isStrikePitch) {
                 // ⚡ [일반 스트라이크 코스]
-                if (isBorderline) {
-                    // 코너워크 보더라인 (페인팅존 모서리 명품 제구):
-                    // 볼카운트가 유리할 땐 지켜보고(루킹 스트라이크 유도), 2스트라이크면 삼진 방지 커트 스윙!
-                    let swingChance = 0.55;
-                    if (this.strikes === 2) swingChance = 0.88; // 2스트라이크면 적극 커트
-                    else if (this.balls >= 3) swingChance = 0.25; // 3볼이면 기다림
-                    aiWillSwing = (Math.random() < swingChance);
+                let swingChance = (this.strikes === 2) ? 0.90 : 0.72;
+                aiWillSwing = (Math.random() < swingChance);
 
-                    // 코너워크 공이므로 타이밍 오차가 발생 (파울로 걷어내거나 빗맞은 범타/호수비 유도)
-                    aiSwingTimingOffset = (Math.random() - 0.5) * 0.06;
-                } else {
-                    // 좋은 스트라이크:
-                    let swingChance = 0.80;
-                    if (this.strikes === 2) swingChance = 0.94;
-                    aiWillSwing = (Math.random() < swingChance);
-
-                    // 구종별 타이밍 반응:
+                if (aiWillSwing) {
+                    // 💨 [스트라이크 존 안에서도 완급조절/구위에 속는 리얼 헛스윙 발생!]
+                    // 체인지업 / 너클볼 (오프스피드 급감속): 38% 확률로 타이밍 뺏겨 앞선 헛스윙!
                     if (pType === 'changeup' || pType === 'knuckleball') {
-                        // 오프스피드 체인지업/너클볼: 65% 확률로 타이밍을 뺏겨 앞선 스윙(-0.08s) or 35% 참아내어 정타
-                        aiSwingTimingOffset = (Math.random() < 0.65) ? (-0.08 - Math.random() * 0.08) : ((Math.random() - 0.5) * 0.025);
-                    } else if (pType === 'curve') {
-                        // 낙차 큰 커브:
-                        aiSwingTimingOffset = (Math.random() < 0.60) ? (-0.06 - Math.random() * 0.08) : ((Math.random() - 0.5) * 0.025);
-                    } else if (finalSpeed >= 152) {
-                        // 152km 이상 광속구 직구: 밀려서 늦은 스윙(+0.05s) 발생 가능
-                        aiSwingTimingOffset = (Math.random() < 0.55) ? (0.05 + Math.random() * 0.06) : ((Math.random() - 0.5) * 0.02);
-                    } else if (pType === 'slider') {
-                        // 횡변화 슬라이더: 빗맞은 타구
-                        aiSwingTimingOffset = (Math.random() - 0.5) * 0.045;
+                        if (Math.random() < 0.38) {
+                            aiSwingTimingRatio = 0.74; // 앞선 헛스윙 (TOO EARLY WHIFF)
+                        } else {
+                            aiSwingTimingRatio = 0.88 + (Math.random() - 0.5) * 0.04;
+                        }
+                    }
+                    // 153km/h 이상 불꽃 강속구: 35% 확률로 배트 밀려 늦은 헛스윙!
+                    else if (finalSpeed >= 153) {
+                        if (Math.random() < 0.35) {
+                            aiSwingTimingRatio = 0.96; // 늦은 헛스윙 (TOO LATE WHIFF)
+                        } else {
+                            aiSwingTimingRatio = 0.88 + (Math.random() - 0.5) * 0.04;
+                        }
+                    }
+                    // 12-6 폭포수 커브 / 와이드 슬라이더: 32% 확률로 헛스윙!
+                    else if (pType === 'curve' || pType === 'slider') {
+                        if (Math.random() < 0.32) {
+                            aiSwingTimingRatio = (pType === 'curve') ? 0.75 : 0.95;
+                        } else {
+                            aiSwingTimingRatio = 0.88 + (Math.random() - 0.5) * 0.04;
+                        }
                     } else {
-                        aiSwingTimingOffset = (Math.random() - 0.5) * 0.035;
+                        // 일반 패스트볼: 22% 헛스윙
+                        if (Math.random() < 0.22) {
+                            aiSwingTimingRatio = 0.96;
+                        } else {
+                            aiSwingTimingRatio = 0.88 + (Math.random() - 0.5) * 0.04;
+                        }
                     }
                 }
             } else {
                 // ⚪ [존 바깥의 볼 / 유인구 코스]
-                // 프로 타자의 뛰어난 선구안(Eye): 0~1스트라이크에서는 85% 확률로 침착하게 볼을 골라냄!
-                let chaseProb = 0.15;
-                if (this.strikes === 2) {
-                    // 2스트라이크 몰렸을 때만 유인구(바깥쪽 슬라이더, 원바운드 포크)에 속을 확률 48%!
-                    chaseProb = 0.48;
-                } else if (this.balls === 3) {
-                    // 3볼에서는 96% 확률로 골라내어 볼넷 출루!
-                    chaseProb = 0.04;
-                }
+                // 투수가 삼진을 잡기 위해 떨어뜨리는 변화구 유인구!
+                // 2스트라이크에서는 72% 확률로 낚여서 배트 헛손질! 평소에도 45% 확률로 속아서 헛스윙!
+                let chaseChance = (this.strikes === 2) ? 0.72 : 0.45;
+                if (this.balls === 3) chaseChance = 0.22;
 
-                aiWillSwing = (Math.random() < chaseProb);
+                aiWillSwing = (Math.random() < chaseChance);
 
-                // 유인구에 속았을 때는 헛스윙 또는 빗맞은 파울
-                if (pType === 'slider' || pType === 'curve') {
-                    aiSwingTimingOffset = -0.14 - Math.random() * 0.08;
-                } else {
-                    aiSwingTimingOffset = 0.12 + Math.random() * 0.08;
+                if (aiWillSwing) {
+                    // 유인구에 속았으므로 100% 확실한 헛스윙 스트라이크!! (CHASE / EARLY / LATE WHIFF)
+                    if (pType === 'slider' || pType === 'curve') {
+                        aiSwingTimingRatio = 0.75;
+                    } else if (pType === 'changeup' || pType === 'knuckleball') {
+                        aiSwingTimingRatio = 0.72;
+                    } else {
+                        aiSwingTimingRatio = 0.96;
+                    }
                 }
             }
 
             if (aiWillSwing) {
-                const swingDelay = Math.max(0.18, (flightDuration * 0.88) + aiSwingTimingOffset);
+                const swingDelay = Math.max(0.12, flightDuration * aiSwingTimingRatio);
                 setTimeout(() => {
                     if (this.isRunning && this.gameState === 'in_flight' && !this.ball.isHit) {
                         this.triggerBatterSwing();
@@ -24891,46 +24882,26 @@ class BaseballGame {
 
         const isBatterRunning = this.activeRunners && this.activeRunners.some(r => r.isBatter && !r.isFinished);
 
-        if (this.userRole === 'pitcher') {
-            // ⚾ [컴투스 프로야구 투수 화면 - GIF 원작 재현 (투수 백뷰 & 홈플레이트/백스톱)]
-            // 1. 투수 시점 스타디움 & 백스톱 배경
-            this.renderPitcherStadiumView(ctx);
-            // 2. 홈플레이트 & 타석 & 마운드 클레이
-            this.renderPitcherFieldAndPlate(ctx);
-            // 3. 포수 및 주심 (z=415)
-            this.renderCatcherAndUmpire(ctx);
-            // 4. 타자석 상대 타자 (z=380)
-            if (!isBatterRunning) this.renderBatter(ctx, false);
-            // 5. 비행 중인 공
-            if (this.ball.active || (this.gameState === 'result_pause' && this.ball.trail && this.ball.trail.length > 4)) {
-                this.renderBall(ctx);
-            }
-            // 6. 투수 백뷰 (등번호 39 와인드업 투구 폼)
-            this.renderPitcher(ctx, false);
-            // 7. 컴팩트 3D 과녁
-            this.renderStrikeZoneBox(ctx);
-        } else {
-            // 🏏 [스마일 홈런 더비 타자 화면 - 와이드 내야 다이아몬드 & 정면 투수]
-            // 1. 경기장 배경
-            this.renderStadiumAtmosphere(ctx);
-            // 2. 넓고 웅장한 다이아몬드 내야 필드 & 베이스
-            this.renderDiamondAndBases(ctx);
-            // 3. 7인제 수비수 & 송구
-            this.renderFielders(ctx);
-            this.renderFieldingThrow(ctx);
-            // 4. 주자들
-            this.renderBaseRunners(ctx);
-            // 5. 마운드 위 정면 투수
-            this.renderPitcher(ctx, true);
-            // 6. 비행 중인 공
-            if (this.ball.active || (this.gameState === 'result_pause' && this.ball.trail && this.ball.trail.length > 4)) {
-                this.renderBall(ctx);
-            }
-            // 7. 타자석 본인 타자
-            if (!isBatterRunning) this.renderBatter(ctx, true);
-            // 8. 핫/콜드 존
-            this.renderStrikeZoneBox(ctx);
+        // 🏟️ [스마일 프로야구 3D] 포수 시점 (와이드 다이아몬드 그라운드 & 7인제 수비수 & 마운드 투수)
+        // 1. 경기장 배경 (스타디움 관중석, 전광판, 하늘)
+        this.renderStadiumAtmosphere(ctx);
+        // 2. 넓고 웅장한 다이아몬드 내야 필드 & 잔디 그라운드 & 1/2/3루 베이스
+        this.renderDiamondAndBases(ctx);
+        // 3. 7인제 3D 수비수 & 실시간 송구
+        this.renderFielders(ctx);
+        this.renderFieldingThrow(ctx);
+        // 4. 루상 주자들
+        this.renderBaseRunners(ctx);
+        // 5. 마운드 위 정면 투수 (z=80)
+        this.renderPitcher(ctx, true);
+        // 6. 비행 중인 공 & 3D 트레일
+        if (this.ball.active || (this.gameState === 'result_pause' && this.ball.trail && this.ball.trail.length > 4)) {
+            this.renderBall(ctx);
         }
+        // 7. 타자석 타자 (투수일 때는 상대 타자, 타자일 때는 본인 타자)
+        if (!isBatterRunning) this.renderBatter(ctx, this.userRole === 'batter');
+        // 8. 3D 과녁 (투수 시점: 컴팩트 조준 과녁 / 타자 시점: 핫콜드존)
+        this.renderStrikeZoneBox(ctx);
 
         // 파티클 & 불꽃놀이
         this.renderEffects(ctx);
@@ -24942,18 +24913,11 @@ class BaseballGame {
     }
 
     /**
-     * 3D 좌표 -> 2D 화면 투영 (투수 백뷰 vs 타자 뷰 완벽 분기)
+     * 3D 좌표 -> 2D 화면 투영 (포수 시점 정통 3D 야구 뷰)
      */
     project(x, y, z) {
         const cam = this.camera;
-        let relZ;
-        if (this.userRole === 'pitcher') {
-            // ⚾ 투수 시점 (컴투스 프로야구 투수 백뷰): 카메라가 z = -30에 있고 홈플레이트(z = 380)를 바라봄
-            relZ = Math.max(15, z - cam.z);
-        } else {
-            // 🏏 타자 시점 (홈플레이트 뒤 배터 뷰): 카메라가 z = 460에 있고 투수(z = 80) 및 외야를 바라봄
-            relZ = Math.max(15, cam.z - z);
-        }
+        const relZ = Math.max(15, cam.z - z);
         const scale = cam.fov / relZ;
         const screenX = this.width / 2 + (x - cam.x) * scale;
         const screenY = this.height * 0.54 - (y - cam.y) * scale;
@@ -25501,13 +25465,9 @@ class BaseballGame {
     renderFielders(ctx) {
         if (!this.fielders) return;
 
-        // 투수 시점 vs 타자 시점에 따른 Z-sorting
+        // Z-sorting: 깊은 외야부터 홈플레이트 쪽으로 순서대로 렌더링
         const sorted = [...this.fielders].sort((a, b) => {
-            if (this.userRole === 'batter') {
-                return (this.camera.z - b.z) - (this.camera.z - a.z);
-            } else {
-                return (b.z - this.camera.z) - (a.z - this.camera.z);
-            }
+            return (this.camera.z - b.z) - (this.camera.z - a.z);
         });
 
         const fieldingTeamChar = (this.userRole === 'batter') ? this.p2.char : this.p1.char;
@@ -25515,13 +25475,6 @@ class BaseballGame {
         const fieldingSkin = fieldingCharObj.skins ? fieldingCharObj.skins.classic : { jersey: '#1d4ed8', cap: '#1e3a8a' };
 
         sorted.forEach(f => {
-            // 🚫 [투수 시점 뷰 클리어링]
-            // 투구 조준 및 비행 시에는 화면 중앙을 가리지 않되, 타구 발생(hit_flight/result_pause) 시에는 전 수비수 시각화!
-            if (this.userRole === 'pitcher' && (this.gameState === 'aiming' || this.gameState === 'windup' || this.gameState === 'in_flight')) {
-                if (f.role === 'CF' || f.role === 'LF' || f.role === 'RF') return;
-                if (Math.abs(f.x) < 80) return; // 투수-홈플레이트 중앙 통로 100% 확보
-            }
-
             const p = this.project(f.x, f.y, f.z);
             if (!p || p.scale <= 0) return;
             const s = p.scale;
@@ -25828,11 +25781,7 @@ class BaseballGame {
         // 1. 이동 중인 주자들 그리기 (활성 주자가 있을 때)
         if (this.activeRunners && this.activeRunners.length > 0) {
             const sorted = [...this.activeRunners].sort((a, b) => {
-                if (this.userRole === 'batter') {
-                    return (this.camera.z - b.z) - (this.camera.z - a.z);
-                } else {
-                    return (b.z - this.camera.z) - (a.z - this.camera.z);
-                }
+                return (this.camera.z - b.z) - (this.camera.z - a.z);
             });
             sorted.forEach(r => this.render3DRunner(ctx, r));
         } else {
