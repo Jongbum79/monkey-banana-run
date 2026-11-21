@@ -46,31 +46,40 @@ class BaseballCommentator {
             const all = this.synth.getVoices();
             this.koreanVoices = all.filter(v => v.lang && (v.lang.startsWith('ko') || v.lang.includes('KR') || v.lang.includes('Korean')));
 
-            // 🎙️ 확실한 남성 목소리 필터링 (macOS Rocko, Reed, Eddy, Grandpa / Windows InJoon / Chrome 표준 남성 보이스 등)
-            const maleKeywords = ['rocko', 'reed', 'eddy', 'grandpa', 'minho', 'injoon', 'bongjin', 'jinho', 'male', '남성', '남자', 'gwangho', 'daewoong', 'standard-c', 'standard-d', 'wavenet-c', 'wavenet-d', 'ko-kr-c', 'ko-kr-d'];
-            const femaleKeywords = ['yuna', 'sunhi', 'heami', 'sora', 'female', '여성', '여자', 'seoyeon', 'grandma', 'flo', 'sandy', 'shelley', 'standard-a', 'standard-b', 'wavenet-a', 'wavenet-b', 'ko-kr-a', 'ko-kr-b'];
+            // ⚠️ 절대 배제: 기계음/만화/장난용 노벨티 음성 (Rocko, Reed, Eddy, Grandpa 등)
+            const bannedNovelty = [
+                'rocko', 'reed', 'eddy', 'grandpa', 'grandma', 'flo', 'sandy', 'shelley',
+                'bad news', 'bahh', 'bells', 'boing', 'cellos', 'deranged', 'good news',
+                'hysterical', 'pipe organ', 'trinoids', 'whisper', 'zarvox', 'wobble',
+                'junior', 'ralph', 'albert', 'fred'
+            ];
 
-            const maleVoices = this.koreanVoices.filter(v => {
+            // 1순위: 사람 같은 프리미엄/자연스러운 인공지능 고품질 음성 키워드
+            const naturalKeywords = ['natural', 'online', 'neural', 'wavenet', 'google', 'premium', 'enhanced', 'siri', 'injoon', 'minho'];
+
+            // 노벨티/로봇 음성 철저히 제외한 순수 한국어 음성군
+            const cleanKorean = this.koreanVoices.filter(v => {
                 const name = (v.name || '').toLowerCase();
-                return maleKeywords.some(k => name.includes(k));
+                return !bannedNovelty.some(b => name.includes(b));
             });
 
-            const nonFemaleVoices = this.koreanVoices.filter(v => {
+            // 사람 목소리 랭킹 1순위: 신경망 / 내추럴 고음질 보이스
+            const topNatural = cleanKorean.filter(v => {
                 const name = (v.name || '').toLowerCase();
-                return !femaleKeywords.some(k => name.includes(k));
+                return naturalKeywords.some(k => name.includes(k));
             });
 
-            const prioritized = maleVoices.length > 0 ? maleVoices : (nonFemaleVoices.length > 0 ? nonFemaleVoices : this.koreanVoices);
+            const candidatePool = (topNatural.length > 0) ? topNatural : cleanKorean;
 
-            if (prioritized.length >= 2) {
-                this.casterVoice = prioritized[0];
-                this.analystVoice = prioritized[1];
-            } else if (prioritized.length === 1) {
-                this.casterVoice = prioritized[0];
-                this.analystVoice = prioritized[0];
-            } else if (this.koreanVoices.length > 0) {
-                this.casterVoice = this.koreanVoices[0];
-                this.analystVoice = this.koreanVoices[0];
+            if (candidatePool.length >= 2) {
+                this.casterVoice = candidatePool[0];
+                this.analystVoice = candidatePool[1];
+            } else if (candidatePool.length === 1) {
+                this.casterVoice = candidatePool[0];
+                this.analystVoice = candidatePool[0];
+            } else if (cleanKorean.length > 0) {
+                this.casterVoice = cleanKorean[0];
+                this.analystVoice = cleanKorean[0];
             }
         };
         load();
@@ -160,13 +169,32 @@ class BaseballCommentator {
         if (this.onAirBadgeEl) this.onAirBadgeEl.classList.remove('pulse');
     }
 
+    playBroadcastCue() {
+        try {
+            const ctx = (this.game && this.game.getAudioCtx) ? this.game.getAudioCtx() : null;
+            if (!ctx) return;
+            const now = ctx.currentTime;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(880, now);
+            osc.frequency.exponentialRampToValueAtTime(1760, now + 0.05);
+            gain.gain.setValueAtTime(0.035, now);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.07);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now);
+            osc.stop(now + 0.07);
+        } catch (e) {}
+    }
+
     /**
      * 🎙️ 중계 멘트 트리거 (이벤트 키 + 경기 파라미터 컨텍스트)
      */
     trigger(eventKey, customData = {}) {
         const now = Date.now();
-        // 동일 이벤트 연속 스팸 방지 (최소 1.1초 텀) 단, 홈런/호수비는 즉시 가로챔
-        const isUrgent = eventKey.includes('HOMERUN') || eventKey.includes('DIVING') || eventKey.includes('GRAND_SLAM');
+        // 동일 이벤트 연속 스팸 방지 (최소 1.1초 텀) 단, 홈런/호수비/실책/라인드라이브는 즉시 가로챔
+        const isUrgent = eventKey.includes('HOMERUN') || eventKey.includes('DIVING') || eventKey.includes('GRAND_SLAM') || eventKey.includes('ERROR') || eventKey.includes('LINEDRIVE');
         if (!isUrgent && (now - this.lastSpokenTime < 1100)) return;
 
         this.lastSpokenKey = eventKey;
@@ -197,23 +225,24 @@ class BaseballCommentator {
             this.speechQueue = [];
         }
 
-        // 1단계: 정우영 캐스터 발화 (남성 아나운서 샤우팅 & 박진감 넘치는 빠른 템포)
+        // 1단계: 정우영 캐스터 발화 (자연스러운 사람 발음 & 시원한 스포츠 중계 템포)
         const uCaster = new SpeechSynthesisUtterance(casterText);
         uCaster.lang = 'ko-KR';
-        uCaster.pitch = 0.82; // 🎙️ 100% 확실한 남성 아나운서 피치
-        uCaster.rate = 1.18;  // 에너지 넘치는 빠른 샤우팅 템포
+        uCaster.pitch = 1.0;  // 🎙️ 사람 목소리 자연 원음 피치 1.0 (로봇 음색 왜곡 방지)
+        uCaster.rate = 1.08;  // 생동감 넘치는 사람 캐스터 호흡 템포
         uCaster.volume = 1.0;
         if (this.casterVoice) uCaster.voice = this.casterVoice;
 
-        // 2단계: 이순철 해설위원 발화 (묵직한 남성 중저음 & 냉철한 분석 템포)
+        // 2단계: 이순철 해설위원 발화 (차분하고 진중한 사람 목소리 해설)
         const uAnalyst = new SpeechSynthesisUtterance(analystText);
         uAnalyst.lang = 'ko-KR';
-        uAnalyst.pitch = 0.65; // 🎙️ 묵직하고 굵은 남성 베이스 중저음
-        uAnalyst.rate = 0.95;  // 차분하고 신중한 기술 해설 템포
+        uAnalyst.pitch = 0.96; // 🎙️ 자연스러운 미세 중저음 음색 (로봇 금속성 노이즈 0%)
+        uAnalyst.rate = 0.98;  // 안정적인 기술 해설 템포
         uAnalyst.volume = 1.0;
         if (this.analystVoice) uAnalyst.voice = this.analystVoice;
 
         this.startEqualizer();
+        this.playBroadcastCue();
 
         uCaster.onstart = () => {
             if (this.casterBoxEl) this.casterBoxEl.classList.add('speaking');
@@ -677,6 +706,118 @@ class BaseballCommentator {
                     "내야수의 원바운드 송구를 1루수가 쇼트바운드로 기가 막히게 걷어올려 준 명품 스트레칭입니다.",
                     "바람을 타고 뒤로 넘어가는 타구라 판단하기 극히 어려웠을 텐데, 환상적인 타구 궤적 추적이었습니다.",
                     "이런 슈퍼 캐치가 나오면 팀의 분위기는 순식간에 최고조로 달아오르게 됩니다."
+                ]
+            },
+
+            // [11-A] ⚡ 총알 라인드라이브 안타 (HIT_LINEDRIVE) - 10 x 10 = 100 조합
+            HIT_LINEDRIVE: {
+                casters: [
+                    "총알 같은 타구! 내야를 꿰뚫고 외야로 빠져나갑니다! 라인드라이브 안타!",
+                    "낮고 빠른 직선타! 눈 깜짝할 사이에 외야 잔디를 가릅니다!",
+                    "엄청난 타구 속도! 배럴 타구로 뻗어나가는 강력한 라인드라이브 안타!",
+                    "맞는 순간 총알입니다! 수비수가 반응조차 할 수 없는 강력한 직선타!",
+                    "날카로운 라이너성 타구! 중견수 앞에 깨끗하게 떨어지는 안타가 됩니다!",
+                    "빨랫줄 타구가 좌중간을 가릅니다! 시원한 라인드라이브 안타!",
+                    "레이저처럼 뻗어 나가는 타구! 2루수 키를 훌쩍 넘겨 외야로 질주합니다!",
+                    "경쾌한 파열음과 함께 내야를 순식간에 통과하는 총알 안타!",
+                    "스윙 궤적과 완벽히 일치한 정타! 총알처럼 뻗어 나가는 클린 히트!",
+                    "타구에 힘이 제대로 실렸습니다! 외야수를 뒤흔드는 총알 직선타 안타!"
+                ],
+                analysts: [
+                    "배트 헤드가 아주 이상적인 각도로 들어갔어요. 공 밑을 때리지 않고 정확히 중심을 관통했습니다.",
+                    "히팅 포인트가 환상적이었습니다. 저렇게 강한 회전이 걸리면 야수들이 손 쓸 틈이 없죠.",
+                    "높은 공을 억지로 퍼 올리지 않고 결대로 날카롭게 찍어 친 교과서적인 타격입니다.",
+                    "타구 속도가 거의 170km에 육박하겠어요. 실투를 놓치지 않고 완벽한 배럴 타구를 만들어냈습니다.",
+                    "타자의 배트 스피드가 워낙 빠르다 보니 타구가 가라앉지 않고 빨랫줄처럼 뻗어 나갑니다.",
+                    "투수의 체인지업이 덜 떨어졌어요. 눈높이 실투를 타자가 놓치지 않고 정확히 통타했습니다.",
+                    "중심 타자다운 완벽한 라인드라이브 타격입니다. 타격 밸런스가 아주 안정되어 있습니다.",
+                    "스윙 궤적의 면이 넓게 형성되면서 공과의 접촉 면적을 극대화한 스마트한 타격입니다.",
+                    "밀어치고 당겨치는 감각이 절정에 달해 있네요. 타구 궤적이 정말 아름답습니다.",
+                    "저런 강한 직선타 안타가 터져 나오면 투수는 마운드에서 상당한 압박감을 느끼게 됩니다."
+                ]
+            },
+
+            // [11-B] ⚡ 총알 라인드라이브 직선타 정면 아웃 (FIELDING_LINEOUT) - 10 x 10 = 100 조합
+            FIELDING_LINEOUT: {
+                casters: [
+                    "잘 맞은 타구! 하지만 {fielder} 정면으로 빨려 들어갑니다! 라인드라이브 아웃!",
+                    "총알 같은 직선타! 아, 아쉽게도 {fielder} 글러브로 직행하고 맙니다!",
+                    "타격감은 최고였는데, 수비수의 위치 선정이 절묘했습니다! 불운의 직선타!",
+                    "날카로운 라이너! {fielder}가 제자리에서 미동도 없이 잡아냅니다!",
+                    "비명 같은 타구 파열음! 그러나 야수 정면입니다! 아쉬워하는 타자!",
+                    "로켓포 타구가 야수의 글러브로 쏙 빨려 들어갑니다! 불운의 라인아웃!",
+                    "빠른 타구였지만 {fielder}의 침착한 반응! 한 치의 흔들림 없이 포구합니다!",
+                    "타자 주자는 헬멧을 감싸 쥡니다! 완벽한 정타가 야수 정면으로 향했습니다!",
+                    "직선타로 뻗어 나간 타구! 유격수의 글러브 속으로 직행, 아웃입니다!",
+                    "엄청난 정타였지만 야구는 코스입니다! 정면 직선타로 물러나는 타자!"
+                ],
+                analysts: [
+                    "타자 입장에서는 정말 속이 쓰릴 타구입니다. 정타로 잘 쳤지만 야수 정면으로 가고 말았어요.",
+                    "스윙 자체는 100점 만점이었습니다. 다만 수비수가 타구 성향에 맞춘 수비 위치를 완벽하게 잡고 있었네요.",
+                    "야구라는 스포츠가 이래서 어렵습니다. 빗맞은 공이 안타가 되기도 하고, 이런 정타가 아웃이 되기도 하거든요.",
+                    "타구 속도가 워낙 빨랐기 때문에 수비수가 움직일 필요도 없이 글러브만 갖다 대고 잡아냈습니다.",
+                    "타자의 타격 밸런스는 전혀 문제없어요. 결과가 아쉬울 뿐이지 다음 타석에서도 기대를 걸어볼 만합니다.",
+                    "투수는 가슴을 쓸어내렸겠어요. 코스가 조금만 좌우로 벗어났어도 장타 코스였는데 수비수가 살려줬습니다.",
+                    "타구 회전이 강해서 글러브에서 튈 수도 있었는데, {fielder} 선수가 침착하게 공을 흡수하며 잡아냈습니다.",
+                    "잘 맞은 타구가 아웃으로 연결되면 타격 리듬에 영향을 줄 수 있으니 빨리 털어내야 합니다.",
+                    "수비 시프트의 승리입니다. 벤치의 분석과 야수의 위치 선정이 만들어낸 소중한 아웃카운트예요.",
+                    "타자의 탄식 소리가 여기까지 들리는 것 같네요. 야구의 신이 이번엔 투수의 손을 들어줬습니다."
+                ]
+            },
+
+            // [11-C] 🧤 평범한 뜬공 & 내야 땅볼 아웃 (FIELDING_ROUTINE) - 10 x 10 = 100 조합
+            FIELDING_ROUTINE: {
+                casters: [
+                    "타구가 높게 뜹니다. {fielder}, 제자리에서 여유 있게 낙구 지점을 포착합니다.",
+                    "평범한 내야 땅볼! {fielder}가 침착하게 바운드를 맞추고 1루 송구, 아웃입니다!",
+                    "이지 플라이볼입니다. {fielder}가 콜 플레이를 하면서 가볍게 처리합니다.",
+                    "빗맞은 타구, 힘없이 굴러갑니다. 1루에서 여유 있게 아웃 카운트를 올립니다.",
+                    "평범한 뜬공이 되네요. 무리 없이 아웃카운트 하나를 안전하게 채웁니다.",
+                    "정면 땅볼 타구! 침착하게 스텝을 밟고 1루로 정확하게 송구 완료!",
+                    "높이 솟아오른 체공시간 긴 뜬공, 수비수가 손짓하며 안전하게 글러브에 담아냅니다.",
+                    "수비수 발밑으로 굴러가는 땅볼, 차분하게 원바운드 포구 후 1루 아웃!",
+                    "빗맞은 내야 뜬공! 침착하게 콜을 외치며 안정적으로 처리합니다.",
+                    "투수의 땅볼 유도가 완벽했습니다! 평범한 내야 땅볼로 가볍게 아웃!"
+                ],
+                analysts: [
+                    "이런 평범한 타구는 긴장하지 않고 기본기대로 침착하게 처리하는 게 가장 중요합니다.",
+                    "타이밍이 약간 늦었어요. 공 밑부분을 깎아 치면서 평범한 뜬공으로 힘없이 솟아올랐죠.",
+                    "차분하네요. 서두르지 않고 풋워크로 바운드를 잡아서 정확하게 송구했습니다.",
+                    "투수가 맞춰 잡는 투구를 아주 영리하게 구사했습니다. 투구수를 절약하는 좋은 플레이예요.",
+                    "수비수가 기본에 충실했습니다. 타구를 정면에서 보고 가슴 높이에서 안전하게 포구했어요.",
+                    "타자가 공의 윗부분을 덮어 때리면서 힘없는 땅볼이 되고 말았습니다.",
+                    "야구는 이런 평범한 타구들을 실수 없이 100% 아웃으로 연결하는 팀이 강팀이 되는 법입니다.",
+                    "콜 플레이가 정확했어요. 주변 야수들과의 동선 정리도 깔끔하게 이뤄졌습니다.",
+                    "타석에서 노림수가 빗나갔어요. 투수의 볼 끝 움직임에 배트 중심이 밀렸습니다.",
+                    "투수와 야수의 호흡이 돋보이는 군더더기 없는 아주 깔끔한 루틴 플레이였습니다."
+                ]
+            },
+
+            // [11-D] 🚨 수비 실책 / 알까기 / 악송구 (FIELDING_ERROR) - 10 x 10 = 100 조합
+            FIELDING_ERROR: {
+                casters: [
+                    "아! 빠졌습니다! {fielder}의 포구 실책! 알까기가 나오고 맙니다!",
+                    "실책이에요! 공을 글러브에 담지 못하고 뒤로 흘리며 타자 주자가 살았습니다!",
+                    "이게 무슨 일인가요! 잡을 수 있는 평범한 공을 놓치면서 주자 모두 세이프!",
+                    "악송구입니다! 1루수가 잡을 수 없는 곳으로 공이 날아가며 추가 진루 허용!",
+                    "수비가 흔들립니다! 결정적인 순간에 뼈아픈 수비 실책이 터져 나옵니다!",
+                    "다 잡았던 공을 글러브에서 떨어뜨립니다! 치명적인 낙구 실책 발생!",
+                    "바운드를 맞추지 못했습니다! 공이 수비수 뒤로 빠져나가며 주자 진루!",
+                    "아, 송구가 빗나갑니다! 1루수 베이스에서 발이 떨어지며 세이프 판정!",
+                    "더그아웃의 탄식이 터져 나옵니다! 기본 플레이에서 뼈아픈 에러가 기록됩니다!",
+                    "포구 실패! 안일한 수비 하나가 경기 흐름에 큰 파장을 몰고 옵니다!"
+                ],
+                analysts: [
+                    "아, 저건 바운드를 끝까지 보지 않고 고개를 먼저 들었어요. 헤드업(Head-up) 실책입니다.",
+                    "투수가 정말 잘 던져줬는데, 저런 에러 하나가 이닝 전체를 흔들 수 있거든요. 대단히 아쉽습니다.",
+                    "글러브질이 너무 뻣뻣했어요. 풋워크로 바운드를 맞추지 못하고 서서 잡으려다 실책이 나왔습니다.",
+                    "기본적인 수비 미스예요. 이런 실책은 투수뿐만 아니라 팀 전체 분위기를 가라앉힐 수 있습니다.",
+                    "어려운 타구도 아니었는데, 포구 순간에 시선이 1루 쪽으로 미리 돌아갔어요. 집중력 부족입니다.",
+                    "외야에서 타구 낙하지점을 놓친 것도 바람 탓만 할 순 없어요. 첫 발 스타트가 늦었습니다.",
+                    "악송구는 내야수에게 가장 치명적인 에러입니다. 스텝을 다 밟지 않고 팔로만 던지다 빗나갔어요.",
+                    "수비 실책 후에는 투수의 멘탈 관리가 급선무입니다. 다음 타자와의 승부에 더 집중해야 합니다.",
+                    "잡으려는 욕심이 앞섰어요. 공을 먼저 확실하게 글러브에 담고 나서 플레이를 이어갔어야 합니다.",
+                    "경기 후반 이런 실책 하나는 패배로 직결될 수 있는 치명타입니다. 벤치에서 따끔한 지적이 필요해 보입니다."
                 ]
             },
 

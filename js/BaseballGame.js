@@ -2493,12 +2493,14 @@ class BaseballGame {
                 });
             }
         }
-        // [2] 🎯 GREAT CONTACT: 2루타 / 3루타 / 1루타
+        // [2] 🎯 GREAT CONTACT: 2루타 / 3루타 / 1루타 / 총알 라인드라이브
         else if (absDiffZ <= hitTiming && distXY <= hitDist) {
-            const isTriple = (Math.random() < 0.15 * (lineupItem.contactBonus || 1.0));
-            const isDouble = !isTriple && (Math.random() < 0.45 * (lineupItem.doubleBonus || batterChar.doubleBonus || 1.0));
+            const isLineDrive = (Math.random() < 0.35); // 35% 확률로 총알 라인드라이브 타구 발생!
+            const isTriple = !isLineDrive && (Math.random() < 0.15 * (lineupItem.contactBonus || 1.0));
+            const isDouble = !isTriple && (isLineDrive ? (Math.random() < 0.50) : (Math.random() < 0.45 * (lineupItem.doubleBonus || batterChar.doubleBonus || 1.0)));
             const hitType = isTriple ? 'triple' : (isDouble ? 'double' : 'single');
             b.hitType = hitType;
+            b.isLineDrive = isLineDrive;
 
             const dist = isTriple ? Math.round(110 + Math.random() * 15) : (isDouble ? Math.round(94 + Math.random() * 24) : Math.round(68 + Math.random() * 22));
             b.hitDist = dist;
@@ -2509,15 +2511,22 @@ class BaseballGame {
             this.addScore(scoredRuns, hitType);
             this.resetAtBatCount(true);
 
-            b.vz = -430 - Math.random() * 50;
-            b.vy = 130 + Math.random() * 35;
-            b.vx = (b.x * 2.0) + (Math.random() - 0.5) * 160;
+            if (isLineDrive) {
+                // ⚡ 총알 라인드라이브: 낮고 빠르게 날아가는 초고속 직선타 궤적!
+                b.vz = -510 - Math.random() * 50;
+                b.vy = 65 + Math.random() * 20;
+                b.vx = (b.x * 2.2) + (Math.random() - 0.5) * 150;
+            } else {
+                b.vz = -430 - Math.random() * 50;
+                b.vy = 130 + Math.random() * 35;
+                b.vx = (b.x * 2.0) + (Math.random() - 0.5) * 160;
+            }
 
-            this.camera.shake = 10;
+            this.camera.shake = isLineDrive ? 18 : 10;
             this.playBatHitSound('hit');
-            let titleText = '⚾ 1루타 클린 안타 성공!';
+            let titleText = isLineDrive ? '⚡ [총알 라인드라이브] 내야를 꿰뚫는 강력한 직선타 안타!!' : '⚾ 1루타 클린 안타 성공!';
             if (hitType === 'triple') titleText = '⚡ 3루타! 우중간을 가르는 총알 3루타!';
-            else if (hitType === 'double') titleText = '🌪️ 2루타! 외야를 가르는 시원한 2루타!';
+            else if (hitType === 'double') titleText = isLineDrive ? '⚡ [라인드라이브 2루타] 외야수를 꿰뚫는 시원한 2루타!' : '🌪️ 2루타! 외야를 가르는 시원한 2루타!';
 
             // 외야수 수비 추격 지정
             let targetRole = 'CF';
@@ -2541,20 +2550,32 @@ class BaseballGame {
             } else {
                 this.showResultBanner(titleText, subText, '#38bdf8');
                 if (this.commentary) {
-                    this.commentary.trigger('HIT_CLEAN', {
-                        dist: dist,
-                        batter: batterChar.name,
-                        runs: scoredRuns
-                    });
+                    if (isLineDrive) {
+                        this.commentary.trigger('HIT_LINEDRIVE', {
+                            dist: dist,
+                            batter: batterChar.name,
+                            runs: scoredRuns
+                        });
+                    } else {
+                        this.commentary.trigger('HIT_CLEAN', {
+                            dist: dist,
+                            batter: batterChar.name,
+                            runs: scoredRuns
+                        });
+                    }
                 }
             }
         }
-        // [3] 🛡️ 빗맞은 내야 땅볼 / 외야 플라이 아웃
+        // [3] 🛡️ 내야 땅볼 / 외야 플라이 / 라인드라이브 아웃
         else if (absDiffZ <= hitTiming + 18 && distXY <= hitDist + 12) {
             b.hitType = 'out';
             this.playBatHitSound('hit');
 
-            const isFlyOut = (absDiffZ > hitTiming + 6 || Math.random() < 0.42);
+            // ⚡ 불운의 라인드라이브 직선타 아웃 여부 (20% 확률)
+            const isLineout = (absDiffZ <= hitTiming + 8 && Math.random() < 0.22);
+            b.isLineout = isLineout;
+
+            const isFlyOut = isLineout || (absDiffZ > hitTiming + 6 || Math.random() < 0.42);
             b.isFlyOut = isFlyOut;
 
             // ⚡ [히트 앤드 런] 주자가 미리 스타트를 끊었으므로 내야 땅볼 시 병살타 100% 방지!
@@ -2571,7 +2592,19 @@ class BaseballGame {
                 return;
             }
 
-            if (isFlyOut) {
+            if (isLineout) {
+                // ⚡ 총알 라인드라이브 직선타 타구 (낮고 빠르게 내야/외야 정면 비행)
+                b.vy = 42 + Math.random() * 15;
+                b.vz = -380 - Math.random() * 35;
+                b.vx = (b.x * 1.8) + (Math.random() - 0.5) * 110;
+
+                let targetRole = 'SS';
+                if (b.vx < -40) targetRole = '3B';
+                else if (b.vx < 10) targetRole = 'SS';
+                else if (b.vx < 60) targetRole = '2B';
+                else targetRole = '1B';
+                this.assignFielderForBall(targetRole);
+            } else if (isFlyOut) {
                 // 외야/내야 플라이볼 타구 (높은 궤적)
                 b.vy = 185 + Math.random() * 45;
                 b.vz = -260 - Math.random() * 40;
@@ -3071,51 +3104,117 @@ class BaseballGame {
                         assigned.z += (dz / dist) * Math.min(dist, sprintSpeed * dt);
                     }
 
-                    // 수비 인터셉트 / 포구 체크 (비현실적 진공청소기 수비 제거 및 리얼 판정)
+                    // 수비 인터셉트 / 포구 체크 (실책, 평범한 공, 라인드라이브, 호수비 다채로운 수비 액션)
                     if (b.active) {
                         if (b.hitType === 'out') {
                             if (b.isFlyOut) {
                                 // 🧤 외야/내야 플라이 낙하지점 정밀 포구: 수비수가 낙하지점에 근접했을 때 포구!
-                                if (dist < 18 && b.y <= 20 && b.vy < 0) {
+                                if (dist < 18 && b.y <= 24 && b.vy < 0) {
                                     b.active = false;
-                                    const isSuperCatch = (dist >= 7);
-                                    assigned.action = isSuperCatch ? 'jumping' : 'ready';
-                                    assigned.y = isSuperCatch ? 12 : 0;
+
+                                    // 🚨 1. 외야 뜬공 낙구 실책 (Dropped Flyball Error) - 9% 확률로 실책 발생!
+                                    const isFlyError = (Math.random() < 0.09);
+                                    if (isFlyError) {
+                                        b.hitType = 'double';
+                                        b.isHit = true;
+                                        b.vy = 26;
+                                        b.vz = -90;
+                                        this.playCatchSound();
+                                        const scoredRuns = this.advanceRunnersOnHit('double');
+                                        this.spawnBaseRunners('double', { ...this.bases });
+                                        this.addScore(scoredRuns, 'error');
+                                        this.showResultBanner(`🚨 [수비 실책 ERROR] ${assigned.name} 포구 실책!`, `외야수가 낙구 지점을 놓쳤습니다! 타자 2루 출루!`, '#ef4444');
+                                        if (this.commentary) {
+                                            this.commentary.trigger('FIELDING_ERROR', { fielder: assigned.name, reason: '외야 뜬공 낙구' });
+                                        }
+                                        this.updateHUD();
+                                        return;
+                                    }
+
+                                    // 2. 정상 포구: 라인드라이브 직선타 vs 슈퍼 점핑 캐치 vs 평범한 뜬공
                                     this.playCatchSound();
                                     this.createCatchSparks(assigned.x, assigned.y + 12, assigned.z);
 
-                                    const catchTitle = isSuperCatch ? `🧤 [슈퍼 점핑 캐치] ${assigned.name}의 그림 같은 호수비!!` : `🧤 ${assigned.name} 안정적인 뜬공 포구!`;
-                                    const catchSub = isSuperCatch ? '허공을 가르며 타구를 낚아채 아웃 카운트를 올립니다!' : '정확한 낙하지점 위치 선정으로 깔끔하게 포구!';
-                                    this.showResultBanner(catchTitle, catchSub, '#ef4444');
+                                    if (b.isLineout) {
+                                        // ⚡ 총알 라인드라이브 직선타 정면 포구 아웃
+                                        assigned.action = 'ready';
+                                        this.showResultBanner(`⚡ [총알 라인드라이브] ${assigned.name} 정면 포구 아웃!`, `잘 맞은 타구가 불운하게 야수 정면으로 빨려 들어갔습니다!`, '#f59e0b');
+                                        if (this.commentary) {
+                                            this.commentary.trigger('FIELDING_LINEOUT', { fielder: assigned.name });
+                                        }
+                                        setTimeout(() => {
+                                            this.recordOut(`⚡ ${assigned.name} 총알 라인드라이브 직선타 아웃!`);
+                                        }, 850);
+                                    } else {
+                                        // 슈퍼 점핑 캐치 (20%) vs 평범한 뜬공 포구 (80%)
+                                        const isSuperCatch = (dist >= 14 && Math.random() < 0.22);
+                                        assigned.action = isSuperCatch ? 'jumping' : 'ready';
+                                        assigned.y = isSuperCatch ? 12 : 0;
 
-                                    if (isSuperCatch && this.commentary) {
-                                        this.commentary.trigger('FIELDING_JUMPING', { fielder: assigned.name });
+                                        if (isSuperCatch) {
+                                            this.showResultBanner(`🧤 [슈퍼 점핑 캐치] ${assigned.name}의 그림 같은 호수비!!`, '허공을 가르며 타구를 낚아채 아웃 카운트를 올립니다!', '#ef4444');
+                                            if (this.commentary) {
+                                                this.commentary.trigger('FIELDING_JUMPING', { fielder: assigned.name });
+                                            }
+                                        } else {
+                                            // 🧤 평범한 뜬공 포구 (Routine Flyball)
+                                            this.showResultBanner(`🧤 [평범한 뜬공 포구] ${assigned.name} 안정적인 정면 포구!`, '타구가 높게 떠올라 여유 있게 포구 완료 (이지 아웃)', '#38bdf8');
+                                            if (this.commentary) {
+                                                this.commentary.trigger('FIELDING_ROUTINE', { fielder: assigned.name, playType: '외야 뜬공' });
+                                            }
+                                        }
+
+                                        setTimeout(() => {
+                                            this.recordOut(`🧤 ${assigned.name} 플라이볼 포구 아웃!`);
+                                        }, 850);
                                     }
-
-                                    setTimeout(() => {
-                                        this.recordOut(`🧤 ${assigned.name} 플라이볼 포구 아웃!`);
-                                    }, 850);
                                 }
                             } else {
-                                // 🛡️ 내야 땅볼 포구 & 다이빙 캐치 & 1루 레이저 송구 (지면 8 이하)
+                                // 🛡️ 내야 땅볼 포구 & 알까기 실책 & 슈퍼 다이빙 캐치 & 평범한 땅볼
                                 if (dist < 22 && b.y <= 8 && assigned.action === 'pursuing') {
                                     b.active = false;
-                                    const isDiving = (dist >= 9);
+
+                                    // 🚨 1. 내야 땅볼 알까기 실책 (Grounder Error) - 10% 확률로 실책 발생!
+                                    const isGroundError = (Math.random() < 0.10);
+                                    if (isGroundError) {
+                                        b.hitType = 'single';
+                                        b.isHit = true;
+                                        b.vx = b.vx * 0.75;
+                                        b.vz = b.vz * 0.75;
+                                        this.playCatchSound();
+                                        const scoredRuns = this.advanceRunnersOnHit('single');
+                                        this.spawnBaseRunners('single', { ...this.bases });
+                                        this.addScore(scoredRuns, 'error');
+                                        this.showResultBanner(`🚨 [수비 실책 ERROR] ${assigned.name} 내야 알까기 실책!`, `불규칙 바운드로 공이 글러브를 빠져나갔습니다! 타자 1루 세이프!`, '#ef4444');
+                                        if (this.commentary) {
+                                            this.commentary.trigger('FIELDING_ERROR', { fielder: assigned.name, reason: '내야 땅볼 알까기' });
+                                        }
+                                        this.updateHUD();
+                                        return;
+                                    }
+
+                                    // 2. 정상 내야 땅볼 포구: 슈퍼 다이빙 캐치 vs 평범한 내야 땅볼
+                                    const isDiving = (dist >= 15 && Math.random() < 0.20);
                                     assigned.action = isDiving ? 'diving' : 'throwing';
                                     this.playCatchSound();
                                     this.createCatchSparks(assigned.x, assigned.y + 6, assigned.z);
 
                                     const firstBaseman = this.fielders.find(f => f.role === '1B');
 
+                                    // 🚨 3. 1루 송구 시 6% 확률로 1루 악송구 실책 (Throwing Error)
+                                    const isThrowError = (!isDiving && Math.random() < 0.06);
+
                                     const executeThrowToFirst = () => {
                                         assigned.action = 'throwing';
+                                        const targetXPos = isThrowError ? ((firstBaseman ? firstBaseman.x : 140) + 40) : (firstBaseman ? firstBaseman.x : 140);
+                                        const targetYPos = isThrowError ? 34 : 16;
                                         this.fieldingThrow = {
                                             active: true,
                                             startX: assigned.x,
                                             startY: assigned.y + 14,
                                             startZ: assigned.z,
-                                            targetX: firstBaseman ? firstBaseman.x : 140,
-                                            targetY: 16,
+                                            targetX: targetXPos,
+                                            targetY: targetYPos,
                                             targetZ: firstBaseman ? firstBaseman.z : 235,
                                             x: assigned.x,
                                             y: assigned.y + 14,
@@ -3123,9 +3222,10 @@ class BaseballGame {
                                             progress: 0,
                                             speed: 3.4,
                                             catcher: firstBaseman,
-                                            sourceFielder: assigned
+                                            sourceFielder: assigned,
+                                            isThrowError: isThrowError
                                         };
-                                        if (firstBaseman) {
+                                        if (firstBaseman && !isThrowError) {
                                             setTimeout(() => { firstBaseman.action = 'stretching'; }, 180);
                                         }
                                     };
@@ -3137,7 +3237,11 @@ class BaseballGame {
                                         }
                                         setTimeout(executeThrowToFirst, 380);
                                     } else {
-                                        this.showResultBanner(`🧤 ${assigned.name} 깔끔한 땅볼 포구!`, '1루로 빠르고 정확한 레이저 송구!', '#facc15');
+                                        // 🧤 평범한 땅볼 포구 (Routine Groundout)
+                                        this.showResultBanner(`🧤 [평범한 땅볼] ${assigned.name} 안정적인 1루 송구!`, '차분하게 바운드를 맞추고 1루로 송구합니다.', '#38bdf8');
+                                        if (this.commentary) {
+                                            this.commentary.trigger('FIELDING_ROUTINE', { fielder: assigned.name, playType: '내야 땅볼' });
+                                        }
                                         executeThrowToFirst();
                                     }
                                 }
@@ -3217,9 +3321,20 @@ class BaseballGame {
                         return;
                     }
 
-                    if (this.ball && this.ball.hitType === 'out' && !b.isDoublePlay) {
+                    if (ft.isThrowError) {
                         const srcName = ft.sourceFielder ? ft.sourceFielder.name : '내야수';
-                        this.recordOut(`🛡️ ${srcName} 포구 & 1루 총알 송구 아웃!`);
+                        this.playCatchSound();
+                        const scoredRuns = this.advanceRunnersOnHit('single');
+                        this.spawnBaseRunners('single', { ...this.bases });
+                        this.addScore(scoredRuns, 'error');
+                        this.showResultBanner(`🚨 [1루 악송구 실책 ERROR] ${srcName} 송구 실책!`, `1루수가 잡을 수 없는 빗나간 악송구로 타자 1루 세이프!`, '#ef4444');
+                        if (this.commentary) {
+                            this.commentary.trigger('FIELDING_ERROR', { fielder: srcName, reason: '1루 악송구' });
+                        }
+                        this.updateHUD();
+                    } else if (this.ball && this.ball.hitType === 'out' && !b.isDoublePlay) {
+                        const srcName = ft.sourceFielder ? ft.sourceFielder.name : '내야수';
+                        this.recordOut(`🛡️ ${srcName} 포구 & 1루 송구 아웃!`);
                     }
                 }
             }
