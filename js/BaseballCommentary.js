@@ -44,11 +44,31 @@ class BaseballCommentator {
         if (!this.synth) return;
         const load = () => {
             const all = this.synth.getVoices();
-            this.koreanVoices = all.filter(v => v.lang && (v.lang.startsWith('ko') || v.lang.includes('KR')));
-            if (this.koreanVoices.length >= 2) {
-                this.casterVoice = this.koreanVoices[0];
-                this.analystVoice = this.koreanVoices[1];
-            } else if (this.koreanVoices.length === 1) {
+            this.koreanVoices = all.filter(v => v.lang && (v.lang.startsWith('ko') || v.lang.includes('KR') || v.lang.includes('Korean')));
+
+            // 🎙️ 확실한 남성 목소리 필터링 (macOS Rocko, Reed, Eddy, Grandpa / Windows InJoon / Chrome 표준 남성 보이스 등)
+            const maleKeywords = ['rocko', 'reed', 'eddy', 'grandpa', 'minho', 'injoon', 'bongjin', 'jinho', 'male', '남성', '남자', 'gwangho', 'daewoong', 'standard-c', 'standard-d', 'wavenet-c', 'wavenet-d', 'ko-kr-c', 'ko-kr-d'];
+            const femaleKeywords = ['yuna', 'sunhi', 'heami', 'sora', 'female', '여성', '여자', 'seoyeon', 'grandma', 'flo', 'sandy', 'shelley', 'standard-a', 'standard-b', 'wavenet-a', 'wavenet-b', 'ko-kr-a', 'ko-kr-b'];
+
+            const maleVoices = this.koreanVoices.filter(v => {
+                const name = (v.name || '').toLowerCase();
+                return maleKeywords.some(k => name.includes(k));
+            });
+
+            const nonFemaleVoices = this.koreanVoices.filter(v => {
+                const name = (v.name || '').toLowerCase();
+                return !femaleKeywords.some(k => name.includes(k));
+            });
+
+            const prioritized = maleVoices.length > 0 ? maleVoices : (nonFemaleVoices.length > 0 ? nonFemaleVoices : this.koreanVoices);
+
+            if (prioritized.length >= 2) {
+                this.casterVoice = prioritized[0];
+                this.analystVoice = prioritized[1];
+            } else if (prioritized.length === 1) {
+                this.casterVoice = prioritized[0];
+                this.analystVoice = prioritized[0];
+            } else if (this.koreanVoices.length > 0) {
                 this.casterVoice = this.koreanVoices[0];
                 this.analystVoice = this.koreanVoices[0];
             }
@@ -177,20 +197,20 @@ class BaseballCommentator {
             this.speechQueue = [];
         }
 
-        // 1단계: 정우영 캐스터 발화 (샤우팅 & 고음 & 빠른 템포)
+        // 1단계: 정우영 캐스터 발화 (남성 아나운서 샤우팅 & 박진감 넘치는 빠른 템포)
         const uCaster = new SpeechSynthesisUtterance(casterText);
         uCaster.lang = 'ko-KR';
-        uCaster.pitch = 1.18;
-        uCaster.rate = 1.15;
+        uCaster.pitch = 0.82; // 🎙️ 100% 확실한 남성 아나운서 피치
+        uCaster.rate = 1.18;  // 에너지 넘치는 빠른 샤우팅 템포
         uCaster.volume = 1.0;
         if (this.casterVoice) uCaster.voice = this.casterVoice;
 
-        // 2단계: 이순철 해설위원 발화 (진중한 중저음 & 분석 템포)
+        // 2단계: 이순철 해설위원 발화 (묵직한 남성 중저음 & 냉철한 분석 템포)
         const uAnalyst = new SpeechSynthesisUtterance(analystText);
         uAnalyst.lang = 'ko-KR';
-        uAnalyst.pitch = 0.83;
-        uAnalyst.rate = 0.96;
-        uAnalyst.volume = 0.95;
+        uAnalyst.pitch = 0.65; // 🎙️ 묵직하고 굵은 남성 베이스 중저음
+        uAnalyst.rate = 0.95;  // 차분하고 신중한 기술 해설 템포
+        uAnalyst.volume = 1.0;
         if (this.analystVoice) uAnalyst.voice = this.analystVoice;
 
         this.startEqualizer();
