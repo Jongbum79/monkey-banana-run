@@ -224,6 +224,7 @@ class BaseballGame {
         this.canvas = null;
         this.ctx = null;
         this.containerEl = null;
+        this.commentary = null;
         this.isRunning = false;
         this.animFrameId = null;
 
@@ -595,6 +596,13 @@ class BaseballGame {
         this.difficulty = (savedDiff && ['easy', 'normal', 'pro'].includes(savedDiff)) ? savedDiff : 'normal';
         this.updateDifficultyUI();
         this.updateHUD();
+
+        // 🎙️ KBO 중계석 정우영 캐스터 & 이순철 해설위원 시스템 활성화
+        if (!this.commentary && typeof BaseballCommentator !== 'undefined') {
+            this.commentary = new BaseballCommentator(this);
+            this.commentary.init();
+        }
+
         this.isInitialized = true;
         this.render(); // 초기 캔버스 즉시 렌더링
     }
@@ -1409,6 +1417,9 @@ class BaseballGame {
 
         const rText = (this.userRole === 'batter') ? '🏏 타자 타석 입장! (포수 뒤 시점)' : '⚾ 투수 마운드 등판! (투수 뒤 시점)';
         this.showResultBanner('⚾ PLAY BALL! MLB 26 개막 ⚾', rText, '#38bdf8');
+        if (this.commentary) {
+            this.commentary.trigger('GAME_START');
+        }
     }
 
     stop() {
@@ -1669,6 +1680,15 @@ class BaseballGame {
             knuckleball: '🔮 MYSTIC KNUCKLEBALL • 3D 카오스 초슬로우 무회전 마구'
         };
         this.showRadarGun(finalSpeed, pNameMap[pType] || 'FASTBALL');
+
+        if (this.commentary) {
+            this.commentary.trigger('PITCH_RELEASE', {
+                pitchName: pNameMap[pType] || pType,
+                speed: finalSpeed,
+                count: `${this.balls}B ${this.strikes}S`,
+                zone: (Math.abs(actualTargetX) <= 12 && actualTargetY >= 32 && actualTargetY <= 56) ? '한가운데' : '외곽'
+            });
+        }
 
         // 🤖 [컴투스 프로야구 2026] 초현실적 AI 타자 정밀 타격 & 선구안 알고리즘
         // - 실투(한가운데 빠른공/몰린 공)는 놓치지 않고 92~98% 확률로 통타(적시타/초대형 장외 홈런 폭발!)
@@ -2041,6 +2061,9 @@ class BaseballGame {
         // 🎯 1. 스퀴즈 번트 (Squeeze Bunt) 특수 발동!
         if (this.activeTactic === 'squeeze' || (this.bases.third && Math.random() < 0.20 && hasRunners)) {
             this.activeTactic = null;
+            if (this.commentary) {
+                this.commentary.trigger('TACTIC_SQUEEZE');
+            }
             const dir = (Math.random() < 0.5) ? -1 : 1;
             b.vx = dir * (20 + Math.random() * 15);
             b.vy = 8;
@@ -2199,6 +2222,10 @@ class BaseballGame {
         if (!this.bases.first && !this.bases.second && !this.bases.third) {
             this.showResultBanner('🏃 루상에 주자 없음!', '루상에 주자가 없습니다. 먼저 안타나 볼넷으로 출루하세요!', '#94a3b8');
             return;
+        }
+
+        if (this.commentary) {
+            this.commentary.trigger('STEAL_PLAY');
         }
 
         let stealType = '';
@@ -2455,6 +2482,16 @@ class BaseballGame {
             this.camera.shake = isHotZone ? 32 : 24;
             this.playBatHitSound('homerun', isHotZone);
             this.triggerHomeRunCelebration(dist, scoredRuns, isHotZone);
+
+            if (this.commentary) {
+                const isGrandSlam = (scoredRuns >= 4);
+                this.commentary.trigger(isGrandSlam ? 'HIT_GRAND_SLAM' : 'HIT_HOMERUN', {
+                    dist: dist,
+                    runs: scoredRuns,
+                    batter: batterChar.name,
+                    speed: b.speedKm || 150
+                });
+            }
         }
         // [2] 🎯 GREAT CONTACT: 2루타 / 3루타 / 1루타
         else if (absDiffZ <= hitTiming && distXY <= hitDist) {
@@ -2495,12 +2532,21 @@ class BaseballGame {
                 this.activeTactic = null;
                 titleText = '🌪️ [히트 & 런 대성공] 1루 주자 3루 폭풍 진루 클린 안타!!';
                 this.showResultBanner(titleText, '사전 스타트 효과로 단타에 2베이스를 질주했습니다!', '#38bdf8');
+                if (this.commentary) this.commentary.trigger('TACTIC_HIT_AND_RUN');
             } else if (this.activeTactic === 'run_and_hit') {
                 this.activeTactic = null;
                 titleText = '🔥 [런 & 히트 정타] 스마트 타격 대성공!!';
                 this.showResultBanner(titleText, '좋은 스트라이크를 골라쳐서 주자와 함께 안타 작렬!', '#22c55e');
+                if (this.commentary) this.commentary.trigger('TACTIC_RUN_AND_HIT');
             } else {
                 this.showResultBanner(titleText, subText, '#38bdf8');
+                if (this.commentary) {
+                    this.commentary.trigger('HIT_CLEAN', {
+                        dist: dist,
+                        batter: batterChar.name,
+                        runs: scoredRuns
+                    });
+                }
             }
         }
         // [3] 🛡️ 빗맞은 내야 땅볼 / 외야 플라이 아웃
@@ -2566,6 +2612,12 @@ class BaseballGame {
             if (this.strikes < 2) this.strikes++;
             this.playBatHitSound('foul');
             this.showResultBanner('⚠️ 빗맞은 파울볼!', '2스트라이크 이전 파울 (+1 스트라이크)', '#f59e0b');
+            if (this.commentary) {
+                this.commentary.trigger('SWING_FOUL', {
+                    batter: batterChar.name,
+                    count: `${this.balls}B ${this.strikes}S`
+                });
+            }
             this.updateHUD();
         }
 
@@ -2643,6 +2695,16 @@ class BaseballGame {
             this.showResultBanner(title, `${desc} (카운트: ${this.balls}B - ${this.strikes}S)`, '#facc15');
             this.gameState = 'result_pause';
             this.stateTimer = 1.3;
+        }
+
+        if (this.commentary) {
+            this.commentary.trigger('STRIKE_SWINGING', {
+                pitchName: pitchType,
+                speed: bSpeed,
+                batter: (this.getCurrentBatter() && this.getCurrentBatter().name) || '타자',
+                pitcher: (this.getCurrentPitcher() && this.getCurrentPitcher().name) || '투수',
+                count: `${this.balls}B ${this.strikes}S`
+            });
         }
 
         // ⚡ 히트 앤드 런 작전 중 헛스윙 시 주자 강제 도루 승부
@@ -3026,6 +3088,10 @@ class BaseballGame {
                                     const catchSub = isSuperCatch ? '허공을 가르며 타구를 낚아채 아웃 카운트를 올립니다!' : '정확한 낙하지점 위치 선정으로 깔끔하게 포구!';
                                     this.showResultBanner(catchTitle, catchSub, '#ef4444');
 
+                                    if (isSuperCatch && this.commentary) {
+                                        this.commentary.trigger('FIELDING_JUMPING', { fielder: assigned.name });
+                                    }
+
                                     setTimeout(() => {
                                         this.recordOut(`🧤 ${assigned.name} 플라이볼 포구 아웃!`);
                                     }, 850);
@@ -3066,6 +3132,9 @@ class BaseballGame {
 
                                     if (isDiving) {
                                         this.showResultBanner(`🔥 [슈퍼 다이빙 캐치] ${assigned.name} 환상적인 호수비!!`, '몸을 날려 지면 타구를 건져낸 뒤 1루로 전력 송구!', '#f59e0b');
+                                        if (this.commentary) {
+                                            this.commentary.trigger('FIELDING_DIVING', { fielder: assigned.name });
+                                        }
                                         setTimeout(executeThrowToFirst, 380);
                                     } else {
                                         this.showResultBanner(`🧤 ${assigned.name} 깔끔한 땅볼 포구!`, '1루로 빠르고 정확한 레이저 송구!', '#facc15');
@@ -3236,6 +3305,22 @@ class BaseballGame {
             this.playCatchSound();
             this.playUmpireWhistle(1400, 0.2);
 
+            if (this.commentary) {
+                if (isSwung) {
+                    this.commentary.trigger('STRIKE_SWINGING', {
+                        pitchName: pitchType,
+                        speed: pitchSpeed,
+                        count: `${this.balls}B ${this.strikes}S`
+                    });
+                } else {
+                    this.commentary.trigger('STRIKE_LOOKING', {
+                        pitchName: pitchType,
+                        speed: pitchSpeed,
+                        count: `${this.balls}B ${this.strikes}S`
+                    });
+                }
+            }
+
             // ⚡ [런 & 히트] 스트라이크 노스윙/헛스윙 시 주자 도루 승부 강제 진행!
             if (this.activeTactic === 'run_and_hit') {
                 this.activeTactic = null;
@@ -3263,6 +3348,12 @@ class BaseballGame {
             this.lastResultWasBall = true;
             this.balls++;
             this.playCatchSound();
+
+            if (this.commentary) {
+                this.commentary.trigger('PITCH_BALL', {
+                    count: `${this.balls}B ${this.strikes}S`
+                });
+            }
 
             // ⚡ [런 & 히트] 타자가 침착하게 볼을 골라냄 -> 주자 70% 높은 확률로 도루 세이프!
             if (this.activeTactic === 'run_and_hit') {
