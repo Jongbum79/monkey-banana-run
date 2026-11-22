@@ -20481,8 +20481,10 @@ class BaseballCommentator {
                 'junior', 'ralph', 'albert', 'fred'
             ];
 
-            // 1순위: 사람 같은 프리미엄/자연스러운 인공지능 고품질 음성 키워드
-            const naturalKeywords = ['natural', 'online', 'neural', 'wavenet', 'google', 'premium', 'enhanced', 'siri', 'injoon', 'minho'];
+            // 1순위: 자연스러운 고품질 남성 AI 음성 (Edge InJoon/Hyunsu/BongJin, Minho, WaveNet C/D 등)
+            const naturalMaleKeywords = ['injoon', 'hyunsu', 'bongjin', 'minho', 'jinho', 'male', '남성', '남자', 'standard-c', 'standard-d', 'wavenet-c', 'wavenet-d'];
+            // 2순위: 기타 자연스러운 신경망 음성
+            const naturalKeywords = ['natural', 'online', 'neural', 'wavenet', 'google', 'premium', 'enhanced', 'siri'];
 
             // 노벨티/로봇 음성 철저히 제외한 순수 한국어 음성군
             const cleanKorean = this.koreanVoices.filter(v => {
@@ -20490,13 +20492,19 @@ class BaseballCommentator {
                 return !bannedNovelty.some(b => name.includes(b));
             });
 
-            // 사람 목소리 랭킹 1순위: 신경망 / 내추럴 고음질 보이스
+            const topNaturalMale = cleanKorean.filter(v => {
+                const name = (v.name || '').toLowerCase();
+                return naturalMaleKeywords.some(k => name.includes(k));
+            });
+
+            // 사람 목소리 랭킹: 자연스러운 남성 음성 > 일반 신경망 음성 > 기본 음성
             const topNatural = cleanKorean.filter(v => {
                 const name = (v.name || '').toLowerCase();
                 return naturalKeywords.some(k => name.includes(k));
             });
 
-            const candidatePool = (topNatural.length > 0) ? topNatural : cleanKorean;
+            const candidatePool = (topNaturalMale.length > 0) ? topNaturalMale : ((topNatural.length > 0) ? topNatural : cleanKorean);
+            this.hasNaturalMaleVoice = topNaturalMale.length > 0;
 
             if (candidatePool.length >= 2) {
                 this.casterVoice = candidatePool[0];
