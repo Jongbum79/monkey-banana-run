@@ -20,6 +20,19 @@ class BaseballCommentator {
         this.lastSpokenTime = 0;
         this.speechQueue = [];
         this.isSpeaking = false;
+        this.activeAudio = null;
+        this.speakToken = 0;
+
+        // 사용자 커스텀 음성 설정 (localStorage)
+        try {
+            this.openAiKey = localStorage.getItem('smile_bb_openai_tts_key') || '';
+            this.customCasterVoiceName = localStorage.getItem('smile_bb_caster_voice') || '';
+            this.customAnalystVoiceName = localStorage.getItem('smile_bb_analyst_voice') || '';
+        } catch (e) {
+            this.openAiKey = '';
+            this.customCasterVoiceName = '';
+            this.customAnalystVoiceName = '';
+        }
 
         // UI 엘리먼트 참조
         this.containerEl = null;
@@ -81,6 +94,18 @@ class BaseballCommentator {
                 this.casterVoice = cleanKorean[0];
                 this.analystVoice = cleanKorean[0];
             }
+
+            // 사용자가 직접 선택한 보이스 우선 적용
+            if (this.customCasterVoiceName) {
+                const found = all.find(v => v.name === this.customCasterVoiceName);
+                if (found) this.casterVoice = found;
+            }
+            if (this.customAnalystVoiceName) {
+                const found = all.find(v => v.name === this.customAnalystVoiceName);
+                if (found) this.analystVoice = found;
+            }
+
+            this.populateVoiceSelectors();
         };
         load();
         if (typeof window !== 'undefined' && this.synth.onvoiceschanged !== undefined) {
@@ -104,9 +129,30 @@ class BaseballCommentator {
                 <div class="commentary-equalizer" id="comm-equalizer">
                     <span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span>
                 </div>
+                <button type="button" class="comm-voice-toggle-btn" id="btn-comm-voice-settings" title="목소리 변경 / AI 성우 연결">
+                    ⚙️ 목소리 설정
+                </button>
                 <button type="button" class="comm-voice-toggle-btn" id="btn-comm-voice-toggle" title="해설 음성 켜기/끄기">
                     🔊 해설 ON
                 </button>
+            </div>
+            <div class="comm-settings-panel" id="comm-voice-settings-panel" style="display:none;">
+                <div class="comm-settings-note">
+                    💡 Safari/Chrome 기본 음성은 OS 내장 합성음(기계음)일 수 있습니다. 진짜 사람 남자 목소리는 <b>Microsoft Edge 브라우저(InJoon/Hyunsu)</b>를 쓰거나 아래 <b>OpenAI AI 성우 키</b>를 연결하세요.
+                </div>
+                <div class="comm-settings-row">
+                    <label>정우영 보이스</label>
+                    <select id="comm-select-caster"></select>
+                    <label>이순철 보이스</label>
+                    <select id="comm-select-analyst"></select>
+                    <button type="button" class="comm-mini-btn" id="btn-comm-test-voice">▶ 테스트</button>
+                </div>
+                <div class="comm-settings-row">
+                    <label>AI 성우 (OpenAI Key)</label>
+                    <input type="password" id="comm-openai-key" placeholder="sk-... (선택: 실제 사람 목소리 echo/onyx)" />
+                    <button type="button" class="comm-mini-btn" id="btn-comm-save-key">저장</button>
+                    <button type="button" class="comm-mini-btn" id="btn-comm-clear-key">초기화</button>
+                </div>
             </div>
             <div class="commentary-dialogue-wrap">
                 <!-- 정우영 캐스터 박스 -->
@@ -151,12 +197,128 @@ class BaseballCommentator {
                 this.isVoiceEnabled = !this.isVoiceEnabled;
                 this.toggleBtnEl.innerHTML = this.isVoiceEnabled ? '🔊 해설 ON' : '🔇 해설 OFF';
                 this.toggleBtnEl.classList.toggle('muted', !this.isVoiceEnabled);
-                if (!this.isVoiceEnabled && this.synth) {
-                    this.synth.cancel();
-                    this.stopEqualizer();
+                if (!this.isVoiceEnabled) {
+                    this.stopAllSpeech();
                 }
             };
         }
+
+        const settingsBtn = document.getElementById('btn-comm-voice-settings');
+        const settingsPanel = document.getElementById('comm-voice-settings-panel');
+        const keyInput = document.getElementById('comm-openai-key');
+        const saveKeyBtn = document.getElementById('btn-comm-save-key');
+        const clearKeyBtn = document.getElementById('btn-comm-clear-key');
+        const testBtn = document.getElementById('btn-comm-test-voice');
+        const casterSelect = document.getElementById('comm-select-caster');
+        const analystSelect = document.getElementById('comm-select-analyst');
+
+        if (keyInput && this.openAiKey) {
+            keyInput.value = this.openAiKey;
+        }
+
+        if (settingsBtn && settingsPanel) {
+            settingsBtn.onclick = (e) => {
+                e.stopPropagation();
+                const isOpen = settingsPanel.style.display !== 'none';
+                settingsPanel.style.display = isOpen ? 'none' : 'block';
+                if (!isOpen) this.populateVoiceSelectors();
+            };
+        }
+
+        if (casterSelect) {
+            casterSelect.onchange = (e) => {
+                const name = e.target.value;
+                this.customCasterVoiceName = name;
+                try { localStorage.setItem('smile_bb_caster_voice', name); } catch (err) {}
+                if (this.synth) {
+                    const found = this.synth.getVoices().find(v => v.name === name);
+                    if (found) this.casterVoice = found;
+                }
+            };
+        }
+
+        if (analystSelect) {
+            analystSelect.onchange = (e) => {
+                const name = e.target.value;
+                this.customAnalystVoiceName = name;
+                try { localStorage.setItem('smile_bb_analyst_voice', name); } catch (err) {}
+                if (this.synth) {
+                    const found = this.synth.getVoices().find(v => v.name === name);
+                    if (found) this.analystVoice = found;
+                }
+            };
+        }
+
+        if (saveKeyBtn && keyInput) {
+            saveKeyBtn.onclick = (e) => {
+                e.stopPropagation();
+                this.openAiKey = keyInput.value.trim();
+                try { localStorage.setItem('smile_bb_openai_tts_key', this.openAiKey); } catch (err) {}
+                saveKeyBtn.textContent = '✓ 저장됨';
+                setTimeout(() => { saveKeyBtn.textContent = '저장'; }, 1500);
+            };
+        }
+
+        if (clearKeyBtn && keyInput) {
+            clearKeyBtn.onclick = (e) => {
+                e.stopPropagation();
+                this.openAiKey = '';
+                keyInput.value = '';
+                try { localStorage.removeItem('smile_bb_openai_tts_key'); } catch (err) {}
+            };
+        }
+
+        if (testBtn) {
+            testBtn.onclick = (e) => {
+                e.stopPropagation();
+                this.displayAndSpeak(
+                    '투수 와인드업, 던졌습니다! 시속 154킬로미터 강속구!',
+                    '초구부터 아주 공격적인 피칭을 보여주고 있습니다.',
+                    true
+                );
+            };
+        }
+
+        this.populateVoiceSelectors();
+    }
+
+    populateVoiceSelectors() {
+        const casterSelect = document.getElementById('comm-select-caster');
+        const analystSelect = document.getElementById('comm-select-analyst');
+        if (!casterSelect || !analystSelect || !this.synth) return;
+
+        const all = this.synth.getVoices();
+        const ko = all.filter(v => v.lang && (v.lang.startsWith('ko') || v.lang.includes('KR') || v.lang.includes('Korean')));
+        const list = ko.length > 0 ? ko : all;
+
+        const fill = (sel, activeVoice) => {
+            sel.innerHTML = '';
+            list.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v.name;
+                opt.textContent = `${v.name} (${v.lang})`;
+                if (activeVoice && activeVoice.name === v.name) opt.selected = true;
+                sel.appendChild(opt);
+            });
+        };
+        fill(casterSelect, this.casterVoice);
+        fill(analystSelect, this.analystVoice);
+    }
+
+    stopAllSpeech() {
+        this.speakToken++;
+        if (this.synth) {
+            try { this.synth.cancel(); } catch (e) {}
+        }
+        if (this.activeAudio) {
+            try {
+                this.activeAudio.pause();
+                this.activeAudio = null;
+            } catch (e) {}
+        }
+        if (this.casterBoxEl) this.casterBoxEl.classList.remove('speaking');
+        if (this.analystBoxEl) this.analystBoxEl.classList.remove('speaking');
+        this.stopEqualizer();
     }
 
     startEqualizer() {
@@ -218,26 +380,101 @@ class BaseballCommentator {
             this.casterBoxEl.classList.add('highlight');
         }
 
-        if (!this.synth || !this.isVoiceEnabled) return;
+        if (!this.isVoiceEnabled) return;
 
         if (isUrgent) {
-            this.synth.cancel();
-            this.speechQueue = [];
+            this.stopAllSpeech();
         }
 
-        // 1단계: 정우영 캐스터 발화 (자연스러운 사람 발음 & 시원한 스포츠 중계 템포)
+        const myToken = ++this.speakToken;
+
+        // 1순위: 사용자가 OpenAI AI 성우 키를 설정한 경우 (실제 사람 같은 초고음질 남성 보이스 echo/onyx)
+        if (this.openAiKey) {
+            this.speakWithOpenAI(casterText, analystText, myToken);
+            return;
+        }
+
+        // 2순위: 브라우저 Web Speech API
+        this.speakWithBrowserSynth(casterText, analystText, myToken);
+    }
+
+    async speakWithOpenAI(casterText, analystText, token) {
+        if (!this.openAiKey || !this.isVoiceEnabled || token !== this.speakToken) return;
+        this.startEqualizer();
+        this.playBroadcastCue();
+
+        const playSegment = async (text, voice, speed, boxEl, otherBoxEl) => {
+            if (!this.isVoiceEnabled || token !== this.speakToken) return false;
+            try {
+                const res = await fetch('https://api.openai.com/v1/audio/speech', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${this.openAiKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: 'tts-1',
+                        input: text,
+                        voice: voice,
+                        speed: speed
+                    })
+                });
+                if (!res.ok) throw new Error('OpenAI TTS HTTP ' + res.status);
+                const blob = await res.blob();
+                if (!this.isVoiceEnabled || token !== this.speakToken) return false;
+
+                const url = URL.createObjectURL(blob);
+                return await new Promise((resolve) => {
+                    const audio = new Audio(url);
+                    this.activeAudio = audio;
+                    if (boxEl) boxEl.classList.add('speaking');
+                    if (otherBoxEl) otherBoxEl.classList.remove('speaking');
+                    audio.onended = () => {
+                        URL.revokeObjectURL(url);
+                        if (boxEl) boxEl.classList.remove('speaking');
+                        if (this.activeAudio === audio) this.activeAudio = null;
+                        resolve(true);
+                    };
+                    audio.onerror = () => {
+                        URL.revokeObjectURL(url);
+                        if (boxEl) boxEl.classList.remove('speaking');
+                        if (this.activeAudio === audio) this.activeAudio = null;
+                        resolve(false);
+                    };
+                    audio.play().catch(() => resolve(false));
+                });
+            } catch (e) {
+                return false;
+            }
+        };
+
+        const okCaster = await playSegment(casterText, 'echo', 1.12, this.casterBoxEl, this.analystBoxEl);
+        if (!okCaster) {
+            if (token === this.speakToken) {
+                this.speakWithBrowserSynth(casterText, analystText, token);
+            }
+            return;
+        }
+        await playSegment(analystText, 'onyx', 1.0, this.analystBoxEl, this.casterBoxEl);
+        if (token === this.speakToken) this.stopEqualizer();
+    }
+
+    speakWithBrowserSynth(casterText, analystText, token) {
+        if (!this.synth || !this.isVoiceEnabled || token !== this.speakToken) return;
+
+        // 1단계: 정우영 캐스터 발화
         const uCaster = new SpeechSynthesisUtterance(casterText);
         uCaster.lang = 'ko-KR';
-        uCaster.pitch = 1.0;  // 🎙️ 사람 목소리 자연 원음 피치 1.0 (로봇 음색 왜곡 방지)
-        uCaster.rate = 1.08;  // 생동감 넘치는 사람 캐스터 호흡 템포
+        uCaster.pitch = 1.0;
+        uCaster.rate = 1.08;
         uCaster.volume = 1.0;
         if (this.casterVoice) uCaster.voice = this.casterVoice;
 
-        // 2단계: 이순철 해설위원 발화 (차분하고 진중한 사람 목소리 해설)
+        // 2단계: 이순철 해설위원 발화
         const uAnalyst = new SpeechSynthesisUtterance(analystText);
         uAnalyst.lang = 'ko-KR';
-        uAnalyst.pitch = 0.96; // 🎙️ 자연스러운 미세 중저음 음색 (로봇 금속성 노이즈 0%)
-        uAnalyst.rate = 0.98;  // 안정적인 기술 해설 템포
+        uAnalyst.pitch = 0.96;
+        uAnalyst.rate = 0.98;
         uAnalyst.volume = 1.0;
         if (this.analystVoice) uAnalyst.voice = this.analystVoice;
 
@@ -252,9 +489,8 @@ class BaseballCommentator {
         uCaster.onend = () => {
             if (this.casterBoxEl) this.casterBoxEl.classList.remove('speaking');
             if (this.analystBoxEl) this.analystBoxEl.classList.add('speaking');
-            // 캐스터 발화 직후 이순철 해설 발화 연결
             setTimeout(() => {
-                if (this.isVoiceEnabled && this.synth) {
+                if (this.isVoiceEnabled && this.synth && token === this.speakToken) {
                     this.synth.speak(uAnalyst);
                 } else {
                     this.stopEqualizer();
